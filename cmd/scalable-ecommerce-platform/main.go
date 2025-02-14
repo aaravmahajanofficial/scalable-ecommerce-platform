@@ -1,9 +1,13 @@
 package main
 
 import (
-	"log"
+	"context"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 )
@@ -40,12 +44,30 @@ func main() {
 		Handler: router,
 	}
 
-	slog.Info("Started server at", slog.String("address", cfg.Addr))
+	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))
 
-	err := server.ListenAndServe()
+	done := make(chan os.Signal, 1)
 
-	if err != nil {
-		log.Fatalf("error starting the server %s", err)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() { // Starts the HTTP server in a new goroutine so it doesn't block the main thread.
+
+		if err := server.ListenAndServe(); err != nil {
+			slog.Error("❌ Failed to start server", slog.String("error", err.Error()))
+		}
+	}()
+
+	<-done
+
+	slog.Warn("🛑 Shutdown signal received. Preparing to stop the server...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		slog.Error("⚠️ Server shutdown encountered an issue", slog.String("error", err.Error()))
+	} else {
+		slog.Info("✅ Server shut down gracefully. All connections closed.")
 	}
 
 }
