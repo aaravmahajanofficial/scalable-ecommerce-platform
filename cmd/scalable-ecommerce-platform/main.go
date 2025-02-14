@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
+	auth "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/http/handlers/user"
 )
 
 func main() {
@@ -24,9 +25,7 @@ func main() {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("POST /api/v1/register", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Sign up to get started..."))
-	})
+	router.HandleFunc("POST /api/v1/register", auth.Register())
 	router.HandleFunc("POST /api/v1/login", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Login to get started..."))
 	})
