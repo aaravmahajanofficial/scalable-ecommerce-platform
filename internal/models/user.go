@@ -17,14 +17,14 @@ type User struct {
 }
 
 // for registration
-type Registeration struct {
+type RegisterRequest struct {
 	Email    string `json:"email" validate:"required, email"`
 	Password string `json:"password" validate:"required, min=6"`
 	Name     string `json:"name" validate:"required"`
 }
 
 // for login
-type Login struct {
+type LoginRequest struct {
 	Email    string `json:"email" validate:"required, email"`
 	Password string `json:"password" validate:"required"`
 }
