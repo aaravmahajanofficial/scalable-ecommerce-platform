@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	ID        int64    `json:"id"`
+	ID        string    `json:"id"`
 	Name      string    `json:"name" validate:"required"`
 	Username  string    `json:"username" validate:"required"`
 	Email     string    `json:"email" validate:"required"`
@@ -32,7 +32,7 @@ type LoginRequest struct {
 // JWT claims structure
 
 type Claims struct {
-	UserID int64  `json:"user_id"`
+	UserID string  `json:"user_id"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
