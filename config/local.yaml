@@ -1,4 +1,5 @@
 env: "dev"
-storage_path: "storage/storage.db"
+# storage_path: "storage/storage.db"
+storage_path: "postgres://postgres:password@localhost:5432/postgres?sslmode=disable"
 http_server:
   address: "localhost:8085"

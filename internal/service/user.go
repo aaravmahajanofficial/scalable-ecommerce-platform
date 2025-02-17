@@ -53,7 +53,7 @@ func (s *UserService) Login(req *models.LoginRequest) (string, error) {
 	user, err := s.repo.GetUserByEmail(req.Email)
 
 	if err != nil {
-		return "", errors.New("invalid credentials")
+		return "", err
 	}
 
 	// Compare passwords
