@@ -149,3 +149,11 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 	}
 }
+
+func (h *UserHandler) Profile() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		response.WriteJson(w, http.StatusAccepted, map[string]string{"message": "Profile page is empty, but ready!"})
+
+	}
+}

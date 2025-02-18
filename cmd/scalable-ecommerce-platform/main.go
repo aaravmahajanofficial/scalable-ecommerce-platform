@@ -12,6 +12,7 @@ import (
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/handlers"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/storage/postgres"
 )
@@ -39,6 +40,7 @@ func main() {
 	jwtKey := []byte("secret-key-123")
 	userService := service.NewUserService(storage, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
+	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 
@@ -46,6 +48,7 @@ func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/v1/register", userHandler.Register())
 	router.HandleFunc("POST /api/v1/login", userHandler.Login())
+	router.HandleFunc("GET /api/v1/profile", authMiddleware.Authenticate(http.HandlerFunc(userHandler.Profile())))
 
 	// Setup http server
 	server := http.Server{
