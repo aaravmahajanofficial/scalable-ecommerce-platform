@@ -83,3 +83,16 @@ func (s *UserService) Login(req *models.LoginRequest) (string, error) {
 	return tokenString, nil
 
 }
+
+func (s *UserService) GetUserByID(id string) (*models.User, error) {
+
+	user, err := s.repo.GetUserById(id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Note: Password is already included in repository query
+	return user, nil
+
+}

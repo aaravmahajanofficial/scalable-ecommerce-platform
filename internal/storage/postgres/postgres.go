@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	model "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
@@ -65,6 +66,32 @@ func (p *Postgres) GetUserByEmail(email string) (*model.User, error) {
 
 	if err != nil {
 		return nil, err
+	}
+
+	return user, nil
+
+}
+
+func (p *Postgres) GetUserById(id string) (*model.User, error) {
+
+	user := &model.User{}
+
+	query := `
+	SELECT id, email, name, created_at, updated_at
+	FROM users
+	WHERE id = $1
+	`
+
+	err := p.db.QueryRow(query, id).Scan(&user.ID, &user.Email, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+
+	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+
+		return nil, err
+
 	}
 
 	return user, nil

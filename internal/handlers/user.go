@@ -153,7 +153,21 @@ func (h *UserHandler) Login() http.HandlerFunc {
 func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		response.WriteJson(w, http.StatusAccepted, map[string]string{"message": "Profile page is empty, but ready!"})
+		// Get user claims from context (set by middleware)
+		claims, ok := r.Context().Value("user").(*models.Claims)
 
+		if !ok {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		user, err := h.userService.GetUserByID(claims.UserID)
+
+		if err != nil {
+			http.Error(w, "User not found", http.StatusNotFound)
+			return
+		}
+
+		response.WriteJson(w, http.StatusFound, user)
 	}
 }
