@@ -13,8 +13,8 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/middleware"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/storage/postgres"
 )
 
 func main() {
@@ -23,14 +23,14 @@ func main() {
 	cfg := config.MustLoad()
 
 	// Database setup
-	storage, err := postgres.New(cfg)
+	postgresInstance, userRepo, _, err := repository.New(cfg)
 
 	if err != nil {
 		log.Fatal("❌ Error accessing the database:", err)
 	}
 
 	defer func() {
-		if err := storage.Close(); err != nil {
+		if err := postgresInstance.Close(); err != nil {
 			slog.Error("⚠️ Error closing database connection", slog.String("error", err.Error()))
 		} else {
 			slog.Info("✅ Database connection closed")
@@ -38,7 +38,7 @@ func main() {
 	}()
 
 	jwtKey := []byte("secret-key-123")
-	userService := service.NewUserService(storage, jwtKey)
+	userService := service.NewUserService(userRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 

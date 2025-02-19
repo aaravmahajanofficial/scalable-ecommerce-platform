@@ -5,17 +5,17 @@ import (
 	"time"
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/storage/postgres"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	repo   *postgres.Postgres
+	repo   *repository.UserRepository
 	jwtKey []byte
 }
 
-func NewUserService(repo *postgres.Postgres, jwtKey []byte) *UserService {
+func NewUserService(repo *repository.UserRepository, jwtKey []byte) *UserService {
 	return &UserService{
 		repo:   repo,
 		jwtKey: jwtKey,
