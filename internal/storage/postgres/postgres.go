@@ -29,7 +29,29 @@ func New(cfg *config.Config) (*Postgres, error) {
 		name VARCHAR(255) NOT NULL,
 		created_at TIMESTAMP DEFAULT NOW() NOT NULL,
 		updated_at TIMESTAMP DEFAULT NOW() NOT NULL
-	)`)
+		);
+
+		CREATE TABLE IF NOT EXISTS categories (
+		id SERIAL PRIMARY KEY,
+		name VARCHAR(100) NOT NULL,
+		description TEXT,
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+
+		CREATE TABLE IF NOT EXISTS products (
+		id SERIAL PRIMARY KEY,
+		category_id INTEGER REFERENCES categories(id),
+		name VARCHAR(200) NOT NULL,
+		description TEXT,
+		price DECIMAL(10,2) NOT NULL,
+		stock_quantity INTEGER NOT NULL DEFAULT 0,
+		sku VARCHAR(50) UNIQUE NOT NULL,
+		status VARCHAR(20) NOT NULL DEFAULT 'active', -- active, inactive, discontinued
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+		);
+	`)
 
 	// Test the connection to make sure DB is reachable
 	if err := db.Ping(); err != nil {
