@@ -16,7 +16,7 @@ type Product struct {
 	Name          string    `json:"name"`
 	Description   string    `json:"description"`
 	Price         float64   `json:"price"`
-	StockQuantity int     `json:"stock_quantity"`
+	StockQuantity int       `json:"stock_quantity"`
 	SKU           string    `json:"sku"`
 	Status        string    `json:"status"`
 	CreatedAt     time.Time `json:"created_at"`
