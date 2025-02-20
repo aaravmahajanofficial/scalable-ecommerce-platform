@@ -24,7 +24,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if !validateMethod(w, r) {
+		if !validateMethod(w, r, http.MethodPost) {
 			return
 		}
 
@@ -58,7 +58,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if !validateMethod(w, r) {
+		if !validateMethod(w, r, http.MethodPost) {
 			return
 		}
 
@@ -91,7 +91,7 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if !validateMethod(w, r) {
+		if !validateMethod(w, r, http.MethodPost) {
 			return
 		}
 

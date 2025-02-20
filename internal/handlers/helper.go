@@ -12,8 +12,8 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func validateMethod(w http.ResponseWriter, r *http.Request) bool {
-	if r.Method != http.MethodPost {
+func validateMethod(w http.ResponseWriter, r *http.Request, expectedMethod string) bool {
+	if r.Method != expectedMethod {
 		slog.Warn("Invalid request method",
 			slog.String("method", r.Method),
 			slog.String("endpoint", r.URL.Path),
