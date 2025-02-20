@@ -41,7 +41,7 @@ func (s *ProductService) GetProductByID(id int64) (*models.Product, error) {
 
 }
 
-func (s *ProductService) UpdateProductRequest(id int64, req *models.UpdateProductRequest) (*models.Product, error) {
+func (s *ProductService) UpdateProduct(id int64, req *models.UpdateProductRequest) (*models.Product, error) {
 
 	product, err := s.repo.GetProductByID(id)
 
