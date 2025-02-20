@@ -40,7 +40,7 @@ func (p *ProductRepository) GetProductByID(id int64) (*models.Product, error) {
 
 	var category models.Category
 
-	err := p.DB.QueryRow(query, id).Scan(query, &product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
+	err := p.DB.QueryRow(query, id).Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -93,7 +93,7 @@ func (p *ProductRepository) ListProducts(offset, limit int) ([]*models.Product, 
 		product := &models.Product{}
 		category := &models.Category{}
 
-		err := rows.Scan(query, &product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
+		err := rows.Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
 
 		if err != nil {
 			return nil, err
