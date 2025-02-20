@@ -1,10 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 
@@ -16,59 +13,30 @@ import (
 
 type UserHandler struct {
 	userService *service.UserService
+	validator   *validator.Validate
 }
 
 func NewUserHandler(userService *service.UserService) *UserHandler {
-	return &UserHandler{userService: userService}
+	return &UserHandler{userService: userService, validator: validator.New()}
 }
-
-var validate = validator.New()
 
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if r.Method != http.MethodPost {
-			slog.Warn("Invalid request method",
-				slog.String("method", r.Method),
-				slog.String("endpoint", r.URL.Path),
-			)
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		if !validateMethod(w, r) {
 			return
 		}
-
-		defer r.Body.Close()
 
 		// Decode the request body
 		var req models.RegisterRequest
-
-		err := json.NewDecoder(r.Body).Decode(&req)
-
-		if errors.Is(err, io.EOF) {
-			slog.Warn("Empty request body", slog.String("endpoint", r.URL.Path))
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("❌ Bad Request: request body cannot be empty")))
+		if err := decodeJSONBody(w, r, &req); err != nil {
 			return
 		}
 
-		if err != nil {
-			slog.Error("Failed to decode request body",
-				slog.String("error", err.Error()),
-				slog.String("endpoint", r.URL.Path),
-			)
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+		// Validate Input
+		if !validateStruct(w, h.validator, req) {
 			return
-		}
-
-		if err := validate.Struct(req); err != nil {
-
-			slog.Warn("User input validation failed",
-				slog.String("endpoint", r.URL.Path),
-				slog.String("error", err.Error()),
-			)
-
-			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(err.(validator.ValidationErrors)))
-			return
-
 		}
 
 		// Call the register service
@@ -90,49 +58,19 @@ func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if r.Method != http.MethodPost {
-			slog.Warn("Invalid request method",
-				slog.String("method", r.Method),
-				slog.String("endpoint", r.URL.Path),
-			)
-			http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
+		if !validateMethod(w, r) {
 			return
 		}
-
-		defer r.Body.Close()
 
 		// Decode the request body
 		var req models.LoginRequest
-
-		err := json.NewDecoder(r.Body).Decode(&req)
-
-		if errors.Is(err, io.EOF) {
-			slog.Warn("Empty request body",
-				slog.String("endpoint", r.URL.Path),
-			)
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("❌ Bad Request: request body cannot be empty")))
+		if err := decodeJSONBody(w, r, &req); err != nil {
 			return
 		}
 
-		if err != nil {
-			slog.Error("Failed to decode request body",
-				slog.String("error", err.Error()),
-				slog.String("endpoint", r.URL.Path),
-			)
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
+		// Validate Input
+		if !validateStruct(w, h.validator, req) {
 			return
-		}
-
-		if err := validate.Struct(req); err != nil {
-
-			slog.Warn("User input validation failed",
-				slog.String("endpoint", r.URL.Path),
-				slog.String("error", err.Error()),
-			)
-
-			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(err.(validator.ValidationErrors)))
-			return
-
 		}
 
 		// Call the register service
@@ -144,7 +82,6 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		}
 
 		slog.Info("User logged in successfully", slog.String("email", req.Email))
-
 		response.WriteJson(w, http.StatusOK, map[string]string{"token": token})
 
 	}
@@ -152,6 +89,11 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		// Check for correct HTTP method
+		if !validateMethod(w, r) {
+			return
+		}
 
 		// Get user claims from context (set by middleware)
 		claims, ok := r.Context().Value("user").(*models.Claims)
