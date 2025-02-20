@@ -91,7 +91,7 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if !validateMethod(w, r, http.MethodPost) {
+		if !validateMethod(w, r, http.MethodGet) {
 			return
 		}
 
