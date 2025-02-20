@@ -23,7 +23,7 @@ func main() {
 	cfg := config.MustLoad()
 
 	// Database setup
-	postgresInstance, userRepo, _, err := repository.New(cfg)
+	postgresInstance, userRepo, productRepo, err := repository.New(cfg)
 
 	if err != nil {
 		log.Fatal("❌ Error accessing the database:", err)
@@ -40,6 +40,8 @@ func main() {
 	jwtKey := []byte("secret-key-123")
 	userService := service.NewUserService(userRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
+	productService := service.NewProductService(productRepo)
+	productHandler := handlers.NewProductHandler(productService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
@@ -49,6 +51,10 @@ func main() {
 	router.HandleFunc("POST /api/v1/register", userHandler.Register())
 	router.HandleFunc("POST /api/v1/login", userHandler.Login())
 	router.HandleFunc("GET /api/v1/profile", authMiddleware.Authenticate(http.HandlerFunc(userHandler.Profile())))
+	router.HandleFunc("POST /api/v1/products", authMiddleware.Authenticate(http.HandlerFunc(productHandler.CreateProduct())))
+	router.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(http.HandlerFunc(productHandler.GetProduct())))
+	router.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(http.HandlerFunc(productHandler.UpdateProduct())))
+	router.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(http.HandlerFunc(productHandler.ListProducts())))
 
 	// Setup http server
 	server := http.Server{
