@@ -29,10 +29,20 @@ type LoginRequest struct {
 	Password string `json:"password" validate:"required"`
 }
 
+// for login response
+type LoginResponse struct {
+	Success        bool   `json:"success"`
+	Token          string `json:"token,omitempty"`
+	ExpiresIn      int    `json:"expires_in,omitempty"`
+	RemainingTries int    `json:"remaining_tries,omitempty"`
+	RetryAfter     int    `json:"retry_after,omitempty"`
+	Message        string `json:"message,omitempty"`
+}
+
 // JWT claims structure
 
 type Claims struct {
-	UserID string  `json:"user_id"`
+	UserID string `json:"user_id"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }

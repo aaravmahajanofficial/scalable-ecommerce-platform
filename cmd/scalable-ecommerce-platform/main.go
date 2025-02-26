@@ -14,6 +14,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository/redis"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
 )
 
@@ -26,7 +27,14 @@ func main() {
 	postgresInstance, userRepo, productRepo, err := repository.New(cfg)
 
 	if err != nil {
-		log.Fatal("❌ Error accessing the database:", err)
+		log.Fatalf("❌ Error accessing the database: %v", err)
+	}
+
+	// Redis setup
+	redisRepo, err := redis.NewRedisRepo(cfg)
+
+	if err != nil {
+		log.Fatalf("❌ Error accessing the redis instance: %v", err)
 	}
 
 	defer func() {
@@ -38,7 +46,7 @@ func main() {
 	}()
 
 	jwtKey := []byte("secret-key-123")
-	userService := service.NewUserService(userRepo, jwtKey)
+	userService := service.NewUserService(userRepo, redisRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
 	productService := service.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productService)

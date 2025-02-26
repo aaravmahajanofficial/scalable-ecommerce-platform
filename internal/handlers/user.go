@@ -74,15 +74,26 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		}
 
 		// Call the register service
-		token, err := h.userService.Login(&req)
+		resp, err := h.userService.Login(r.Context(), &req)
 
 		if err != nil {
 			response.WriteJson(w, http.StatusUnauthorized, response.GeneralError(err))
 			return
 		}
 
+		if !resp.Success {
+
+			if resp.RetryAfter > 0 {
+				response.WriteJson(w, http.StatusTooManyRequests, resp)
+				return
+			}
+
+			response.WriteJson(w, http.StatusUnauthorized, resp)
+			return
+		}
+
 		slog.Info("User logged in successfully", slog.String("email", req.Email))
-		response.WriteJson(w, http.StatusOK, map[string]string{"token": token})
+		response.WriteJson(w, http.StatusOK, resp)
 
 	}
 }

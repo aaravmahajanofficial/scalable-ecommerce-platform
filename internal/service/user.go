@@ -1,24 +1,28 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository/redis"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type UserService struct {
-	repo   *repository.UserRepository
-	jwtKey []byte
+	repo      *repository.UserRepository
+	redisRepo *redis.RedisRepo
+	jwtKey    []byte
 }
 
-func NewUserService(repo *repository.UserRepository, jwtKey []byte) *UserService {
+func NewUserService(repo *repository.UserRepository, redisRepo *redis.RedisRepo, jwtKey []byte) *UserService {
 	return &UserService{
-		repo:   repo,
-		jwtKey: jwtKey,
+		repo:      repo,
+		redisRepo: redisRepo,
+		jwtKey:    jwtKey,
 	}
 }
 
@@ -47,20 +51,31 @@ func (s *UserService) Register(req *models.RegisterRequest) (*models.User, error
 
 }
 
-func (s *UserService) Login(req *models.LoginRequest) (string, error) {
+func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
 
-	// Retrieve the user from the DB
-	user, err := s.repo.GetUserByEmail(req.Email)
+	// check rate limit
+	allowed, remaining, retryAfter, err := s.redisRepo.CheckLoginRateLimit(ctx, req.Email)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	// Compare passwords
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	if !allowed {
+		return &models.LoginResponse{
+			Success:    false,
+			Message:    "Too many login attempts. Please try again later.",
+			RetryAfter: retryAfter,
+		}, nil
+	}
 
-	if err != nil {
-		return "", errors.New("invalid credentials")
+	// Retrieve the user from the DB and compare the passwords
+	user, err := s.repo.GetUserByEmail(req.Email)
+	if err != nil || bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)) != nil {
+		return &models.LoginResponse{
+			Success:        false,
+			Message:        "Invalid email or password",
+			RemainingTries: remaining,
+		}, nil
 	}
 
 	claims := &models.Claims{
@@ -75,12 +90,15 @@ func (s *UserService) Login(req *models.LoginRequest) (string, error) {
 	// Generate Token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(s.jwtKey)
-
 	if err != nil {
-		return "", nil
+		return nil, errors.New("failed to generate authentication token")
 	}
 
-	return tokenString, nil
+	return &models.LoginResponse{
+		Success:   true,
+		Token:     tokenString,
+		ExpiresIn: int(time.Until(claims.ExpiresAt.Time).Seconds()),
+	}, nil
 
 }
 

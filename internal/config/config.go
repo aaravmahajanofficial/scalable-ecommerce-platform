@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 )
@@ -22,11 +23,25 @@ type Database struct {
 	SSLMode  string `yaml:"PG_SSLMODE" env:"PG_SSLMODE" env-default:"require"`
 }
 
+type RedisConnect struct {
+	Host     string `yaml:"REDIS_HOST" env:"REDIS_HOST"`
+	Username string `yaml:"REDIS_USER" env:"REDIS_USER" env-required:"true"`
+	Password string `yaml:"REDIS_PASSWORD" env:"REDIS_PASSWORD" env-required:"true"`
+	DB       int    `yaml:"REDIS_DB" env:"REDIS_DB" env-default:"0"`
+}
+
+type RateConfig struct {
+	MaxAttempts int64         `yaml:"MAX_ATTEMPTS" env:"MAX_ATTEMPTS" env-default:"5"`
+	WindowSize  time.Duration `yaml:"WINDOW_SIZE" env:"WINDOW_SIZE" env-default:"15s"`
+}
+
 type Config struct {
-	Env         string `yaml:"env" env:"ENV" env-required:"true"`
-	StoragePath string `yaml:"storage_path" env-required:"true"`
-	HTTPServer  `yaml:"http_server"`
-	Database    Database `yaml:"database"`
+	Env          string `yaml:"env" env:"ENV" env-required:"true"`
+	StoragePath  string `yaml:"storage_path" env-required:"true"`
+	HTTPServer   `yaml:"http_server"`
+	Database     Database     `yaml:"database"`
+	RedisConnect RedisConnect `yaml:"redis"`
+	RateConfig   RateConfig   `yaml:"rateConfig"`
 }
 
 func MustLoad() *Config {
