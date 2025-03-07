@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
@@ -17,14 +19,19 @@ func NewCartRepo(db *sql.DB) *CartRepository {
 
 func (r *CartRepository) CreateCart(cart *models.Cart) error {
 
+	itemsJSON, err := json.Marshal(cart.Items)
+
+	if err != nil {
+		return fmt.Errorf("failed to marshal cart items: %w", err)
+	}
+
 	query := `
 		INSERT INTO carts (id, user_id, items, created_at, updated_at)
 		VALUES($1, $2, $3, NOW(), NOW())
-		RETURNING id, created_at, updated_at`
+		RETURNING id, created_at, updated_at
+	`
 
-	_, err := r.DB.Exec(query, cart.ID, cart.UserID, cart.Items, cart.CreatedAt, cart.UpdatedAt)
-
-	return err
+	return r.DB.QueryRow(query, cart.ID, cart.UserID, itemsJSON).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
 }
 
 func (r *CartRepository) GetCart(cartID string) (*models.Cart, error) {
@@ -36,11 +43,16 @@ func (r *CartRepository) GetCart(cartID string) (*models.Cart, error) {
 	`
 
 	cart := &models.Cart{}
+	var itemsJSON []byte
 
-	err := r.DB.QueryRow(query, cartID).Scan(&cart.ID, &cart.UserID, &cart.Items, &cart.CreatedAt, &cart.UpdatedAt)
+	err := r.DB.QueryRow(query, cartID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
 
 	if err != nil {
 		return nil, err
+	}
+
+	if err := json.Unmarshal(itemsJSON, &cart.Items); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal cart items: %w", err)
 	}
 
 	return cart, nil
@@ -49,13 +61,19 @@ func (r *CartRepository) GetCart(cartID string) (*models.Cart, error) {
 
 func (r *CartRepository) UpdateCart(cart *models.Cart) error {
 
+	itemsJSON, err := json.Marshal(cart.Items)
+
+	if err != nil {
+		return fmt.Errorf("failed to marshal cart items: %w", err)
+	}
+
 	query := `
 		UPDATE carts
 		SET items = $1, total = $2, updated_at = $3
 		WHERE id = $4
 	`
 
-	_, err := r.DB.Exec(query, cart.ID, cart.Total, time.Now(), cart.ID)
+	_, err = r.DB.Exec(query, itemsJSON, cart.Total, time.Now(), cart.ID)
 
 	return err
 

@@ -13,29 +13,30 @@ type Repository struct {
 	DB *sql.DB
 }
 
-func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, error) {
+func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, *CartRepository, error) {
 
 	db, err := sql.Open("postgres", cfg.Database.GetDSN())
 
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	// Test the connection to make sure DB is reachable
 	if err := db.Ping(); err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	// Initialize database schema
 	if err := initSchema(db); err != nil {
-		return nil, nil, nil, fmt.Errorf("failed to initialize schema: %w", err)
+		return nil, nil, nil, nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
 
 	// Initialize repositories
 	postgresInstance := &Repository{DB: db}
-	userRepo := NewUserRepo(db)       // Initialize Repository
+	userRepo := NewUserRepo(db)       // Initialize UserRepository
 	productRepo := NewProductRepo(db) // Initialize ProductRepository
+	cartRepo := NewCartRepo(db)       // Initialize CartRepository
 
-	return postgresInstance, userRepo, productRepo, nil
+	return postgresInstance, userRepo, productRepo, cartRepo, nil
 }
 
 func (p *Repository) Close() error {
@@ -73,6 +74,15 @@ func initSchema(db *sql.DB) error {
 		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 	);
+
+	CREATE TABLE IF NOT EXISTS carts (
+            id UUID PRIMARY KEY,
+            user_id VARCHAR(255) NOT NULL,
+            items JSONB NOT NULL DEFAULT '{}'::jsonb,
+            total DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
 	`
 
 	if _, err := db.Exec(schema); err != nil {

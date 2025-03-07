@@ -61,6 +61,7 @@ func (s *CartService) AddItem(cartId string, req *models.AddItemRequest) (*model
 
 		ProductID:  req.ProductID,
 		Quantity:   req.Quantity,
+		UnitPrice:  req.UnitPrice,
 		TotalPrice: float64(req.Quantity) * req.UnitPrice,
 	}
 

@@ -24,7 +24,7 @@ func main() {
 	cfg := config.MustLoad()
 
 	// Database setup
-	postgresInstance, userRepo, productRepo, err := repository.New(cfg)
+	postgresInstance, userRepo, productRepo, cartRepo, err := repository.New(cfg)
 
 	if err != nil {
 		log.Fatalf("❌ Error accessing the database: %v", err)
@@ -50,6 +50,8 @@ func main() {
 	userHandler := handlers.NewUserHandler(userService)
 	productService := service.NewProductService(productRepo)
 	productHandler := handlers.NewProductHandler(productService)
+	cartService := service.NewCartService(cartRepo)
+	cartHandler := handlers.NewCartHandler(cartService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
@@ -63,6 +65,10 @@ func main() {
 	router.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(http.HandlerFunc(productHandler.GetProduct())))
 	router.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(http.HandlerFunc(productHandler.UpdateProduct())))
 	router.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(http.HandlerFunc(productHandler.ListProducts())))
+	router.HandleFunc("POST /api/v1/carts", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.CreateCart())))
+	router.HandleFunc("GET /api/v1/carts/{id}", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.GetCart())))
+	router.HandleFunc("POST /api/v1/carts/{id}/items", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.AddItem())))
+	router.HandleFunc("PUT /api/v1/carts/{id}/items", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.UpdateQuantity())))
 
 	// Setup http server
 	server := http.Server{

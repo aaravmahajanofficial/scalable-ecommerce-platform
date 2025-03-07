@@ -52,6 +52,9 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 			return
 		}
 
+		// Set the header "X-User-ID"
+		r.Header.Set("X-User-ID", claims.UserID)
+
 		// Add userId to the context
 		// It attaches a new key-value pair ("user": claims) to the context.
 		ctx := context.WithValue(r.Context(), "user", claims)
