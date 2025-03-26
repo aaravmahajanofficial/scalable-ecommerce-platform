@@ -29,15 +29,15 @@ type Address struct {
 	City       string `json:"city" validate:"required"`
 	State      string `json:"state" validate:"required"`
 	PostalCode string `json:"postal_code" validate:"required"`
-	Country    string `json:"country" validate:"required, iso3166_1_alpha2"`
+	Country    string `json:"country" validate:"required,iso3166_1_alpha2"`
 }
 
 type OrderItem struct {
 	ID        uuid.UUID `json:"id"`
 	OrderID   uuid.UUID `json:"order_id"`
 	ProductID uuid.UUID `json:"product_id" validate:"required"`
-	Quantity  int       `json:"quantity" validate:"required, min=1"`
-	UnitPrice float64   `json:"unit_price" validate:"required, gte=0"`
+	Quantity  int       `json:"quantity" validate:"required,min=1"`
+	UnitPrice float64   `json:"unit_price" validate:"required,gte=0"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
