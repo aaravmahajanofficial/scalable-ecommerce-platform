@@ -60,7 +60,7 @@ type CreateOrderRequest struct {
 	ShippingAddress Address     `json:"shipping_address" validate:"required"`
 }
 
-type UpdateOrderRequest struct {
+type UpdateOrderStatusRequest struct {
 	Status OrderStatus `json:"status" validate:"required,oneof=pending confirmed shipping delivered cancelled"`
 }
 
