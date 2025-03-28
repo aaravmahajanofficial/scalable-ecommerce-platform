@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -19,13 +20,19 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 
 func (o *OrderRepository) CreateOrder(order *models.Order) error {
 
+	shipping_address, err := json.Marshal(order.ShippingAddress)
+
+	if err != nil {
+		return fmt.Errorf("failed to marshal shipping address: %w", err)
+	}
+
 	// Insert an order
 	query := `
-		INSERT INTO orders (id, customer_id, status, total_amount, payment_status, payment_intent_id, shipping_address, items, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+		INSERT INTO orders (id, customer_id, status, total_amount, payment_status, payment_intent_id, shipping_address, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
 	`
 
-	_, err := o.DB.Exec(query, order.ID, order.CustomerID, order.Status, order.TotalAmount, order.PaymentStatus, order.PaymentIntentID, order.ShippingAddress, order.Items)
+	_, err = o.DB.Exec(query, order.ID, order.CustomerID, order.Status, order.TotalAmount, order.PaymentStatus, order.PaymentIntentID, shipping_address)
 
 	if err != nil {
 		return fmt.Errorf("failed to insert order: %w", err)
@@ -36,10 +43,10 @@ func (o *OrderRepository) CreateOrder(order *models.Order) error {
 
 		query := `
 			INSERT INTO order_items (id, order_id, product_id, quantity, unit_price, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6, NOW())
+			VALUES ($1, $2, $3, $4, $5, NOW())
 		`
 
-		_, err := o.DB.Exec(query, item.ID, order.ID, item.ProductID, item.Quantity, item.UnitPrice, item.CreatedAt)
+		_, err := o.DB.Exec(query, item.ID, order.ID, item.ProductID, item.Quantity, item.UnitPrice)
 
 		if err != nil {
 			return fmt.Errorf("failed to insert an order item: %w", err)
