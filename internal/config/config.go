@@ -84,6 +84,6 @@ func MustLoad() *Config {
 }
 
 func (d *Database) GetDSN() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
-		d.User, d.Password, d.Host, d.Port, d.Name)
+	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+		d.User, d.Password, d.Host, d.Name, d.SSLMode)
 }
