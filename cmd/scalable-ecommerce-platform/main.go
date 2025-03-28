@@ -71,7 +71,7 @@ func main() {
 	router.HandleFunc("GET /api/v1/carts/{id}", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.GetCart())))
 	router.HandleFunc("POST /api/v1/carts/{id}/items", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.AddItem())))
 	router.HandleFunc("PUT /api/v1/carts/{id}/items", authMiddleware.Authenticate(http.HandlerFunc(cartHandler.UpdateQuantity())))
-	router.HandleFunc("POST /api/orders", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.CreateOrder())))
+	router.HandleFunc("POST /api/v1/orders", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.CreateOrder())))
 	router.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.GetOrder())))
 	router.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.ListOrders())))
 	router.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.UpdateOrderStatus())))
