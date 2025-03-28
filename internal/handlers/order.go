@@ -129,7 +129,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 			return
 		}
 
-		response.WriteJson(w, http.StatusCreated, map[string]any{
+		response.WriteJson(w, http.StatusOK, map[string]any{
 			"Orders": orders,
 			"Total":  total,
 			"Page":   page,
