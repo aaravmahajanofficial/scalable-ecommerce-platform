@@ -72,8 +72,11 @@ func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
 		FROM orders
 		WHERE id = $1
 	`
+	var jsonData []byte
 
-	err := o.DB.QueryRow(query, id).Scan(query, &order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &order.ShippingAddress, &order.CreatedAt, &order.UpdatedAt)
+	err := o.DB.QueryRow(query, id).Scan(&order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
+
+	json.Unmarshal(jsonData, &order.ShippingAddress)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the order: %w", err)
