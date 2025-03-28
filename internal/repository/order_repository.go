@@ -78,6 +78,11 @@ func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
 
 	json.Unmarshal(jsonData, &order.ShippingAddress)
 
+	if err := json.Unmarshal(jsonData, &order.ShippingAddress); err != nil {
+
+		return nil, fmt.Errorf("failed to unmarshal shipping address: %w", err)
+	}
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the order: %w", err)
 	}
@@ -128,25 +133,12 @@ func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
 */
 func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
 
-	// Get the total number of orders
-	var count int
-
-	query := `
-		SELECT COUNT(*) FROM orders WHERE customer_id = $1
-	`
-
-	err := o.DB.QueryRow(query, customerID).Scan(&count)
-
-	if err != nil {
-		return nil, 0, fmt.Errorf("failed to count the orders: %w", err)
-	}
-
 	// Offset
 	offset := (page - 1) * size
 
 	// Get orders with pagination
-	query = `
-		SELECT id, customer_id, status, total_amount, payment_status, payment_intent_id, shipping_address, created_at, updated_at
+	query := `
+		SELECT id, status, total_amount, payment_status, payment_intent_id, shipping_address, created_at, updated_at
 		FROM orders
 		WHERE customer_id = $1
 		ORDER BY created_at DESC
@@ -169,10 +161,17 @@ func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, s
 
 		order.CustomerID = customerID
 
-		err := rows.Scan(&order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &order.ShippingAddress, &order.CreatedAt, &order.UpdatedAt)
+		var jsonData []byte
+
+		err := rows.Scan(&order.ID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
+
+		if err := json.Unmarshal(jsonData, &order.ShippingAddress); err != nil {
+
+			return nil, 0, fmt.Errorf("failed to unmarshal shipping address: %w", err)
+		}
 
 		if err != nil {
-			return nil, 0, fmt.Errorf("failed to scan orders: %w", err)
+			return nil, 0, fmt.Errorf("failed to scan the orders: %w", err)
 		}
 
 		orders = append(orders, order)
@@ -195,17 +194,16 @@ func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, s
 			return nil, 0, fmt.Errorf("failed to get the orders: %w", err)
 		}
 
-		defer itemsRows.Close()
-
 		var items []models.OrderItem
 
 		for itemsRows.Next() {
 
 			var item models.OrderItem
 
-			err := rows.Scan(&item.ID, &item.ProductID, &item.Quantity, &item.UnitPrice, &item.CreatedAt)
+			err := itemsRows.Scan(&item.ID, &item.ProductID, &item.Quantity, &item.UnitPrice, &item.CreatedAt)
 
 			if err != nil {
+				itemsRows.Close()
 				return nil, 0, fmt.Errorf("failed to scan order items: %w", err)
 			}
 			item.OrderID = orders[i].ID
@@ -214,17 +212,18 @@ func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, s
 
 		}
 
+		itemsRows.Close()
 		orders[i].Items = items
 	}
 
-	return orders, count, nil
+	return orders, len(orders), nil
 }
 
 // Update Order status
 func (o *OrderRepository) UpdateOrderStatus(id uuid.UUID, status models.OrderStatus) error {
 
 	query := `
-		UPDATE orders SET status = $1, updated_at = $2, WHERE id = $3
+		UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3
 	`
 
 	result, err := o.DB.Exec(query, status, time.Now(), id)
