@@ -22,7 +22,7 @@ func (p *ProductRepository) CreateProduct(product *models.Product) error {
 			  RETURNING id, created_at, updated_at
 	`
 
-	return p.DB.QueryRow(query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.SKU, "active").Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
+	return p.DB.QueryRow(query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.SKU, product.Status).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
 
 }
 
