@@ -8,20 +8,12 @@ import (
 
 type OrderStatus string
 
-type PaymentStatus string
-
 const (
 	OrderStatusPending   OrderStatus = "pending"
 	OrderStatusConfirmed OrderStatus = "confirmed"
 	OrderStatusShipping  OrderStatus = "shipping"
 	OrderStatusDelivered OrderStatus = "delivered"
 	OrderStatusCancelled OrderStatus = "cancelled"
-
-	PaymentStatusPending    PaymentStatus = "pending"
-	PaymentStatusAuthorized PaymentStatus = "authorized"
-	PaymentStatusPaid       PaymentStatus = "paid"
-	PaymentStatusFailed     PaymentStatus = "failed"
-	PaymentStatusRefunded   PaymentStatus = "refunded"
 )
 
 type Address struct {
@@ -73,19 +65,4 @@ type OrderHistoryResponse struct {
 	Total  int     `json:"total"`
 	Page   int     `json:"page"`
 	Size   int     `json:"size"`
-}
-
-type PaymentIntent struct {
-	ID     string  `json:"id"`
-	Amount float64 `json:"amount"`
-	Status string  `json:"status"`
-}
-
-type CreatePaymentRequest struct {
-	OrderID uuid.UUID `json:"order_id" validate:"required"`
-}
-
-type PaymentResponse struct {
-	PaymentIntent *PaymentIntent `json:"payment_intent"`
-	ClientSecret  string         `json:"client_secret"`
 }
