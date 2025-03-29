@@ -11,7 +11,6 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 type PaymentHandler struct {
@@ -51,7 +50,7 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 			return
 		}
 
-		slog.Info("Product created successfully", slog.String("productId", fmt.Sprintf("%v", payment.Payment.ID)))
+		slog.Info("Payment initiated successfully", slog.String("productId", fmt.Sprintf("%v", payment.Payment.ID)))
 		response.WriteJson(w, http.StatusCreated, payment)
 
 	}
@@ -67,15 +66,8 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 			return
 		}
 
-		id, err := uuid.Parse(idStr)
-
-		if err != nil {
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid payment ID")))
-			return
-		}
-
 		// Call the service
-		payment, err := h.paymentService.GetPaymentByID(r.Context(), id)
+		payment, err := h.paymentService.GetPaymentByID(r.Context(), idStr)
 
 		if err != nil {
 			slog.Error("Error while accessing payment", slog.String("error", err.Error()))
@@ -98,14 +90,6 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 			return
 		}
 
-		// Parse the customer ID
-		customerID, err := uuid.Parse(customerIDStr)
-
-		if err != nil {
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid customer ID")))
-			return
-		}
-
 		// extract pagination parameters
 		page, size := 1, 10
 
@@ -122,7 +106,7 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 		}
 
 		// Call the service
-		payments, total, err := h.paymentService.ListPaymentsByCustomer(r.Context(), customerID, page, size)
+		payments, total, err := h.paymentService.ListPaymentsByCustomer(r.Context(), customerIDStr, page, size)
 
 		if err != nil {
 			slog.Error("Error while listing the payments for the customer", slog.String("error", err.Error()))

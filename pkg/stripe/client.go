@@ -15,6 +15,7 @@ import (
 type Client interface {
 	CreatePaymentIntent(amount int64, currency string, description string, customerID string) (*stripe.PaymentIntent, error)
 	CreatePaymentMethod(cardNumber, cardExpMonth, cardExpYear, cardCVC string) (*stripe.PaymentMethod, error)
+	CreatePaymentMethodFromToken(paymentMethodID string) (*stripe.PaymentMethod, error)
 	AttachPaymentMethodToIntent(paymentMethodID, paymentIntentID string) error
 	ConfirmPaymentIntent(paymentIntentID string) (*stripe.PaymentIntent, error)
 	RefundPayment(paymentIntentID string, amount int64) (*stripe.Refund, error)
@@ -79,6 +80,13 @@ func (s *stripeClient) CreatePaymentMethod(cardNumber string, cardExpMonth strin
 	}
 
 	return paymentmethod.New(params)
+
+}
+
+// CreatePaymentMethod implements Client.
+func (s *stripeClient) CreatePaymentMethodFromToken(paymentMethodId string) (*stripe.PaymentMethod, error) {
+
+	return paymentmethod.Get(paymentMethodId, nil)
 
 }
 

@@ -8,13 +8,12 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
-	"github.com/google/uuid"
 )
 
 type PaymentService interface {
 	CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error)
-	GetPaymentByID(ctx context.Context, id uuid.UUID) (*models.Payment, error)
-	ListPaymentsByCustomer(ctx context.Context, customerID uuid.UUID, page, size int) ([]*models.Payment, int, error)
+	GetPaymentByID(ctx context.Context, id string) (*models.Payment, error)
+	ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error)
 	ProcessWebhook(ctx context.Context, payload []byte, signature string) error
 }
 
@@ -40,7 +39,8 @@ func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 
 	// create a payment method & attach it to paymentIntent
 	if req.PaymentMethod == "card" {
-		paymentMethod, err := p.stripeClient.CreatePaymentMethod(req.CardNumber, fmt.Sprintf("%d", req.CardExpMonth), fmt.Sprintf("%d", req.CardExpYear), req.CardCVC)
+		// paymentMethod, err := p.stripeClient.CreatePaymentMethod(req.CardNumber, fmt.Sprintf("%d", req.CardExpMonth), fmt.Sprintf("%d", req.CardExpYear), req.CardCVC)
+		paymentMethod, err := p.stripeClient.CreatePaymentMethodFromToken(req.Token)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create payment method: %w", err)
@@ -56,7 +56,7 @@ func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 
 	// store the payment in the database
 	payment := &models.Payment{
-		ID:            uuid.New(),
+		ID:            paymentIntent.ID,
 		CustomerID:    req.CustomerID,
 		Amount:        req.Amount,
 		Currency:      req.Currency,
@@ -82,14 +82,14 @@ func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 }
 
 // GetPaymentByID implements PaymentService.
-func (p *paymentService) GetPaymentByID(ctx context.Context, id uuid.UUID) (*models.Payment, error) {
+func (p *paymentService) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
 
 	return p.repo.GetPaymentByID(ctx, id)
 
 }
 
 // ListPaymentsByCustomer implements PaymentService.
-func (p *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID uuid.UUID, page, size int) ([]*models.Payment, int, error) {
+func (p *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
 
 	return p.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
 
