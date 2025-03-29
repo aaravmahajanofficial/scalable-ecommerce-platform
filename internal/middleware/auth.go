@@ -43,7 +43,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		// Stores the decoded information
 		claims := &models.Claims{}
 
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 			return m.jwtKey, nil
 		})
 

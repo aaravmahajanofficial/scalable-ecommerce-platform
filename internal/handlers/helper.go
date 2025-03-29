@@ -25,7 +25,7 @@ func validateMethod(w http.ResponseWriter, r *http.Request, expectedMethod strin
 	return true
 }
 
-func decodeJSONBody(w http.ResponseWriter, r *http.Request, dest interface{}) error {
+func decodeJSONBody(w http.ResponseWriter, r *http.Request, dest any) error {
 	defer r.Body.Close()
 
 	err := json.NewDecoder(r.Body).Decode(&dest)
@@ -48,7 +48,7 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dest interface{}) er
 	return nil
 }
 
-func validateStruct(w http.ResponseWriter, validate *validator.Validate, data interface{}) bool {
+func validateStruct(w http.ResponseWriter, validate *validator.Validate, data any) bool {
 	if err := validate.Struct(data); err != nil {
 		if validationErrs, ok := err.(validator.ValidationErrors); ok {
 			slog.Warn("User input validation failed",
