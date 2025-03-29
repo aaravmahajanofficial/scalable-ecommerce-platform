@@ -13,17 +13,17 @@ type Repository struct {
 	DB *sql.DB
 }
 
-func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, *CartRepository, *OrderRepository, error) {
+func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, *CartRepository, *OrderRepository, *PaymentRepository, error) {
 
 	db, err := sql.Open("postgres", cfg.Database.GetDSN())
 
 	if err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, nil, nil, nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	// Test the connection to make sure DB is reachable
 	if err := db.Ping(); err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, nil, nil, nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Initialize repositories
@@ -32,8 +32,9 @@ func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, 
 	productRepo := NewProductRepo(db) // Initialize ProductRepository
 	cartRepo := NewCartRepo(db)       // Initialize CartRepository
 	orderRepo := NewOrderRepository(db)
+	paymentRepo := NewPaymentRepository(db)
 
-	return postgresInstance, userRepo, productRepo, cartRepo, orderRepo, nil
+	return postgresInstance, userRepo, productRepo, cartRepo, orderRepo, paymentRepo, nil
 }
 
 func (p *Repository) Close() error {

@@ -67,18 +67,23 @@ func (p *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUI
 
 }
 
-func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID uuid.UUID) ([]*models.Payment, error) {
+func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID uuid.UUID, page, size int) ([]*models.Payment, int, error) {
+
+	// Offset
+	offset := (page - 1) * size
 
 	query := `
 		SELECT id, customer_id, amount, currency, description, payment_status, payment_method, created_at, updated_at
 		FROM payments
 		WHERE customer_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := p.DB.QueryContext(ctx, query, customerID)
+	rows, err := p.DB.QueryContext(ctx, query, customerID, size, offset)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to access the payment history: %w", err)
+		return nil, 0, fmt.Errorf("failed to list the payments: %w", err)
 	}
 
 	defer rows.Close()
@@ -92,7 +97,7 @@ func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 		err := rows.Scan(&payment.ID, &payment.CustomerID, &payment.Amount, &payment.Currency, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.CreatedAt, &payment.UpdatedAt)
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan the payments: %w", err)
+			return nil, 0, fmt.Errorf("failed to scan the payments: %w", err)
 		}
 
 		payments = append(payments, payment)
@@ -100,9 +105,9 @@ func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return payments, nil
+	return payments, len(payments), nil
 
 }

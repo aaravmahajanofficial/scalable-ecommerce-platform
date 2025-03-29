@@ -35,6 +35,13 @@ type RateConfig struct {
 	WindowSize  time.Duration `yaml:"WINDOW_SIZE" env:"WINDOW_SIZE" env-default:"15s"`
 }
 
+type Stripe struct {
+	APIKey              string   `yaml:"STRIPE_API_KEY" env:"STRIPE_API_KEY" env-default:""`
+	WebhookSecret       string   `yaml:"STRIPE_WEBHOOK_SECRET" env:"STRIPE_WEBHOOK_SECRET" env-default:""`
+	PaymentMethods      []string `yaml:"STRIPE_PAYMENT_METHODS" env:"STRIPE_PAYMENT_METHODS" env-default:"card,bank_transfer"`
+	SupportedCurrencies []string `yaml:"STRIPE_SUPPORTED_CURRENCIES" env:"STRIPE_SUPPORTED_CURRENCIES" env-default:"inr, usd, eur"`
+}
+
 type Config struct {
 	Env          string `yaml:"env" env:"ENV" env-required:"true"`
 	StoragePath  string `yaml:"storage_path" env-required:"true"`
@@ -42,6 +49,7 @@ type Config struct {
 	Database     Database     `yaml:"database"`
 	RedisConnect RedisConnect `yaml:"redis"`
 	RateConfig   RateConfig   `yaml:"rateConfig"`
+	Stripe       Stripe       `yaml:"stripe"`
 }
 
 func MustLoad() *Config {

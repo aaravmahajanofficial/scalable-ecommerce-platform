@@ -10,12 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository/redis"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 	cfg := config.MustLoad()
 
 	// Database setup
-	postgresInstance, userRepo, productRepo, cartRepo, orderRepo, err := repository.New(cfg)
+	postgresInstance, userRepo, productRepo, cartRepo, orderRepo, paymentRepo, err := repository.New(cfg)
 
 	if err != nil {
 		log.Fatalf("❌ Error accessing the database: %v", err)
@@ -46,6 +47,7 @@ func main() {
 	}()
 
 	jwtKey := []byte("secret-key-123")
+	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey)
 	userService := service.NewUserService(userRepo, redisRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
 	productService := service.NewProductService(productRepo)
@@ -54,6 +56,8 @@ func main() {
 	cartHandler := handlers.NewCartHandler(cartService)
 	orderService := service.NewOrderService(orderRepo)
 	orderHandler := handlers.NewOrderHandler(orderService)
+	paymentService := service.NewPaymentService(paymentRepo, stripeClient)
+	paymentHandler := handlers.NewPaymentService(paymentService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
@@ -75,6 +79,10 @@ func main() {
 	router.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.GetOrder())))
 	router.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.ListOrders())))
 	router.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(http.HandlerFunc(orderHandler.UpdateOrderStatus())))
+	router.HandleFunc("POST /api/v1/payments", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePayment())))
+	router.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetPayment())))
+	router.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.ListPayments())))
+	router.HandleFunc("POST /api/v1/payments/webhook", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.HandleStripeWebhook())))
 
 	// Setup http server
 	server := http.Server{
