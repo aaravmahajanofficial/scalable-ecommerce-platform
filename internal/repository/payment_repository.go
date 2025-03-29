@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/google/uuid"
@@ -16,16 +17,6 @@ type PaymentRepository struct {
 func NewPaymentRepository(db *sql.DB) *PaymentRepository {
 	return &PaymentRepository{DB: db}
 }
-
-// ID            uuid.UUID     `json:"id"`
-// Amount        float64       `json:"amount"`
-// Currency      string        `json:"currency"`
-// CustomerID    uuid.UUID     `json:"customer_id"`
-// Description   string        `json:"description"`
-// Status        PaymentStatus `json:"payment_status"`
-// PaymentMethod string        `json:"payment_method"`
-// CreatedAt     time.Time     `json:"created_at"`
-// UpdatedAt     time.Time     `json:"updated_at"`
 
 func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
 
@@ -43,7 +34,7 @@ func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.P
 	return nil
 }
 
-func (p *PaymentRepository) GetPayment(ctx context.Context, id uuid.UUID) (*models.Payment, error) {
+func (p *PaymentRepository) GetPaymentByID(ctx context.Context, id uuid.UUID) (*models.Payment, error) {
 
 	payment := &models.Payment{}
 
@@ -60,5 +51,58 @@ func (p *PaymentRepository) GetPayment(ctx context.Context, id uuid.UUID) (*mode
 	}
 
 	return payment, nil
+
+}
+
+func (p *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus) error {
+
+	query := `
+		UPDATE payments SET status = $1, updated_at = $2
+		WHERE id = $3
+	`
+
+	_, err := p.DB.ExecContext(ctx, query, status, time.Now(), id)
+
+	return err
+
+}
+
+func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID uuid.UUID) ([]*models.Payment, error) {
+
+	query := `
+		SELECT id, customer_id, amount, currency, description, payment_status, payment_method, created_at, updated_at
+		FROM payments
+		WHERE customer_id = $1
+	`
+
+	rows, err := p.DB.QueryContext(ctx, query, customerID)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to access the payment history: %w", err)
+	}
+
+	defer rows.Close()
+
+	var payments []*models.Payment
+
+	for rows.Next() {
+
+		payment := &models.Payment{}
+
+		err := rows.Scan(&payment.ID, &payment.CustomerID, &payment.Amount, &payment.Currency, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.CreatedAt, &payment.UpdatedAt)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan the payments: %w", err)
+		}
+
+		payments = append(payments, payment)
+
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return payments, nil
 
 }
