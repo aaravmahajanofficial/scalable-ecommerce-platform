@@ -14,7 +14,7 @@ type PaymentService interface {
 	CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error)
 	GetPaymentByID(ctx context.Context, id string) (*models.Payment, error)
 	ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error)
-	ProcessWebhook(ctx context.Context, payload []byte, signature string) error
+	ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error)
 }
 
 type paymentService struct {
@@ -96,8 +96,51 @@ func (p *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID 
 }
 
 // ProcessWebhook implements PaymentService.
-func (p *paymentService) ProcessWebhook(ctx context.Context, payload []byte, signature string) error {
+func (p *paymentService) ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error) {
 
-	return p.stripeClient.VerifyWebhookSignature(payload, signature)
+	event, err := p.stripeClient.VerifyWebhookSignature(payload, signature)
 
+	if err != nil {
+		return stripe.Event{}, fmt.Errorf("webhook signature verification failed: %w", err)
+	}
+
+	switch event.Type {
+
+	case "payment_intent.succeeded":
+		paymentIntent := event.Data.Object
+		stripeID, _ := paymentIntent["id"].(string)
+
+		if stripeID == "" {
+			return event, fmt.Errorf("missing payment intent ID in webhook")
+		}
+
+		if err := p.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusSucceeded); err != nil {
+			return event, fmt.Errorf("failed to update payment status: %w", err)
+		}
+
+	case "payment_intent.payment_failed":
+		paymentIntent := event.Data.Object
+		stripeID, _ := paymentIntent["id"].(string)
+
+		if stripeID == "" {
+			return event, fmt.Errorf("missing payment intent ID in webhook")
+		}
+
+		if err := p.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusFailed); err != nil {
+			return event, fmt.Errorf("failed to update payment status: %w", err)
+		}
+
+	case "charge.refunded":
+		paymentIntent := event.Data.Object
+		stripeID, _ := paymentIntent["id"].(string)
+
+		if stripeID == "" {
+			return event, fmt.Errorf("missing payment intent ID in webhook")
+		}
+
+		if err := p.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusRefunded); err != nil {
+			return event, fmt.Errorf("failed to update payment status: %w", err)
+		}
+	}
+	return stripe.Event{}, nil
 }

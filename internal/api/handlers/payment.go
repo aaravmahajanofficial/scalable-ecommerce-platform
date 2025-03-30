@@ -146,11 +146,12 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		}
 
 		// Call the service
-		err = h.paymentService.ProcessWebhook(r.Context(), payload, signature)
+		_, err = h.paymentService.ProcessWebhook(r.Context(), payload, signature)
 
 		if err != nil {
-			slog.Error("Error processing webhook")
-			response.WriteJson(w, http.StatusInternalServerError, err.Error())
+			slog.Error("Error processing webhook: %w", err)
+			response.WriteJson(w, http.StatusOK, map[string]string{"status": "received"})
+			return
 		}
 
 		response.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})

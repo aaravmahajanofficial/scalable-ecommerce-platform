@@ -11,6 +11,8 @@ import (
 	"github.com/stripe/stripe-go/v81/webhook"
 )
 
+type Event = stripe.Event
+
 // defines the methods that any of payment client must implement
 type Client interface {
 	CreatePaymentIntent(amount int64, currency string, description string, customerID string) (*stripe.PaymentIntent, error)
@@ -19,7 +21,7 @@ type Client interface {
 	AttachPaymentMethodToIntent(paymentMethodID, paymentIntentID string) error
 	ConfirmPaymentIntent(paymentIntentID string) (*stripe.PaymentIntent, error)
 	RefundPayment(paymentIntentID string, amount int64) (*stripe.Refund, error)
-	VerifyWebhookSignature(payload []byte, signature string) error
+	VerifyWebhookSignature(payload []byte, signature string) (Event, error)
 }
 
 // stripeClient is the implementation of the Client interface
@@ -29,11 +31,11 @@ type stripeClient struct {
 
 // type paypalClient struct {}
 
-func NewStripeClient(apiKey string) Client {
+func NewStripeClient(apiKey string, webhookSecret string) Client {
 	stripe.Key = apiKey
 
 	// since *stripeClient is impplementing Client, it will automatically get converted to the Client interface
-	return &stripeClient{}
+	return &stripeClient{webhookSecret: webhookSecret}
 }
 
 // CreatePaymentIntent implements Client.
@@ -127,15 +129,13 @@ func (s *stripeClient) RefundPayment(paymentIntentID string, amount int64) (*str
 }
 
 // VerifyWebhookSignature implements Client.
-func (s *stripeClient) VerifyWebhookSignature(payload []byte, signature string) error {
+func (s *stripeClient) VerifyWebhookSignature(payload []byte, signature string) (Event, error) {
 
 	if s.webhookSecret == "" {
-		return fmt.Errorf("webhook secret not configured")
+		return Event{}, fmt.Errorf("webhook secret not configured")
 	}
 
-	_, err := webhook.ConstructEvent(payload, signature, s.webhookSecret)
-
-	return err
+	return webhook.ConstructEvent(payload, signature, s.webhookSecret)
 
 }
 

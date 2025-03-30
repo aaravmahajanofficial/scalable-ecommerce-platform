@@ -47,7 +47,7 @@ func main() {
 	}()
 
 	jwtKey := []byte("secret-key-123")
-	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey)
+	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
 	userService := service.NewUserService(userRepo, redisRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
 	productService := service.NewProductService(productRepo)
@@ -82,7 +82,7 @@ func main() {
 	router.HandleFunc("POST /api/v1/payments", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.CreatePayment())))
 	router.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetPayment())))
 	router.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.ListPayments())))
-	router.HandleFunc("POST /api/v1/payments/webhook", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.HandleStripeWebhook())))
+	router.HandleFunc("POST /api/v1/payments/webhook", http.HandlerFunc(paymentHandler.HandleStripeWebhook()))
 
 	// Setup http server
 	server := http.Server{
