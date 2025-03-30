@@ -2,10 +2,13 @@ package middleware
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -26,7 +29,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		authHeader := r.Header.Get("Authorization")
 
 		if authHeader == "" {
-			http.Error(w, "Authorization header required", http.StatusUnauthorized)
+			response.WriteJson(w, http.StatusUnauthorized, "Authorization header is required")
 			return
 		}
 
@@ -34,7 +37,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		tokenParts := strings.Split(authHeader, " ")
 
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
+			response.WriteJson(w, http.StatusUnauthorized, "Invalid authorization header format")
 			return
 		}
 
@@ -44,11 +47,27 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		claims := &models.Claims{}
 
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
+			// check the signing method
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+
+				return nil, errors.New("unexpected signing method")
+
+			}
 			return m.jwtKey, nil
 		})
 
-		if err != nil || !token.Valid {
-			http.Error(w, "Invalid Token", http.StatusUnauthorized)
+		if err != nil {
+			response.WriteJson(w, http.StatusUnauthorized, "Invalid or expired token: "+err.Error())
+			return
+		}
+
+		if !token.Valid {
+			response.WriteJson(w, http.StatusUnauthorized, "Invalid token")
+			return
+		}
+
+		if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
+			response.WriteJson(w, http.StatusUnauthorized, "Token expired")
 			return
 		}
 
