@@ -12,6 +12,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type contextKey string
+
+const userContextKey contextKey = "user"
+
 type AuthMiddleware struct {
 	jwtKey []byte
 }
@@ -76,7 +80,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 
 		// Add userId to the context
 		// It attaches a new key-value pair ("user": claims) to the context.
-		ctx := context.WithValue(r.Context(), "user", claims)
+		ctx := context.WithValue(r.Context(), userContextKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 	}
