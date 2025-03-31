@@ -9,8 +9,9 @@ import (
 type NotificationType string
 
 const (
-	EmailNotification NotificationType = "email"
-	SMSNotification   NotificationType = "sms"
+	NotificationTypeEmail NotificationType = "email"
+	NotificationTypeSMS   NotificationType = "sms"
+	NotificationTypePush  NotificationType = "push"
 )
 
 type NotificationStatus string
@@ -19,7 +20,7 @@ const (
 	StatusPending   NotificationStatus = "pending"
 	StatusSent      NotificationStatus = "sent"
 	StatusFailed    NotificationStatus = "failed"
-	StatusCancelled NotificationStatus = "cancelled"
+	StatusScheduled NotificationStatus = "scheduled"
 )
 
 type Notification struct {
@@ -35,9 +36,19 @@ type Notification struct {
 	SentAt    *time.Time         `json:"sent_at,omitempty"`
 }
 
-type CreateNotificationRequest struct {
-	Type      NotificationType `json:"type" validate:"required,oneof=email sms"`
-	Recipient string           `json:"recipient" validate:"required"`
-	Subject   string           `json:"subject,omitempty" validate:"required_if=Type email"`
-	Content   string           `json:"content" validate:"required"`
+type EmailNotificationRequest struct {
+	Subject   string            `json:"subject" validate:"required"`
+	Content   string            `json:"content" validate:"required"`
+	Recipient string            `json:"recipient" validate:"required,email"`
+	CC        []string          `json:"cc,omitempty" validate:"omitempty,dive,email"`
+	BCC       []string          `json:"bcc,omitempty" validate:"omitempty,dive,email"`
+	Metadata  map[string]string `json:"metadata,omitempty"`
+}
+
+type NotificationResponse struct {
+	ID        uuid.UUID          `json:"id"`
+	Type      NotificationType   `json:"type"`
+	Status    NotificationStatus `json:"status"`
+	CreatedAt time.Time          `json:"created_at"`
+	SentAt    *time.Time         `json:"sent_at,omitempty"`
 }
