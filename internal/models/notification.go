@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -30,7 +31,7 @@ type Notification struct {
 	Content      string             `json:"content"`
 	Status       NotificationStatus `json:"status"`
 	ErrorMessage string             `json:"error_message,omitempty"`
-	Metadata     string             `json:"metadata,omitempty"`
+	Metadata     json.RawMessage    `json:"metadata,omitempty"` //highly dynamic
 	CreatedAt    time.Time          `json:"created_at"`
 	UpdatedAt    time.Time          `json:"updated_at"`
 	SentAt       *time.Time         `json:"sent_at,omitempty"`
