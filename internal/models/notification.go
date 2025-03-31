@@ -17,38 +17,46 @@ const (
 type NotificationStatus string
 
 const (
-	StatusPending   NotificationStatus = "pending"
-	StatusSent      NotificationStatus = "sent"
-	StatusFailed    NotificationStatus = "failed"
-	StatusScheduled NotificationStatus = "scheduled"
+	StatusPending NotificationStatus = "pending"
+	StatusSent    NotificationStatus = "sent"
+	StatusFailed  NotificationStatus = "failed"
 )
 
 type Notification struct {
-	ID        uuid.UUID          `json:"id"`
-	Type      NotificationType   `json:"type"`
-	Recipient string             `json:"recipient"`
-	Subject   string             `json:"subject,omitempty"`
-	Content   string             `json:"content"`
-	Status    NotificationStatus `json:"status"`
-	Error     string             `json:"error,omitempty"`
-	CreatedAt time.Time          `json:"created_at"`
-	UpdatedAt time.Time          `json:"updated_at"`
-	SentAt    *time.Time         `json:"sent_at,omitempty"`
+	ID           uuid.UUID          `json:"id"`
+	Type         NotificationType   `json:"type"`
+	Recipient    string             `json:"recipient"`
+	Subject      string             `json:"subject,omitempty"`
+	Content      string             `json:"content"`
+	Status       NotificationStatus `json:"status"`
+	ErrorMessage string             `json:"error_message,omitempty"`
+	Metadata     string             `json:"metadata,omitempty"`
+	CreatedAt    time.Time          `json:"created_at"`
+	UpdatedAt    time.Time          `json:"updated_at"`
+	SentAt       *time.Time         `json:"sent_at,omitempty"`
 }
 
 type EmailNotificationRequest struct {
-	Subject   string            `json:"subject" validate:"required"`
-	Content   string            `json:"content" validate:"required"`
-	Recipient string            `json:"recipient" validate:"required,email"`
-	CC        []string          `json:"cc,omitempty" validate:"omitempty,dive,email"`
-	BCC       []string          `json:"bcc,omitempty" validate:"omitempty,dive,email"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
+	To          string            `json:"to" validate:"required,email"`
+	Subject     string            `json:"subject" validate:"required"`
+	Content     string            `json:"content" validate:"required"`
+	HTMLContent string            `json:"html_content,omitempty"`
+	CC          []string          `json:"cc,omitempty" validate:"omitempty,dive,email"`
+	BCC         []string          `json:"bcc,omitempty" validate:"omitempty,dive,email"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 
 type NotificationResponse struct {
 	ID        uuid.UUID          `json:"id"`
 	Type      NotificationType   `json:"type"`
 	Status    NotificationStatus `json:"status"`
+	Recipient string             `json:"recipient,omitempty"`
 	CreatedAt time.Time          `json:"created_at"`
-	SentAt    *time.Time         `json:"sent_at,omitempty"`
+}
+
+type NotificationListResponse struct {
+	Notifications []Notification `json:"notifications"`
+	Total         int            `json:"total"`
+	Page          int            `json:"page"`
+	PageSize      int            `json:"page_size"`
 }

@@ -26,7 +26,7 @@ func (n *NotificationRepository) CreateNotification(ctx context.Context, notific
 		RETURNING id, type, recipient, subject, content, status, error, created_at, updated_at, sent_at
 	`
 
-	row := n.DB.QueryRowContext(ctx, query, notification.ID, notification.Type, notification.Recipient, notification.Subject, notification.Content, notification.Status, notification.Error, notification.CreatedAt, notification.UpdatedAt, notification.SentAt)
+	row := n.DB.QueryRowContext(ctx, query, notification.ID, notification.Type, notification.Recipient, notification.Subject, notification.Content, notification.Status, notification.ErrorMessage, notification.CreatedAt, notification.UpdatedAt, notification.SentAt)
 
 	result := &models.Notification{}
 
@@ -45,7 +45,7 @@ func (n *NotificationRepository) CreateNotification(ctx context.Context, notific
 	}
 
 	if errorMsg.Valid {
-		result.Error = errorMsg.String
+		result.ErrorMessage = errorMsg.String
 	}
 
 	return result, nil
@@ -77,7 +77,7 @@ func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uui
 	}
 
 	if errorMsg.Valid {
-		result.Error = errorMsg.String
+		result.ErrorMessage = errorMsg.String
 	}
 
 	return result, nil
@@ -164,7 +164,7 @@ func (n *NotificationRepository) ListPending(ctx context.Context, page int, size
 		}
 
 		if errorMsg.Valid {
-			notification.Error = errorMsg.String
+			notification.ErrorMessage = errorMsg.String
 		}
 
 		notifications = append(notifications, notification)
