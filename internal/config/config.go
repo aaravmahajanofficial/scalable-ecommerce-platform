@@ -42,6 +42,15 @@ type Stripe struct {
 	SupportedCurrencies []string `yaml:"STRIPE_SUPPORTED_CURRENCIES" env:"STRIPE_SUPPORTED_CURRENCIES" env-default:"inr, usd, eur"`
 }
 
+type MailGun struct {
+	Domain        string        `yaml:"DOMAIN" env:"DOMAIN" env-default:""`
+	APIKey        string        `yaml:"API_KEY" env:"API_KEY" env-default:""`
+	SenderEmail   string        `yaml:"SENDER_EMAIL" env:"SENDER_EMAIL" env-default:"noreply@example.com"`
+	SenderName    string        `yaml:"SENDER_NAME" env:"SENDER_NAME" env-default:"Notification Service"`
+	RetryAttempts int           `yaml:"RETRY_ATTEMPTS" env:"RETRY_ATTEMPTS" env-default:"3"`
+	RetryDelay    time.Duration `yaml:"RETRY_DELAY" env:"RETRY_DELAY" env-default:"5s"`
+}
+
 type Config struct {
 	Env          string `yaml:"env" env:"ENV" env-required:"true"`
 	StoragePath  string `yaml:"storage_path" env-required:"true"`
@@ -50,6 +59,7 @@ type Config struct {
 	RedisConnect RedisConnect `yaml:"redis"`
 	RateConfig   RateConfig   `yaml:"rateConfig"`
 	Stripe       Stripe       `yaml:"stripe"`
+	MailGun      MailGun      `yaml:"mailgun"`
 }
 
 func MustLoad() *Config {
