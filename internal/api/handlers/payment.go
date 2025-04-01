@@ -149,7 +149,7 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		_, err = h.paymentService.ProcessWebhook(r.Context(), payload, signature)
 
 		if err != nil {
-			slog.Error("Error processing webhook: %w", err)
+			slog.Error("Error processing webhook: %w", slog.String("error", err.Error()))
 			response.WriteJson(w, http.StatusOK, map[string]string{"status": "received"})
 			return
 		}

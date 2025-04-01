@@ -44,7 +44,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 
 		if err != nil {
 			slog.Error("Error during user registration", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("An unexpected error occurred")))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
 			return
 		}
 

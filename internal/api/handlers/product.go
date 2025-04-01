@@ -45,7 +45,7 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 
 		if err != nil {
 			slog.Error("Error during product creation", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("An unexpected error occurred")))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
 			return
 		}
 
@@ -106,7 +106,7 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 
 		if err != nil {
 			slog.Error("Error during product updation", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("An unexpected error occurred")))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
 			return
 		}
 
@@ -127,7 +127,7 @@ func (h *ProductHandler) ListProducts() http.HandlerFunc {
 
 		if err != nil {
 			slog.Error("Failed to fetch products", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("Failed to fetch products")))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("failed to fetch products")))
 			return
 		}
 
