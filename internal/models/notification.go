@@ -56,7 +56,7 @@ type NotificationResponse struct {
 }
 
 type NotificationListResponse struct {
-	Notifications []Notification `json:"notifications"`
+	Notifications []*Notification `json:"notifications"`
 	Total         int            `json:"total"`
 	Page          int            `json:"page"`
 	PageSize      int            `json:"page_size"`

@@ -10,7 +10,7 @@ import (
 )
 
 type EmailService interface {
-	Send(ctx context.Context, req models.EmailNotificationRequest) error
+	Send(ctx context.Context, req *models.EmailNotificationRequest) error
 }
 
 type emailService struct {
@@ -24,7 +24,7 @@ func NewEmailService(apiKey string, fromEmail string, fromName string) EmailServ
 }
 
 // Send implements EmailService.
-func (e *emailService) Send(ctx context.Context, req models.EmailNotificationRequest) error {
+func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRequest) error {
 
 	from := mail.NewEmail(e.fromName, e.fromEmail)
 	to := mail.NewEmail("", req.To)

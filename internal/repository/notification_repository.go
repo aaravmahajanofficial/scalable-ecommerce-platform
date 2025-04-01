@@ -19,7 +19,7 @@ func NewNotificationRepo(db *sql.DB) *NotificationRepository {
 	return &NotificationRepository{DB: db}
 }
 
-func (n *NotificationRepository) CreateNotification(ctx context.Context, notification models.Notification) error {
+func (n *NotificationRepository) CreateNotification(ctx context.Context, notification *models.Notification) error {
 
 	query := `
 		INSERT INTO notifications (id, type, recipient, subject, content, status, error_message, metadata, created_at, updated_at)
@@ -95,7 +95,7 @@ func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, i
 
 }
 
-func (n *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]models.Notification, int, error) {
+func (n *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error) {
 
 	offSet := (page - 1) * size
 
@@ -103,7 +103,7 @@ func (n *NotificationRepository) ListNotifications(ctx context.Context, page int
 		SELECT id, type, recipient, subject, content, status, error_message, metadata, created_at, updated_at
 		FROM notifications
 		ORDER BY created_at DESC
-		LIMIT = $1, OFFSET = $2
+		LIMIT $1, OFFSET $2
 	`
 
 	rows, err := n.DB.QueryContext(ctx, query, size, offSet)
@@ -114,14 +114,14 @@ func (n *NotificationRepository) ListNotifications(ctx context.Context, page int
 
 	defer rows.Close()
 
-	notifications := []models.Notification{}
+	notifications := []*models.Notification{}
 
-	if rows.Next() {
+	for rows.Next() {
 
 		var notification models.Notification
 		var metadata []byte
 
-		err := rows.Scan(&notification.ID, &notification.Type, &notification.Recipient, &notification.Subject, &notification.Content, &notification.Status, &metadata, &notification.CreatedAt, &notification.UpdatedAt)
+		err := rows.Scan(&notification.ID, &notification.Type, &notification.Recipient, &notification.Subject, &notification.Content, &notification.Status, &metadata, &notification.ErrorMessage, &notification.CreatedAt, &notification.UpdatedAt)
 
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan notifications: %w", err)
@@ -129,7 +129,7 @@ func (n *NotificationRepository) ListNotifications(ctx context.Context, page int
 
 		notification.Metadata = json.RawMessage(metadata)
 
-		notifications = append(notifications, notification)
+		notifications = append(notifications, &notification)
 
 	}
 
