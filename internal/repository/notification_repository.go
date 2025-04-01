@@ -23,18 +23,10 @@ func (n *NotificationRepository) CreateNotification(ctx context.Context, notific
 
 	query := `
 		INSERT INTO notifications (id, type, recipient, subject, content, status, error_message, metadata, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
 	`
 
-	_, err := n.DB.ExecContext(ctx, query, notification.ID, notification.Type, notification.Recipient, notification.Subject, notification.Content, notification.Status, notification.ErrorMessage, notification.CreatedAt, notification.UpdatedAt)
-
-	if notification.CreatedAt.IsZero() {
-		notification.CreatedAt = time.Now().UTC()
-	}
-
-	if notification.UpdatedAt.IsZero() {
-		notification.UpdatedAt = notification.CreatedAt
-	}
+	_, err := n.DB.ExecContext(ctx, query, notification.ID, notification.Type, notification.Recipient, notification.Subject, notification.Content, notification.Status, notification.ErrorMessage, notification.Metadata)
 
 	if err != nil {
 		return fmt.Errorf("failed to create notification: %w", err)
@@ -70,7 +62,8 @@ func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uui
 func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error {
 
 	query := `
-		UPDATE notifications SET status = $1, error_message = $2, updated_at = $3, WHERE id = $4
+		UPDATE notifications SET status = $1, error_message = $2, updated_at = $3
+		WHERE id = $4
 	`
 
 	result, err := n.DB.ExecContext(ctx, query, status, errorMsg, time.Now(), id)
@@ -103,7 +96,7 @@ func (n *NotificationRepository) ListNotifications(ctx context.Context, page int
 		SELECT id, type, recipient, subject, content, status, error_message, metadata, created_at, updated_at
 		FROM notifications
 		ORDER BY created_at DESC
-		LIMIT $1, OFFSET $2
+		LIMIT $1 OFFSET $2
 	`
 
 	rows, err := n.DB.QueryContext(ctx, query, size, offSet)
