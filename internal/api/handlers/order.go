@@ -109,13 +109,13 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 		page, size := 1, 10
 
 		if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-			if p, err := strconv.Atoi(pageStr); err != nil && p > 0 {
+			if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
 				page = p
 			}
 		}
 
 		if sizeStr := r.URL.Query().Get("size"); sizeStr != "" {
-			if s, err := strconv.Atoi(sizeStr); err != nil && s > 0 && s <= 100 {
+			if s, err := strconv.Atoi(sizeStr); err == nil && s > 0 && s <= 100 {
 				size = s
 			}
 		}
