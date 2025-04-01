@@ -16,6 +16,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository/redis"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 )
 
@@ -25,7 +26,7 @@ func main() {
 	cfg := config.MustLoad()
 
 	// Database setup
-	postgresInstance, userRepo, productRepo, cartRepo, orderRepo, paymentRepo, err := repository.New(cfg)
+	postgresInstance, userRepo, productRepo, cartRepo, orderRepo, paymentRepo, notificationRepo, err := repository.New(cfg)
 
 	if err != nil {
 		log.Fatalf("❌ Error accessing the database: %v", err)
@@ -48,6 +49,7 @@ func main() {
 
 	jwtKey := []byte("secret-key-123")
 	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
+	sendGridClient := sendGrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
 	userService := service.NewUserService(userRepo, redisRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
 	productService := service.NewProductService(productRepo)
@@ -58,6 +60,8 @@ func main() {
 	orderHandler := handlers.NewOrderHandler(orderService)
 	paymentService := service.NewPaymentService(paymentRepo, stripeClient)
 	paymentHandler := handlers.NewPaymentService(paymentService)
+	notificationService := service.NewNotificationService(notificationRepo, sendGridClient)
+	notificationHandler := handlers.NewNotificationHandler(notificationService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
@@ -83,6 +87,9 @@ func main() {
 	router.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.GetPayment())))
 	router.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(http.HandlerFunc(paymentHandler.ListPayments())))
 	router.HandleFunc("POST /api/v1/payments/webhook", http.HandlerFunc(paymentHandler.HandleStripeWebhook()))
+	router.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(http.HandlerFunc(notificationHandler.SendEmail())))
+	router.HandleFunc("GET /api/v1/notifications/{id}", authMiddleware.Authenticate(http.HandlerFunc(notificationHandler.GetNotification())))
+	router.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(http.HandlerFunc(notificationHandler.ListNotifications())))
 
 	// Setup http server
 	server := http.Server{

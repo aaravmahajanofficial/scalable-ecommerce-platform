@@ -15,7 +15,7 @@ import (
 type NotificationService interface {
 	SendEmail(ctx context.Context, req *models.EmailNotificationRequest) (*models.NotificationResponse, error)
 	GetNotification(ctx context.Context, id uuid.UUID) (*models.Notification, error)
-	ListNotifications(ctx context.Context, page int, size int) (*models.NotificationListResponse, error)
+	ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error)
 }
 
 type notificationService struct {
@@ -97,7 +97,7 @@ func (n *notificationService) GetNotification(ctx context.Context, id uuid.UUID)
 }
 
 // ListNotifications implements NotificationService.
-func (n *notificationService) ListNotifications(ctx context.Context, page int, size int) (*models.NotificationListResponse, error) {
+func (n *notificationService) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
 
 	if page < 1 {
 		page = 1
@@ -107,17 +107,12 @@ func (n *notificationService) ListNotifications(ctx context.Context, page int, s
 		size = 10
 	}
 
-	notifications, total, err := n.repo.ListNotifications(ctx, page, size)
+	notifications, err := n.repo.ListNotifications(ctx, page, size)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to list notifications: %w", err)
 	}
 
-	return &models.NotificationListResponse{
-		Notifications: notifications,
-		Total:         total,
-		Page:          page,
-		PageSize:      size,
-	}, nil
+	return notifications, nil
 
 }
