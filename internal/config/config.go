@@ -49,6 +49,11 @@ type SendGrid struct {
 	SMSEnabled bool   `yaml:"SMSENABLED" env:"SMSENABLED" env-default:"false"`
 }
 
+type Security struct {
+	JWTKey         string `yaml:"JWT_KEY" env:"JWT_KEY" env-required:"true"`
+	JWTExpiryHours int    `yaml:"JWT_EXPIRY_HOURS" env:"JWT_EXPIRY_HOURS" env-default:"24"`
+}
+
 type Config struct {
 	Env          string `yaml:"env" env:"ENV" env-required:"true"`
 	StoragePath  string `yaml:"storage_path" env-required:"true"`
@@ -58,6 +63,7 @@ type Config struct {
 	RateConfig   RateConfig   `yaml:"rateConfig"`
 	Stripe       Stripe       `yaml:"stripe"`
 	SendGrid     SendGrid     `yaml:"sendgrid"`
+	Security     Security     `yaml:"security"`
 }
 
 func MustLoad() *Config {

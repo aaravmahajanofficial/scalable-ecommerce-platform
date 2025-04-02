@@ -47,7 +47,7 @@ func main() {
 		}
 	}()
 
-	jwtKey := []byte("secret-key-123")
+	jwtKey := []byte(cfg.Security.JWTKey)
 	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
 	sendGridClient := sendGrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
 	userService := service.NewUserService(userRepo, redisRepo, jwtKey)
