@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +22,7 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 
 func (o *OrderRepository) CreateOrder(ctx context.Context, order *models.Order) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	shipping_address, err := json.Marshal(order.ShippingAddress)
@@ -67,7 +68,7 @@ Get the order items
 */
 func (o *OrderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	order := &models.Order{
@@ -140,7 +141,7 @@ func (o *OrderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*mode
 */
 func (o *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	// Offset
@@ -232,7 +233,7 @@ func (o *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 // Update Order status
 func (o *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -262,7 +263,7 @@ func (o *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, s
 // Update the Payment Status and Payment Intent ID of an order
 func (o *OrderRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `

@@ -1,4 +1,4 @@
-package repository
+package utils
 
 import (
 	"context"
@@ -7,6 +7,6 @@ import (
 
 const DefaultDBTimeout = 5 * time.Second
 
-func withDBTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+func WithDBTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(ctx, DefaultDBTimeout)
 }

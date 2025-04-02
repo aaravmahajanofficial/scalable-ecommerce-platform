@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 )
 
 type CartRepository struct {
@@ -20,7 +21,7 @@ func NewCartRepo(db *sql.DB) *CartRepository {
 
 func (r *CartRepository) CreateCart(ctx context.Context, cart *models.Cart) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	itemsJSON, err := json.Marshal(cart.Items)
@@ -40,7 +41,7 @@ func (r *CartRepository) CreateCart(ctx context.Context, cart *models.Cart) erro
 
 func (r *CartRepository) GetCart(ctx context.Context, cartID string) (*models.Cart, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -68,7 +69,7 @@ func (r *CartRepository) GetCart(ctx context.Context, cartID string) (*models.Ca
 
 func (r *CartRepository) UpdateCart(ctx context.Context, cart *models.Cart) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	itemsJSON, err := json.Marshal(cart.Items)

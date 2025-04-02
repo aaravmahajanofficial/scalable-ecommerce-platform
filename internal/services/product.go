@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 )
 
 type ProductService struct {

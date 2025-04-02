@@ -6,7 +6,8 @@ import (
 	"net/http"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
+	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
 )
@@ -35,7 +36,7 @@ func (h *CartHandler) CreateCart() http.HandlerFunc {
 		}
 
 		// validate the method
-		if !validateMethod(w, r, http.MethodPost) {
+		if !utils.ValidateMethod(w, r, http.MethodPost) {
 			return
 		}
 
@@ -91,12 +92,12 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 
 		// decode the response body
 		var req models.AddItemRequest
-		if err := decodeJSONBody(w, r, &req); err != nil {
+		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 			return
 		}
 
 		// Validate Input
-		if !validateStruct(w, h.validator, req) {
+		if !utils.ValidateStruct(w, h.validator, req) {
 			return
 		}
 
@@ -124,7 +125,7 @@ func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 
 		var req models.UpdateQuantityRequest
 
-		if err := decodeJSONBody(w, r, &req); err != nil {
+		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 			return
 		}
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 )
 
 type ProductRepository struct {
@@ -18,7 +19,7 @@ func NewProductRepo(db *sql.DB) *ProductRepository {
 
 func (p *ProductRepository) CreateProduct(ctx context.Context, product *models.Product) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `INSERT INTO products (category_id, name, description, price, stock_quantity, sku, status)
@@ -32,7 +33,7 @@ func (p *ProductRepository) CreateProduct(ctx context.Context, product *models.P
 
 func (p *ProductRepository) GetProductByID(ctx context.Context, id int64) (*models.Product, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	product := &models.Product{}
@@ -63,7 +64,7 @@ func (p *ProductRepository) GetProductByID(ctx context.Context, id int64) (*mode
 
 func (p *ProductRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -78,7 +79,7 @@ func (p *ProductRepository) UpdateProduct(ctx context.Context, product *models.P
 
 func (p *ProductRepository) ListProducts(ctx context.Context, offset, limit int) ([]*models.Product, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `

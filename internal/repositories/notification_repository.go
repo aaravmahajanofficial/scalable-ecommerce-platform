@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -21,7 +22,7 @@ func NewNotificationRepo(db *sql.DB) *NotificationRepository {
 
 func (n *NotificationRepository) CreateNotification(ctx context.Context, notification *models.Notification) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -41,7 +42,7 @@ func (n *NotificationRepository) CreateNotification(ctx context.Context, notific
 
 func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -67,7 +68,7 @@ func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uui
 
 func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -99,7 +100,7 @@ func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, i
 
 func (n *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	offSet := (page - 1) * size

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/google/uuid"
 )
 

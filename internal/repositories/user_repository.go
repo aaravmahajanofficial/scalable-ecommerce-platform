@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 )
 
 type UserRepository struct {
@@ -18,7 +19,7 @@ func NewUserRepo(db *sql.DB) *UserRepository {
 
 func (p *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -32,7 +33,7 @@ func (p *UserRepository) CreateUser(ctx context.Context, user *models.User) erro
 
 func (p *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	user := &models.User{} // user holds the address of the new instance of new User models
@@ -52,7 +53,7 @@ func (p *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 func (p *UserRepository) GetUserById(ctx context.Context, id string) (*models.User, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	user := &models.User{}

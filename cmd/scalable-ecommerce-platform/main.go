@@ -13,9 +13,9 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository/redis"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/redis"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 )

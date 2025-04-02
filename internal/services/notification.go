@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/google/uuid"
 )

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 )
 
 type PaymentRepository struct {
@@ -19,7 +20,7 @@ func NewPaymentRepository(db *sql.DB) *PaymentRepository {
 
 func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -38,7 +39,7 @@ func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.P
 
 func (p *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	payment := &models.Payment{}
@@ -61,7 +62,7 @@ func (p *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*mod
 
 func (p *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	query := `
@@ -77,7 +78,7 @@ func (p *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, 
 
 func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
 
-	dbCtx, cancel := withDBTimeout(ctx)
+	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	// Offset

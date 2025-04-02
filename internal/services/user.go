@@ -6,8 +6,8 @@ import (
 	"time"
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository/redis"
+	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/redis"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )

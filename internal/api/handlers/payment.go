@@ -8,7 +8,8 @@ import (
 	"strconv"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/service"
+	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
 )
@@ -26,18 +27,18 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// Check for correct HTTP method
-		if !validateMethod(w, r, http.MethodPost) {
+		if !utils.ValidateMethod(w, r, http.MethodPost) {
 			return
 		}
 
 		// Decode the request body
 		var req models.PaymentRequest
-		if err := decodeJSONBody(w, r, &req); err != nil {
+		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
 			return
 		}
 
 		// Validate Input
-		if !validateStruct(w, h.validator, req) {
+		if !utils.ValidateStruct(w, h.validator, req) {
 			return
 		}
 

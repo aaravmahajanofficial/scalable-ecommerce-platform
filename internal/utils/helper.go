@@ -1,4 +1,4 @@
-package handlers
+package utils
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func validateMethod(w http.ResponseWriter, r *http.Request, expectedMethod string) bool {
+func ValidateMethod(w http.ResponseWriter, r *http.Request, expectedMethod string) bool {
 	if r.Method != expectedMethod {
 		slog.Warn("Invalid request method",
 			slog.String("method", r.Method),
@@ -25,7 +25,7 @@ func validateMethod(w http.ResponseWriter, r *http.Request, expectedMethod strin
 	return true
 }
 
-func decodeJSONBody(w http.ResponseWriter, r *http.Request, dest any) error {
+func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dest any) error {
 	defer r.Body.Close()
 
 	err := json.NewDecoder(r.Body).Decode(&dest)
@@ -48,7 +48,7 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dest any) error {
 	return nil
 }
 
-func validateStruct(w http.ResponseWriter, validate *validator.Validate, data any) bool {
+func ValidateStruct(w http.ResponseWriter, validate *validator.Validate, data any) bool {
 	if err := validate.Struct(data); err != nil {
 		if validationErrs, ok := err.(validator.ValidationErrors); ok {
 			slog.Warn("User input validation failed",
