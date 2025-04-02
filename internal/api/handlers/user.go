@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -32,16 +32,16 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		}
 
 		// Call the register service
-		user, err := h.userService.Register(r.Context(), &req)
+		resp, err := h.userService.Register(r.Context(), &req)
 
 		if err != nil {
-			slog.Error("Error during user registration", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("User registration failed", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 			return
 		}
 
-		slog.Info("User registered successfully", slog.String("userId", user.ID))
-		response.WriteJson(w, http.StatusCreated, map[string]string{"id": user.ID})
+		slog.Info("User registered", slog.String("userId", resp.ID))
+		response.WriteJson(w, http.StatusCreated, resp)
 
 	}
 }
@@ -51,7 +51,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 		// Decode the request body
 		var req models.LoginRequest
-		
+
 		// Validate Input
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
@@ -61,22 +61,22 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		resp, err := h.userService.Login(r.Context(), &req)
 
 		if err != nil {
+			slog.Warn("Login failed", slog.String("email", req.Email), slog.String("error", err.Error()))
 			response.WriteJson(w, http.StatusUnauthorized, response.GeneralError(err))
 			return
 		}
 
 		if !resp.Success {
-
+			status := http.StatusUnauthorized
 			if resp.RetryAfter > 0 {
-				response.WriteJson(w, http.StatusTooManyRequests, resp)
-				return
+				status = http.StatusTooManyRequests
 			}
 
-			response.WriteJson(w, http.StatusUnauthorized, resp)
+			response.WriteJson(w, status, resp)
 			return
 		}
 
-		slog.Info("User logged in successfully", slog.String("email", req.Email))
+		slog.Info("User logged in", slog.String("email", req.Email))
 		response.WriteJson(w, http.StatusOK, resp)
 
 	}
@@ -89,17 +89,20 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 		claims, ok := r.Context().Value("user").(*models.Claims)
 
 		if !ok {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			slog.Warn("Unauthorized access attempt")
+			response.WriteJson(w, http.StatusNotFound, response.GeneralError(errors.New("unauthorized")))
 			return
 		}
 
-		user, err := h.userService.GetUserByID(r.Context(), claims.UserID)
+		resp, err := h.userService.GetUserByID(r.Context(), claims.UserID)
 
 		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
+			slog.Warn("User not found", slog.String("userID", claims.UserID))
+			response.WriteJson(w, http.StatusNotFound, response.GeneralError(errors.New("user not found")))
 			return
 		}
 
-		response.WriteJson(w, http.StatusFound, user)
+		slog.Info("User profile accessed", slog.String("userID", resp.ID))
+		response.WriteJson(w, http.StatusFound, resp)
 	}
 }
