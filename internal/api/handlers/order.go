@@ -42,7 +42,7 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 		}
 
 		// Call the service
-		order, err := h.orderService.CreateOrder(&req)
+		order, err := h.orderService.CreateOrder(r.Context(), &req)
 
 		if err != nil {
 			slog.Error("Error during order creation", slog.String("error", err.Error()))
@@ -74,7 +74,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 		}
 
 		// Call the service
-		order, err := h.orderService.GetOrderById(id)
+		order, err := h.orderService.GetOrderById(r.Context(), id)
 
 		if err != nil {
 			slog.Error("Error while accessing order", slog.String("error", err.Error()))
@@ -121,7 +121,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 		}
 
 		// Call the service
-		orders, total, err := h.orderService.ListOrdersByCustomer(customerID, page, size)
+		orders, total, err := h.orderService.ListOrdersByCustomer(r.Context(), customerID, page, size)
 
 		if err != nil {
 			slog.Error("Error while listing the orders for the customer", slog.String("error", err.Error()))
@@ -173,7 +173,7 @@ func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 		}
 
 		// Call the service
-		err = h.orderService.UpdateOrderStatus(id, req.Status)
+		err = h.orderService.UpdateOrderStatus(r.Context(), id, req.Status)
 
 		if err != nil {
 			slog.Error("Error while updating the order status for order", slog.String("error", err.Error()))

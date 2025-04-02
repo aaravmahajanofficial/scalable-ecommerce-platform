@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -18,7 +19,10 @@ func NewOrderRepository(db *sql.DB) *OrderRepository {
 	return &OrderRepository{DB: db}
 }
 
-func (o *OrderRepository) CreateOrder(order *models.Order) error {
+func (o *OrderRepository) CreateOrder(ctx context.Context, order *models.Order) error {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	shipping_address, err := json.Marshal(order.ShippingAddress)
 
@@ -32,7 +36,7 @@ func (o *OrderRepository) CreateOrder(order *models.Order) error {
 		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
 	`
 
-	_, err = o.DB.Exec(query, order.ID, order.CustomerID, order.Status, order.TotalAmount, order.PaymentStatus, order.PaymentIntentID, shipping_address)
+	_, err = o.DB.ExecContext(dbCtx, query, order.ID, order.CustomerID, order.Status, order.TotalAmount, order.PaymentStatus, order.PaymentIntentID, shipping_address)
 
 	if err != nil {
 		return fmt.Errorf("failed to insert order: %w", err)
@@ -46,7 +50,7 @@ func (o *OrderRepository) CreateOrder(order *models.Order) error {
 			VALUES ($1, $2, $3, $4, $5, NOW())
 		`
 
-		_, err := o.DB.Exec(query, item.ID, order.ID, item.ProductID, item.Quantity, item.UnitPrice)
+		_, err := o.DB.ExecContext(dbCtx, query, item.ID, order.ID, item.ProductID, item.Quantity, item.UnitPrice)
 
 		if err != nil {
 			return fmt.Errorf("failed to insert an order item: %w", err)
@@ -61,7 +65,10 @@ func (o *OrderRepository) CreateOrder(order *models.Order) error {
 Get the order
 Get the order items
 */
-func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
+func (o *OrderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	order := &models.Order{
 		ID: id,
@@ -74,7 +81,7 @@ func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
 	`
 	var jsonData []byte
 
-	err := o.DB.QueryRow(query, id).Scan(&order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
+	err := o.DB.QueryRowContext(dbCtx, query, id).Scan(&order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
 
 	json.Unmarshal(jsonData, &order.ShippingAddress)
 
@@ -93,7 +100,7 @@ func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
 		FROM order_items
 		WHERE order_id = $1
 	`
-	rows, err := o.DB.Query(query, id)
+	rows, err := o.DB.QueryContext(dbCtx, query, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the order items: %w", err)
@@ -131,7 +138,10 @@ func (o *OrderRepository) GetOrderById(id uuid.UUID) (*models.Order, error) {
 	2.
 
 */
-func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
+func (o *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	// Offset
 	offset := (page - 1) * size
@@ -145,7 +155,7 @@ func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, s
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := o.DB.Query(query, customerID, size, offset)
+	rows, err := o.DB.QueryContext(dbCtx, query, customerID, size, offset)
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list orders: %w", err)
@@ -188,7 +198,7 @@ func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, s
 	for i := range orders {
 
 		// Get the order items
-		itemsRows, err := o.DB.Query(query, orders[i].ID)
+		itemsRows, err := o.DB.QueryContext(dbCtx, query, orders[i].ID)
 
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to get the orders: %w", err)
@@ -220,13 +230,16 @@ func (o *OrderRepository) ListOrdersByCustomer(customerID uuid.UUID, page int, s
 }
 
 // Update Order status
-func (o *OrderRepository) UpdateOrderStatus(id uuid.UUID, status models.OrderStatus) error {
+func (o *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) error {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	query := `
 		UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3
 	`
 
-	result, err := o.DB.Exec(query, status, time.Now(), id)
+	result, err := o.DB.ExecContext(dbCtx, query, status, time.Now(), id)
 
 	if err != nil {
 		return fmt.Errorf("failed to update order status: %w", err)
@@ -247,13 +260,16 @@ func (o *OrderRepository) UpdateOrderStatus(id uuid.UUID, status models.OrderSta
 }
 
 // Update the Payment Status and Payment Intent ID of an order
-func (o *OrderRepository) UpdatePaymentStatus(id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error {
+func (o *OrderRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	query := `
 		UPDATE orders set payment_status = $1, payment_intent_id = $2 updated_at = $3 WHERE id = $4
 	`
 
-	result, err := o.DB.Exec(query, status, paymentIntentID, time.Now(), id)
+	result, err := o.DB.ExecContext(dbCtx, query, status, paymentIntentID, time.Now(), id)
 
 	if err != nil {
 		return fmt.Errorf("failed to update payment status: %w", err)

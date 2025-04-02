@@ -40,7 +40,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		}
 
 		// Call the register service
-		user, err := h.userService.Register(&req)
+		user, err := h.userService.Register(r.Context(), &req)
 
 		if err != nil {
 			slog.Error("Error during user registration", slog.String("error", err.Error()))
@@ -114,7 +114,7 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 			return
 		}
 
-		user, err := h.userService.GetUserByID(claims.UserID)
+		user, err := h.userService.GetUserByID(r.Context(), claims.UserID)
 
 		if err != nil {
 			http.Error(w, "User not found", http.StatusNotFound)

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -17,7 +18,7 @@ func NewOrderService(orderRepo *repository.OrderRepository) *OrderService {
 	return &OrderService{orderRepo: orderRepo}
 }
 
-func (s *OrderService) CreateOrder(req *models.CreateOrderRequest) (*models.Order, error) {
+func (s *OrderService) CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error) {
 
 	// calculate the order total
 	var grossTotal float64
@@ -59,7 +60,7 @@ func (s *OrderService) CreateOrder(req *models.CreateOrderRequest) (*models.Orde
 
 	order.Items = items
 
-	err := s.orderRepo.CreateOrder(order)
+	err := s.orderRepo.CreateOrder(ctx, order)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create order: %w", err)
@@ -69,13 +70,13 @@ func (s *OrderService) CreateOrder(req *models.CreateOrderRequest) (*models.Orde
 
 }
 
-func (s *OrderService) GetOrderById(id uuid.UUID) (*models.Order, error) {
+func (s *OrderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 
-	return s.orderRepo.GetOrderById(id)
+	return s.orderRepo.GetOrderById(ctx, id)
 
 }
 
-func (s *OrderService) ListOrdersByCustomer(customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
+func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
 
 	if page < 1 {
 		page = 1
@@ -85,19 +86,19 @@ func (s *OrderService) ListOrdersByCustomer(customerId uuid.UUID, page int, size
 		size = 10
 	}
 
-	return s.orderRepo.ListOrdersByCustomer(customerId, page, size)
+	return s.orderRepo.ListOrdersByCustomer(ctx, customerId, page, size)
 
 }
 
-func (s *OrderService) UpdateOrderStatus(id uuid.UUID, status models.OrderStatus) error {
+func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) error {
 
 	// check if order exists or not
-	_, err := s.orderRepo.GetOrderById(id)
+	_, err := s.orderRepo.GetOrderById(ctx, id)
 
 	if err != nil {
 		return fmt.Errorf("order not found: %w", err)
 	}
 
-	return s.orderRepo.UpdateOrderStatus(id, status)
+	return s.orderRepo.UpdateOrderStatus(ctx, id, status)
 
 }

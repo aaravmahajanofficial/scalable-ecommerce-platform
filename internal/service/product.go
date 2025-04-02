@@ -1,6 +1,8 @@
 package service
 
 import (
+	"context"
+
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repository"
 )
@@ -13,7 +15,7 @@ func NewProductService(repo *repository.ProductRepository) *ProductService {
 	return &ProductService{repo: repo}
 }
 
-func (s *ProductService) CreateProduct(req *models.CreateProductRequest) (*models.Product, error) {
+func (s *ProductService) CreateProduct(ctx context.Context, req *models.CreateProductRequest) (*models.Product, error) {
 
 	product := &models.Product{
 		CategoryID:    req.CategoryID,
@@ -25,7 +27,7 @@ func (s *ProductService) CreateProduct(req *models.CreateProductRequest) (*model
 		Status:        "active",
 	}
 
-	err := s.repo.CreateProduct(product)
+	err := s.repo.CreateProduct(ctx, product)
 
 	if err != nil {
 		return nil, err
@@ -35,15 +37,15 @@ func (s *ProductService) CreateProduct(req *models.CreateProductRequest) (*model
 
 }
 
-func (s *ProductService) GetProductByID(id int64) (*models.Product, error) {
+func (s *ProductService) GetProductByID(ctx context.Context, id int64) (*models.Product, error) {
 
-	return s.repo.GetProductByID(id)
+	return s.repo.GetProductByID(ctx, id)
 
 }
 
-func (s *ProductService) UpdateProduct(id int64, req *models.UpdateProductRequest) (*models.Product, error) {
+func (s *ProductService) UpdateProduct(ctx context.Context, id int64, req *models.UpdateProductRequest) (*models.Product, error) {
 
-	product, err := s.repo.GetProductByID(id)
+	product, err := s.repo.GetProductByID(ctx, id)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +70,7 @@ func (s *ProductService) UpdateProduct(id int64, req *models.UpdateProductReques
 		product.Status = *req.Status
 	}
 
-	err = s.repo.UpdateProduct(product)
+	err = s.repo.UpdateProduct(ctx, product)
 
 	if err != nil {
 		return nil, err
@@ -80,7 +82,7 @@ func (s *ProductService) UpdateProduct(id int64, req *models.UpdateProductReques
 
 // page means "page number requested"
 // pageSize means "number of products to be displayed per page"
-func (s *ProductService) ListProducts(page, pageSize int) ([]*models.Product, error) {
+func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, error) {
 
 	if page < 1 {
 		page = 1
@@ -93,6 +95,6 @@ func (s *ProductService) ListProducts(page, pageSize int) ([]*models.Product, er
 
 	offset := (page - 1) * pageSize
 
-	return s.repo.ListProducts(offset, pageSize)
+	return s.repo.ListProducts(ctx, offset, pageSize)
 
 }

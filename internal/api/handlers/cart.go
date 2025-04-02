@@ -40,7 +40,7 @@ func (h *CartHandler) CreateCart() http.HandlerFunc {
 		}
 
 		// Call the cart service
-		cart, err := h.cartService.CreateCart(userId)
+		cart, err := h.cartService.CreateCart(r.Context(), userId)
 
 		if err != nil {
 			slog.Error("Error during cart creation", slog.String("error", err.Error()))
@@ -66,7 +66,7 @@ func (h *CartHandler) GetCart() http.HandlerFunc {
 
 		}
 
-		cart, err := h.cartService.GetCart(cartID)
+		cart, err := h.cartService.GetCart(r.Context(), cartID)
 
 		if err != nil {
 			response.WriteJson(w, http.StatusInternalServerError, err.Error())
@@ -100,7 +100,7 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 			return
 		}
 
-		cart, err := h.cartService.AddItem(cartID, &req)
+		cart, err := h.cartService.AddItem(r.Context(), cartID, &req)
 
 		if err != nil {
 			response.WriteJson(w, http.StatusInternalServerError, err.Error())
@@ -128,7 +128,7 @@ func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 			return
 		}
 
-		cart, err := h.cartService.UpdateQuantity(cartID, &req)
+		cart, err := h.cartService.UpdateQuantity(r.Context(), cartID, &req)
 
 		if err != nil {
 			response.WriteJson(w, http.StatusInternalServerError, err.Error())

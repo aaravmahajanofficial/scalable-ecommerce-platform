@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -17,7 +18,10 @@ func NewCartRepo(db *sql.DB) *CartRepository {
 	return &CartRepository{DB: db}
 }
 
-func (r *CartRepository) CreateCart(cart *models.Cart) error {
+func (r *CartRepository) CreateCart(ctx context.Context, cart *models.Cart) error {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	itemsJSON, err := json.Marshal(cart.Items)
 
@@ -31,10 +35,13 @@ func (r *CartRepository) CreateCart(cart *models.Cart) error {
 		RETURNING id, created_at, updated_at
 	`
 
-	return r.DB.QueryRow(query, cart.ID, cart.UserID, itemsJSON).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
+	return r.DB.QueryRowContext(dbCtx, query, cart.ID, cart.UserID, itemsJSON).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
 }
 
-func (r *CartRepository) GetCart(cartID string) (*models.Cart, error) {
+func (r *CartRepository) GetCart(ctx context.Context, cartID string) (*models.Cart, error) {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	query := `
 		SELECT id, user_id, items, created_at, updated_at
@@ -45,7 +52,7 @@ func (r *CartRepository) GetCart(cartID string) (*models.Cart, error) {
 	cart := &models.Cart{}
 	var itemsJSON []byte
 
-	err := r.DB.QueryRow(query, cartID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
+	err := r.DB.QueryRowContext(dbCtx, query, cartID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
 
 	if err != nil {
 		return nil, err
@@ -59,7 +66,10 @@ func (r *CartRepository) GetCart(cartID string) (*models.Cart, error) {
 
 }
 
-func (r *CartRepository) UpdateCart(cart *models.Cart) error {
+func (r *CartRepository) UpdateCart(ctx context.Context, cart *models.Cart) error {
+
+	dbCtx, cancel := withDBTimeout(ctx)
+	defer cancel()
 
 	itemsJSON, err := json.Marshal(cart.Items)
 
@@ -73,7 +83,7 @@ func (r *CartRepository) UpdateCart(cart *models.Cart) error {
 		WHERE id = $4
 	`
 
-	_, err = r.DB.Exec(query, itemsJSON, cart.Total, time.Now(), cart.ID)
+	_, err = r.DB.ExecContext(dbCtx, query, itemsJSON, cart.Total, time.Now(), cart.ID)
 
 	return err
 

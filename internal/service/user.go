@@ -26,7 +26,7 @@ func NewUserService(repo *repository.UserRepository, redisRepo *redis.RedisRepo,
 	}
 }
 
-func (s *UserService) Register(req *models.RegisterRequest) (*models.User, error) {
+func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
 
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -41,7 +41,7 @@ func (s *UserService) Register(req *models.RegisterRequest) (*models.User, error
 		Password: string(hashedPassword),
 	}
 
-	err = s.repo.CreateUser(user)
+	err = s.repo.CreateUser(ctx, user)
 
 	if err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 	}
 
 	// Retrieve the user from the DB and compare the passwords
-	user, err := s.repo.GetUserByEmail(req.Email)
+	user, err := s.repo.GetUserByEmail(ctx, req.Email)
 	if err != nil || bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)) != nil {
 		return &models.LoginResponse{
 			Success:        false,
@@ -102,9 +102,9 @@ func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 
 }
 
-func (s *UserService) GetUserByID(id string) (*models.User, error) {
+func (s *UserService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
 
-	user, err := s.repo.GetUserById(id)
+	user, err := s.repo.GetUserById(ctx, id)
 
 	if err != nil {
 		return nil, err

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -17,7 +18,7 @@ func NewCartService(repo *repository.CartRepository) *CartService {
 	return &CartService{repo: repo}
 }
 
-func (s *CartService) CreateCart(userId string) (*models.Cart, error) {
+func (s *CartService) CreateCart(ctx context.Context, userId string) (*models.Cart, error) {
 
 	cart := &models.Cart{
 		ID:        uuid.NewString(),
@@ -28,7 +29,7 @@ func (s *CartService) CreateCart(userId string) (*models.Cart, error) {
 		UpdatedAt: time.Now(),
 	}
 
-	err := s.repo.CreateCart(cart)
+	err := s.repo.CreateCart(ctx, cart)
 
 	if err != nil {
 		return nil, err
@@ -37,9 +38,9 @@ func (s *CartService) CreateCart(userId string) (*models.Cart, error) {
 	return cart, nil
 }
 
-func (s *CartService) GetCart(cartId string) (*models.Cart, error) {
+func (s *CartService) GetCart(ctx context.Context, cartId string) (*models.Cart, error) {
 
-	cart, err := s.repo.GetCart(cartId)
+	cart, err := s.repo.GetCart(ctx, cartId)
 
 	if err != nil {
 		return nil, err
@@ -49,9 +50,9 @@ func (s *CartService) GetCart(cartId string) (*models.Cart, error) {
 
 }
 
-func (s *CartService) AddItem(cartId string, req *models.AddItemRequest) (*models.Cart, error) {
+func (s *CartService) AddItem(ctx context.Context, cartId string, req *models.AddItemRequest) (*models.Cart, error) {
 
-	cart, err := s.repo.GetCart(cartId)
+	cart, err := s.repo.GetCart(ctx, cartId)
 
 	if err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func (s *CartService) AddItem(cartId string, req *models.AddItemRequest) (*model
 	cart.UpdatedAt = time.Now()
 	cart.Total = s.calculateTotal(cart.Items)
 
-	if err := s.repo.UpdateCart(cart); err != nil {
+	if err := s.repo.UpdateCart(ctx, cart); err != nil {
 		return nil, err
 	}
 
@@ -77,9 +78,9 @@ func (s *CartService) AddItem(cartId string, req *models.AddItemRequest) (*model
 
 }
 
-func (s *CartService) UpdateQuantity(cartId string, req *models.UpdateQuantityRequest) (*models.Cart, error) {
+func (s *CartService) UpdateQuantity(ctx context.Context, cartId string, req *models.UpdateQuantityRequest) (*models.Cart, error) {
 
-	cart, err := s.repo.GetCart(cartId)
+	cart, err := s.repo.GetCart(ctx, cartId)
 
 	if err != nil {
 		return nil, err
@@ -107,7 +108,7 @@ func (s *CartService) UpdateQuantity(cartId string, req *models.UpdateQuantityRe
 	cart.UpdatedAt = time.Now()
 	cart.Total = s.calculateTotal(cart.Items)
 
-	err = s.repo.UpdateCart(cart)
+	err = s.repo.UpdateCart(ctx, cart)
 
 	if err != nil {
 		return nil, err

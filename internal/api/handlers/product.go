@@ -41,7 +41,7 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 		}
 
 		// Call the register service
-		product, err := h.productService.CreateProduct(&req)
+		product, err := h.productService.CreateProduct(r.Context(), &req)
 
 		if err != nil {
 			slog.Error("Error during product creation", slog.String("error", err.Error()))
@@ -67,7 +67,7 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 			return
 		}
 
-		product, err := h.productService.GetProductByID(id)
+		product, err := h.productService.GetProductByID(r.Context(), id)
 
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -102,7 +102,7 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 		}
 
 		// Call the register service
-		product, err := h.productService.UpdateProduct(id, &req)
+		product, err := h.productService.UpdateProduct(r.Context(), id, &req)
 
 		if err != nil {
 			slog.Error("Error during product updation", slog.String("error", err.Error()))
@@ -123,7 +123,7 @@ func (h *ProductHandler) ListProducts() http.HandlerFunc {
 		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
 		pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
 
-		products, err := h.productService.ListProducts(page, pageSize)
+		products, err := h.productService.ListProducts(r.Context(), page, pageSize)
 
 		if err != nil {
 			slog.Error("Failed to fetch products", slog.String("error", err.Error()))
