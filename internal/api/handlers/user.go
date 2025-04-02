@@ -24,19 +24,10 @@ func NewUserHandler(userService *service.UserService) *UserHandler {
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodPost) {
-			return
-		}
-
-		// Decode the request body
 		var req models.RegisterRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
 
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 
@@ -58,19 +49,11 @@ func (h *UserHandler) Register() http.HandlerFunc {
 func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodPost) {
-			return
-		}
-
 		// Decode the request body
 		var req models.LoginRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
-
+		
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 
@@ -101,11 +84,6 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodGet) {
-			return
-		}
 
 		// Get user claims from context (set by middleware)
 		claims, ok := r.Context().Value("user").(*models.Claims)

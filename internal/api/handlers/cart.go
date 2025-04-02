@@ -35,13 +35,13 @@ func (h *CartHandler) CreateCart() http.HandlerFunc {
 			return
 		}
 
-		// validate the method
-		if !utils.ValidateMethod(w, r, http.MethodPost) {
+		// Call the cart service
+		req, err := h.cartService.CreateCart(r.Context(), userId)
+
+		// Validate Input
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
-
-		// Call the cart service
-		cart, err := h.cartService.CreateCart(r.Context(), userId)
 
 		if err != nil {
 			slog.Error("Error during cart creation", slog.String("error", err.Error()))
@@ -49,8 +49,8 @@ func (h *CartHandler) CreateCart() http.HandlerFunc {
 			return
 		}
 
-		slog.Info("Cart created successfully", slog.String("cartId", fmt.Sprintf("%v", cart.ID)), slog.String("userId", fmt.Sprintf("%v", userId)))
-		response.WriteJson(w, http.StatusCreated, map[string]string{"id": cart.ID})
+		slog.Info("Cart created successfully", slog.String("cartId", fmt.Sprintf("%v", req.ID)), slog.String("userId", fmt.Sprintf("%v", userId)))
+		response.WriteJson(w, http.StatusCreated, map[string]string{"id": req.ID})
 
 	}
 }
@@ -92,12 +92,9 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 
 		// decode the response body
 		var req models.AddItemRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
 
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 
@@ -125,7 +122,8 @@ func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 
 		var req models.UpdateQuantityRequest
 
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
+		// Validate Input
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 

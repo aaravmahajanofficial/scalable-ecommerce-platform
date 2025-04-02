@@ -8,58 +8,52 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
 )
 
-func ValidateMethod(w http.ResponseWriter, r *http.Request, expectedMethod string) bool {
-	if r.Method != expectedMethod {
-		slog.Warn("Invalid request method",
-			slog.String("method", r.Method),
-			slog.String("endpoint", r.URL.Path),
-		)
-		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
-		return false
-	}
+func DecodeJSONBody(r *http.Request, dest any) error {
 
-	return true
-}
-
-func DecodeJSONBody(w http.ResponseWriter, r *http.Request, dest any) error {
-	defer r.Body.Close()
-
-	err := json.NewDecoder(r.Body).Decode(&dest)
-
-	if errors.Is(err, io.EOF) {
-		slog.Warn("Empty request body", slog.String("endpoint", r.URL.Path))
-		response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("❌ Bad Request: request body cannot be empty")))
-		return err
-	}
+	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
-		slog.Error("Failed to decode request body",
+		slog.Error("Failed to read request body",
 			slog.String("error", err.Error()),
 			slog.String("endpoint", r.URL.Path),
 		)
-		response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
-		return err
+		return fmt.Errorf("failed to read request body: %w", err)
+	}
+
+	defer r.Body.Close()
+
+	if len(body) == 0 {
+		slog.Warn("Empty request body", slog.String("endpoint", r.URL.Path))
+		return errors.New("request body cannot be empty")
+	}
+
+	if err := json.Unmarshal(body, dest); err != nil {
+		slog.Error("Failed to parse request JSON",
+			slog.String("error", err.Error()),
+			slog.String("endpoint", r.URL.Path),
+		)
+		return fmt.Errorf("invalid JSON format: %w", err)
 	}
 
 	return nil
 }
 
-func ValidateStruct(w http.ResponseWriter, validate *validator.Validate, data any) bool {
+func ValidateStruct(validate *validator.Validate, data any) error {
 	if err := validate.Struct(data); err != nil {
 		if validationErrs, ok := err.(validator.ValidationErrors); ok {
 			slog.Warn("User input validation failed",
 				slog.String("error", validationErrs.Error()),
 			)
-			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validationErrs))
+			return fmt.Errorf("validation error: %w", validationErrs)
+
 		} else {
 			slog.Error("Unexpected validation error", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return fmt.Errorf("unexpected validation error: %w", validationErrs)
 		}
-		return false
+
 	}
-	return true
+	return nil
 }

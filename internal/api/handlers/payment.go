@@ -26,19 +26,11 @@ func NewPaymentService(paymentService service.PaymentService) *PaymentHandler {
 func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodPost) {
-			return
-		}
-
 		// Decode the request body
 		var req models.PaymentRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
-
+		
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 

@@ -25,19 +25,11 @@ func NewProductHandler(productService *service.ProductService) *ProductHandler {
 func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodPost) {
-			return
-		}
-
 		// Decode the request body
 		var req models.CreateProductRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
 
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 
@@ -93,12 +85,9 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 
 		// Decode the request body
 		var req models.UpdateProductRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
-
+		
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 

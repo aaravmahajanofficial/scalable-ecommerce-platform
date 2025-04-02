@@ -29,19 +29,11 @@ func NewNotificationHandler(notificationService service.NotificationService) *No
 func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodPost) {
-			return
-		}
-
 		// Decode the request body
 		var req models.EmailNotificationRequest
-		if err := utils.DecodeJSONBody(w, r, &req); err != nil {
-			return
-		}
 
 		// Validate Input
-		if !utils.ValidateStruct(w, h.validator, req) {
+		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 
@@ -62,11 +54,6 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 
 func (h *NotificationHandler) GetNotification() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodGet) {
-			return
-		}
 
 		idStr := r.PathValue("id")
 
@@ -103,11 +90,6 @@ func (h *NotificationHandler) GetNotification() http.HandlerFunc {
 
 func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// Check for correct HTTP method
-		if !utils.ValidateMethod(w, r, http.MethodGet) {
-			return
-		}
 
 		// extract pagination parameters
 		page, size := 1, 10
