@@ -9,16 +9,22 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type Repository struct {
-	DB *sql.DB
+type Repositories struct {
+	DB           *sql.DB
+	User         *UserRepository
+	Product      *ProductRepository
+	Cart         *CartRepository
+	Order        *OrderRepository
+	Payment      *PaymentRepository
+	Notification *NotificationRepository
 }
 
-func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, *CartRepository, *OrderRepository, *PaymentRepository, *NotificationRepository, error) {
+func New(cfg *config.Config) (*Repositories, error) {
 
 	db, err := sql.Open("postgres", cfg.Database.GetDSN())
 
 	if err != nil {
-		return nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
 	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
@@ -28,21 +34,20 @@ func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, 
 
 	// Test the connection to make sure DB is reachable
 	if err := db.Ping(); err != nil {
-		return nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	// Initialize repositories
-	postgresInstance := &Repository{DB: db}
-	userRepo := NewUserRepo(db)       // Initialize UserRepository
-	productRepo := NewProductRepo(db) // Initialize ProductRepository
-	cartRepo := NewCartRepo(db)       // Initialize CartRepository
-	orderRepo := NewOrderRepository(db)
-	paymentRepo := NewPaymentRepository(db)
-	notificationRepo := NewNotificationRepo(db)
-
-	return postgresInstance, userRepo, productRepo, cartRepo, orderRepo, paymentRepo, notificationRepo, nil
+	return &Repositories{
+		DB:           db,
+		User:         NewUserRepo(db),    // Initialize UserRepository
+		Product:      NewProductRepo(db), // Initialize ProductRepository
+		Cart:         NewCartRepo(db),    // Initialize CartRepository
+		Order:        NewOrderRepository(db),
+		Payment:      NewPaymentRepository(db),
+		Notification: NewNotificationRepo(db)}, nil
 }
 
-func (p *Repository) Close() error {
-	return p.DB.Close()
+func (r *Repositories) Close() error {
+	return r.DB.Close()
 }

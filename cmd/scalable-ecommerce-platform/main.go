@@ -13,9 +13,9 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/redis"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
+	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 )
@@ -26,7 +26,7 @@ func main() {
 	cfg := config.MustLoad()
 
 	// Database setup
-	postgresInstance, userRepo, productRepo, cartRepo, orderRepo, paymentRepo, notificationRepo, err := repository.New(cfg)
+	repos, err := repository.New(cfg)
 
 	if err != nil {
 		log.Fatalf("❌ Error accessing the database: %v", err)
@@ -40,7 +40,7 @@ func main() {
 	}
 
 	defer func() {
-		if err := postgresInstance.Close(); err != nil {
+		if err := repos.Close(); err != nil {
 			slog.Error("⚠️ Error closing database connection", slog.String("error", err.Error()))
 		} else {
 			slog.Info("✅ Database connection closed")
@@ -50,17 +50,17 @@ func main() {
 	jwtKey := []byte(cfg.Security.JWTKey)
 	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
 	sendGridClient := sendGrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
-	userService := service.NewUserService(userRepo, redisRepo, jwtKey)
+	userService := service.NewUserService(repos.User, redisRepo, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
-	productService := service.NewProductService(productRepo)
+	productService := service.NewProductService(repos.Product)
 	productHandler := handlers.NewProductHandler(productService)
-	cartService := service.NewCartService(cartRepo)
+	cartService := service.NewCartService(repos.Cart)
 	cartHandler := handlers.NewCartHandler(cartService)
-	orderService := service.NewOrderService(orderRepo)
+	orderService := service.NewOrderService(repos.Order)
 	orderHandler := handlers.NewOrderHandler(orderService)
-	paymentService := service.NewPaymentService(paymentRepo, stripeClient)
+	paymentService := service.NewPaymentService(repos.Payment, stripeClient)
 	paymentHandler := handlers.NewPaymentService(paymentService)
-	notificationService := service.NewNotificationService(notificationRepo, sendGridClient)
+	notificationService := service.NewNotificationService(repos.Notification, sendGridClient)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
