@@ -17,7 +17,7 @@ func NewUserRepo(db *sql.DB) *UserRepository {
 	return &UserRepository{DB: db}
 }
 
-func (p *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
+func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -27,11 +27,11 @@ func (p *UserRepository) CreateUser(ctx context.Context, user *models.User) erro
 		VALUES($1, $2, $3, NOW(), NOW())
 		RETURNING id, created_at, updated_at`
 
-	return p.DB.QueryRowContext(dbCtx, query, user.Email, user.Password, user.Name).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
+	return r.DB.QueryRowContext(dbCtx, query, user.Email, user.Password, user.Name).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 }
 
-func (p *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -41,7 +41,7 @@ func (p *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 			  FROM users 
 			  WHERE email = $1`
 
-	err := p.DB.QueryRowContext(dbCtx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+	err := r.DB.QueryRowContext(dbCtx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (p *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 }
 
-func (p *UserRepository) GetUserById(ctx context.Context, id string) (*models.User, error) {
+func (r *UserRepository) GetUserById(ctx context.Context, id string) (*models.User, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -64,7 +64,7 @@ func (p *UserRepository) GetUserById(ctx context.Context, id string) (*models.Us
 	WHERE id = $1
 	`
 
-	err := p.DB.QueryRowContext(dbCtx, query, id).Scan(&user.ID, &user.Email, &user.Name, &user.CreatedAt, &user.UpdatedAt)
+	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&user.ID, &user.Email, &user.Name, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 

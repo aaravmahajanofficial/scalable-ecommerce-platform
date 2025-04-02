@@ -18,7 +18,7 @@ func NewPaymentRepository(db *sql.DB) *PaymentRepository {
 	return &PaymentRepository{DB: db}
 }
 
-func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
+func (r *PaymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -28,7 +28,7 @@ func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.P
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8,NOW(), NOW())
 	`
 
-	_, err := p.DB.ExecContext(dbCtx, query, &payment.ID, &payment.Amount, &payment.Currency, &payment.CustomerID, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID)
+	_, err := r.DB.ExecContext(dbCtx, query, &payment.ID, &payment.Amount, &payment.Currency, &payment.CustomerID, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID)
 
 	if err != nil {
 		return fmt.Errorf("failed to insert payment: %w", err)
@@ -37,7 +37,7 @@ func (p *PaymentRepository) CreatePayment(ctx context.Context, payment *models.P
 	return nil
 }
 
-func (p *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
+func (r *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -50,7 +50,7 @@ func (p *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*mod
 		WHERE id = $1
 	`
 
-	err := p.DB.QueryRowContext(dbCtx, query, id).Scan(&payment.ID, &payment.Amount, &payment.Currency, &payment.CustomerID, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID, &payment.CreatedAt, &payment.UpdatedAt)
+	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&payment.ID, &payment.Amount, &payment.Currency, &payment.CustomerID, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID, &payment.CreatedAt, &payment.UpdatedAt)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the payment: %w", err)
@@ -60,7 +60,7 @@ func (p *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*mod
 
 }
 
-func (p *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error {
+func (r *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -70,13 +70,13 @@ func (p *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, 
 		WHERE id = $3
 	`
 
-	_, err := p.DB.ExecContext(dbCtx, query, status, time.Now(), id)
+	_, err := r.DB.ExecContext(dbCtx, query, status, time.Now(), id)
 
 	return err
 
 }
 
-func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
+func (r *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -92,7 +92,7 @@ func (p *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 		LIMIT $2 OFFSET $3
 	`
 
-	rows, err := p.DB.QueryContext(dbCtx, query, customerID, size, offset)
+	rows, err := r.DB.QueryContext(dbCtx, query, customerID, size, offset)
 
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list the payments: %w", err)

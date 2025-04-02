@@ -27,10 +27,10 @@ func NewPaymentService(repo *repository.PaymentRepository, stripeClient stripe.C
 }
 
 // CreatePayment implements PaymentService.
-func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error) {
+func (s *paymentService) CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error) {
 
 	// new request for payment
-	paymentIntent, err := p.stripeClient.CreatePaymentIntent(
+	paymentIntent, err := s.stripeClient.CreatePaymentIntent(
 		req.Amount, req.Currency, req.Description, req.CustomerID)
 
 	if err != nil {
@@ -40,13 +40,13 @@ func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 	// create a payment method & attach it to paymentIntent
 	if req.PaymentMethod == "card" {
 		// paymentMethod, err := p.stripeClient.CreatePaymentMethod(req.CardNumber, fmt.Sprintf("%d", req.CardExpMonth), fmt.Sprintf("%d", req.CardExpYear), req.CardCVC)
-		paymentMethod, err := p.stripeClient.CreatePaymentMethodFromToken(req.Token)
+		paymentMethod, err := s.stripeClient.CreatePaymentMethodFromToken(req.Token)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create payment method: %w", err)
 		}
 
-		err = p.stripeClient.AttachPaymentMethodToIntent(paymentMethod.ID, paymentIntent.ID)
+		err = s.stripeClient.AttachPaymentMethodToIntent(paymentMethod.ID, paymentIntent.ID)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to create attach payment method: %w", err)
@@ -68,7 +68,7 @@ func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 		UpdatedAt:     time.Now(),
 	}
 
-	if err := p.repo.CreatePayment(ctx, payment); err != nil {
+	if err := s.repo.CreatePayment(ctx, payment); err != nil {
 		return nil, fmt.Errorf("failed to store the payment: %w", err)
 	}
 
@@ -82,23 +82,23 @@ func (p *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 }
 
 // GetPaymentByID implements PaymentService.
-func (p *paymentService) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
+func (s *paymentService) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
 
-	return p.repo.GetPaymentByID(ctx, id)
+	return s.repo.GetPaymentByID(ctx, id)
 
 }
 
 // ListPaymentsByCustomer implements PaymentService.
-func (p *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
+func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
 
-	return p.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
+	return s.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
 
 }
 
 // ProcessWebhook implements PaymentService.
-func (p *paymentService) ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error) {
+func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error) {
 
-	event, err := p.stripeClient.VerifyWebhookSignature(payload, signature)
+	event, err := s.stripeClient.VerifyWebhookSignature(payload, signature)
 
 	if err != nil {
 		return stripe.Event{}, fmt.Errorf("webhook signature verification failed: %w", err)
@@ -114,7 +114,7 @@ func (p *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 			return event, fmt.Errorf("missing payment intent ID in webhook")
 		}
 
-		if err := p.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusSucceeded); err != nil {
+		if err := s.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusSucceeded); err != nil {
 			return event, fmt.Errorf("failed to update payment status: %w", err)
 		}
 
@@ -126,7 +126,7 @@ func (p *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 			return event, fmt.Errorf("missing payment intent ID in webhook")
 		}
 
-		if err := p.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusFailed); err != nil {
+		if err := s.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusFailed); err != nil {
 			return event, fmt.Errorf("failed to update payment status: %w", err)
 		}
 
@@ -138,7 +138,7 @@ func (p *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 			return event, fmt.Errorf("missing payment intent ID in webhook")
 		}
 
-		if err := p.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusRefunded); err != nil {
+		if err := s.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusRefunded); err != nil {
 			return event, fmt.Errorf("failed to update payment status: %w", err)
 		}
 	}

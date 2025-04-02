@@ -20,7 +20,7 @@ func NewNotificationRepo(db *sql.DB) *NotificationRepository {
 	return &NotificationRepository{DB: db}
 }
 
-func (n *NotificationRepository) CreateNotification(ctx context.Context, notification *models.Notification) error {
+func (r *NotificationRepository) CreateNotification(ctx context.Context, notification *models.Notification) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -30,7 +30,7 @@ func (n *NotificationRepository) CreateNotification(ctx context.Context, notific
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
 	`
 
-	_, err := n.DB.ExecContext(dbCtx, query, notification.ID, notification.Type, notification.Recipient, notification.Subject, notification.Content, notification.Status, notification.ErrorMessage, notification.Metadata)
+	_, err := r.DB.ExecContext(dbCtx, query, notification.ID, notification.Type, notification.Recipient, notification.Subject, notification.Content, notification.Status, notification.ErrorMessage, notification.Metadata)
 
 	if err != nil {
 		return fmt.Errorf("failed to create notification: %w", err)
@@ -40,7 +40,7 @@ func (n *NotificationRepository) CreateNotification(ctx context.Context, notific
 
 }
 
-func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
+func (r *NotificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -55,7 +55,7 @@ func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uui
 
 	var metadata []byte
 
-	err := n.DB.QueryRowContext(dbCtx, query, id).Scan(&result.ID, &result.Type, &result.Recipient, &result.Subject, &result.Content, &result.Status, &result.ErrorMessage, &metadata, &result.CreatedAt, &result.UpdatedAt)
+	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&result.ID, &result.Type, &result.Recipient, &result.Subject, &result.Content, &result.Status, &result.ErrorMessage, &metadata, &result.CreatedAt, &result.UpdatedAt)
 
 	if err != nil {
 		return &models.Notification{}, fmt.Errorf("failed to create notification: %w", err)
@@ -66,7 +66,7 @@ func (n *NotificationRepository) GetNotificationById(ctx context.Context, id uui
 	return result, nil
 }
 
-func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error {
+func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -76,7 +76,7 @@ func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, i
 		WHERE id = $4
 	`
 
-	result, err := n.DB.ExecContext(dbCtx, query, status, errorMsg, time.Now(), id)
+	result, err := r.DB.ExecContext(dbCtx, query, status, errorMsg, time.Now(), id)
 
 	if err != nil {
 		return fmt.Errorf("failed to update the notification status: %w", err)
@@ -98,7 +98,7 @@ func (n *NotificationRepository) UpdateNotificationStatus(ctx context.Context, i
 
 }
 
-func (n *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
+func (r *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -112,7 +112,7 @@ func (n *NotificationRepository) ListNotifications(ctx context.Context, page int
 		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := n.DB.QueryContext(dbCtx, query, size, offSet)
+	rows, err := r.DB.QueryContext(dbCtx, query, size, offSet)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to query notifications: %w", err)

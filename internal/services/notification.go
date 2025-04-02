@@ -28,7 +28,7 @@ func NewNotificationService(repo *repository.NotificationRepository, emailServic
 }
 
 // SendEmail implements NotificationService.
-func (n *notificationService) SendEmail(ctx context.Context, req *models.EmailNotificationRequest) (*models.NotificationResponse, error) {
+func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNotificationRequest) (*models.NotificationResponse, error) {
 
 	var metadataJSON json.RawMessage
 
@@ -55,18 +55,18 @@ func (n *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 	}
 
 	// Save to the database
-	if err := n.repo.CreateNotification(ctx, notification); err != nil {
+	if err := s.repo.CreateNotification(ctx, notification); err != nil {
 		return nil, fmt.Errorf("failed to create notification record: %w", err)
 	}
 
-	err := n.emailService.Send(ctx, req)
+	err := s.emailService.Send(ctx, req)
 
 	if err != nil {
 
 		notification.Status = models.StatusFailed
 		notification.ErrorMessage = err.Error()
 
-		_ = n.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusFailed, notification.ErrorMessage)
+		_ = s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusFailed, notification.ErrorMessage)
 
 		return nil, fmt.Errorf("failed to send email: %w", err)
 
@@ -75,7 +75,7 @@ func (n *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 	// Update the notification status if sent successfully
 	notification.Status = models.StatusSent
 
-	if err := n.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusSent, ""); err != nil {
+	if err := s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusSent, ""); err != nil {
 		return nil, fmt.Errorf("notification sent successfully but failed to update notification status: %w", err)
 	}
 
@@ -90,14 +90,14 @@ func (n *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 }
 
 // GetNotification implements NotificationService.
-func (n *notificationService) GetNotification(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
+func (s *notificationService) GetNotification(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 
-	return n.repo.GetNotificationById(ctx, id)
+	return s.repo.GetNotificationById(ctx, id)
 
 }
 
 // ListNotifications implements NotificationService.
-func (n *notificationService) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
+func (s *notificationService) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
 
 	if page < 1 {
 		page = 1
@@ -107,7 +107,7 @@ func (n *notificationService) ListNotifications(ctx context.Context, page int, s
 		size = 10
 	}
 
-	notifications, err := n.repo.ListNotifications(ctx, page, size)
+	notifications, err := s.repo.ListNotifications(ctx, page, size)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to list notifications: %w", err)

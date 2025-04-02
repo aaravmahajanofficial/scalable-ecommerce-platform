@@ -17,7 +17,7 @@ func NewProductRepo(db *sql.DB) *ProductRepository {
 	return &ProductRepository{DB: db}
 }
 
-func (p *ProductRepository) CreateProduct(ctx context.Context, product *models.Product) error {
+func (r *ProductRepository) CreateProduct(ctx context.Context, product *models.Product) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -27,11 +27,11 @@ func (p *ProductRepository) CreateProduct(ctx context.Context, product *models.P
 			  RETURNING id, created_at, updated_at
 	`
 
-	return p.DB.QueryRowContext(dbCtx, query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.SKU, product.Status).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
+	return r.DB.QueryRowContext(dbCtx, query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.SKU, product.Status).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
 
 }
 
-func (p *ProductRepository) GetProductByID(ctx context.Context, id int64) (*models.Product, error) {
+func (r *ProductRepository) GetProductByID(ctx context.Context, id int64) (*models.Product, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -48,7 +48,7 @@ func (p *ProductRepository) GetProductByID(ctx context.Context, id int64) (*mode
 
 	var category models.Category
 
-	err := p.DB.QueryRowContext(dbCtx, query, id).Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
+	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -62,7 +62,7 @@ func (p *ProductRepository) GetProductByID(ctx context.Context, id int64) (*mode
 	return product, nil
 }
 
-func (p *ProductRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
+func (r *ProductRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -73,11 +73,11 @@ func (p *ProductRepository) UpdateProduct(ctx context.Context, product *models.P
 		RETURNING updated_at
 	`
 
-	return p.DB.QueryRowContext(dbCtx, query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.Status, product.ID).Scan(&product.UpdatedAt)
+	return r.DB.QueryRowContext(dbCtx, query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.Status, product.ID).Scan(&product.UpdatedAt)
 
 }
 
-func (p *ProductRepository) ListProducts(ctx context.Context, offset, limit int) ([]*models.Product, error) {
+func (r *ProductRepository) ListProducts(ctx context.Context, offset, limit int) ([]*models.Product, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -92,7 +92,7 @@ func (p *ProductRepository) ListProducts(ctx context.Context, offset, limit int)
 		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := p.DB.QueryContext(dbCtx, query, limit, offset)
+	rows, err := r.DB.QueryContext(dbCtx, query, limit, offset)
 
 	if err != nil {
 		return nil, err
