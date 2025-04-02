@@ -15,12 +15,16 @@ type HTTPServer struct {
 }
 
 type Database struct {
-	Host     string `yaml:"PG_HOST" env:"PG_HOST" env-default:"localhost"`
-	Port     string `yaml:"PG_PORT" env:"PG_PORT" env-default:"5432"`
-	User     string `yaml:"PG_USER" env:"PG_USER" env-required:"true"`
-	Password string `yaml:"PG_PASSWORD" env:"PG_PASSWORD" env-required:"true"`
-	Name     string `yaml:"PG_DBNAME" env:"PG_DBNAME" env-required:"true"`
-	SSLMode  string `yaml:"PG_SSLMODE" env:"PG_SSLMODE" env-default:"require"`
+	Host            string        `yaml:"PG_HOST" env:"PG_HOST" env-default:"localhost"`
+	Port            string        `yaml:"PG_PORT" env:"PG_PORT" env-default:"5432"`
+	User            string        `yaml:"PG_USER" env:"PG_USER" env-required:"true"`
+	Password        string        `yaml:"PG_PASSWORD" env:"PG_PASSWORD" env-required:"true"`
+	Name            string        `yaml:"PG_DBNAME" env:"PG_DBNAME" env-required:"true"`
+	SSLMode         string        `yaml:"PG_SSLMODE" env:"PG_SSLMODE" env-default:"require"`
+	MaxOpenConns    int           `yaml:"MAX_OPEN_CONNS" env:"MAX_OPEN_CONNS" env-default:"25"`
+	MaxIdleConns    int           `yaml:"MAX_IDLE_CONNS" env:"MAX_IDLE_CONNS" env-default:"10"`
+	ConnMaxLifetime time.Duration `yaml:"CONN_MAX_LIFETIME" env:"CONN_MAX_LIFETIME" env-default:"5m"`
+	ConnMaxIdleTime time.Duration `yaml:"CONN_MAX_IDLE_TIME" env:"CONN_MAX_IDLE_TIME" env-default:"1m"`
 }
 
 type RedisConnect struct {

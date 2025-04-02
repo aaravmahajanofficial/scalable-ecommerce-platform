@@ -21,6 +21,11 @@ func New(cfg *config.Config) (*Repository, *UserRepository, *ProductRepository, 
 		return nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
+	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+	db.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
+
 	// Test the connection to make sure DB is reachable
 	if err := db.Ping(); err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, fmt.Errorf("failed to connect to database: %w", err)
