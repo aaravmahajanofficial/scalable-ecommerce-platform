@@ -35,7 +35,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		resp, err := h.userService.Register(r.Context(), &req)
 
 		if err != nil {
-			slog.Error("User registration failed", slog.String("error", err.Error()))
+			slog.Error("User registration failed", slog.String("email", req.Email), slog.String("error", err.Error()))
 			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
 			return
 		}
