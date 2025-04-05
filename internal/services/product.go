@@ -3,8 +3,10 @@ package service
 import (
 	"context"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	"github.com/google/uuid"
 )
 
 type ProductService struct {
@@ -28,27 +30,28 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *models.CreatePr
 	}
 
 	err := s.repo.CreateProduct(ctx, product)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.DatabaseError("Failed to create product").WithError(err)
 	}
 
 	return product, nil
-
 }
 
-func (s *ProductService) GetProductByID(ctx context.Context, id int64) (*models.Product, error) {
-
-	return s.repo.GetProductByID(ctx, id)
-
-}
-
-func (s *ProductService) UpdateProduct(ctx context.Context, id int64, req *models.UpdateProductRequest) (*models.Product, error) {
+func (s *ProductService) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
 
 	product, err := s.repo.GetProductByID(ctx, id)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.NotFoundError("Product not found").WithError(err)
+	}
+
+	return product, nil
+}
+
+func (s *ProductService) UpdateProduct(ctx context.Context, id uuid.UUID, req *models.UpdateProductRequest) (*models.Product, error) {
+
+	product, err := s.repo.GetProductByID(ctx, id)
+	if err != nil {
+		return nil, errors.NotFoundError("Product not found").WithError(err)
 	}
 
 	if req.CategoryID != nil {
@@ -71,13 +74,11 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id int64, req *model
 	}
 
 	err = s.repo.UpdateProduct(ctx, product)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.DatabaseError("Failed to update product").WithError(err)
 	}
 
 	return product, err
-
 }
 
 // page means "page number requested"
@@ -95,6 +96,10 @@ func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) (
 
 	offset := (page - 1) * pageSize
 
-	return s.repo.ListProducts(ctx, offset, pageSize)
+	products, err := s.repo.ListProducts(ctx, offset, pageSize)
+	if err != nil {
+		return nil, errors.DatabaseError("Failed to fetch products").WithError(err)
+	}
 
+	return products, nil
 }

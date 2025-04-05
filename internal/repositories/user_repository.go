@@ -7,6 +7,7 @@ import (
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
+	"github.com/google/uuid"
 )
 
 type UserRepository struct {
@@ -51,7 +52,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 }
 
-func (r *UserRepository) GetUserById(ctx context.Context, id string) (*models.User, error) {
+func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

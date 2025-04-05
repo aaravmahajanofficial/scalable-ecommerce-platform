@@ -7,6 +7,7 @@ import (
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
+	"github.com/google/uuid"
 )
 
 type ProductRepository struct {
@@ -31,7 +32,7 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, product *models.P
 
 }
 
-func (r *ProductRepository) GetProductByID(ctx context.Context, id int64) (*models.Product, error) {
+func (r *ProductRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

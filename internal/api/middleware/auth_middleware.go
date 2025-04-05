@@ -10,11 +10,12 @@ import (
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-type contextKey string
+type contextKey uuid.UUID
 
-const userContextKey contextKey = "user"
+var UserContextKey = contextKey(uuid.New())
 
 type AuthMiddleware struct {
 	jwtKey []byte
@@ -75,12 +76,9 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 			return
 		}
 
-		// Set the header "X-User-ID"
-		r.Header.Set("X-User-ID", claims.UserID)
-
 		// Add userId to the context
 		// It attaches a new key-value pair ("user": claims) to the context.
-		ctx := context.WithValue(r.Context(), userContextKey, claims)
+		ctx := context.WithValue(r.Context(), UserContextKey, claims)
 		next.ServeHTTP(w, r.WithContext(ctx))
 
 	}

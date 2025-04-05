@@ -40,7 +40,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 			return
 		}
 
-		slog.Info("User registered", slog.String("userId", resp.ID))
+		slog.Info("User registered", slog.String("userId", resp.ID.String()))
 		response.WriteJson(w, http.StatusCreated, resp)
 
 	}
@@ -97,12 +97,12 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 		resp, err := h.userService.GetUserByID(r.Context(), claims.UserID)
 
 		if err != nil {
-			slog.Warn("User not found", slog.String("userID", claims.UserID))
+			slog.Warn("User not found", slog.String("userID", claims.UserID.String()))
 			response.WriteJson(w, http.StatusNotFound, response.GeneralError(errors.New("user not found")))
 			return
 		}
 
-		slog.Info("User profile accessed", slog.String("userID", resp.ID))
+		slog.Info("User profile accessed", slog.String("userID", resp.ID.String()))
 		response.WriteJson(w, http.StatusFound, resp)
 	}
 }

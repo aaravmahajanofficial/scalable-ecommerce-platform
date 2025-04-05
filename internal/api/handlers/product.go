@@ -11,6 +11,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 type ProductHandler struct {
@@ -52,8 +53,7 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		idStr := r.PathValue("id")
-
-		id, err := strconv.ParseInt(idStr, 10, 64)
+		id, err := uuid.Parse(idStr)
 
 		if err != nil {
 			http.Error(w, "Invalid product id", http.StatusBadRequest)
@@ -76,7 +76,7 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		idStr := r.PathValue("id")
-		id, err := strconv.ParseInt(idStr, 10, 64)
+		id, err := uuid.Parse(idStr)
 
 		if err != nil {
 			http.Error(w, "Invalid product id", http.StatusBadRequest)
@@ -85,7 +85,7 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 
 		// Decode the request body
 		var req models.UpdateProductRequest
-		
+
 		// Validate Input
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return

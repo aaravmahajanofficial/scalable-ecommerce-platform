@@ -9,6 +9,7 @@ import (
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
+	"github.com/google/uuid"
 )
 
 type CartRepository struct {
@@ -39,7 +40,7 @@ func (r *CartRepository) CreateCart(ctx context.Context, cart *models.Cart) erro
 	return r.DB.QueryRowContext(dbCtx, query, cart.ID, cart.UserID, itemsJSON).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
 }
 
-func (r *CartRepository) GetCart(ctx context.Context, cartID string) (*models.Cart, error) {
+func (r *CartRepository) GetCartByCustomerID(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -47,13 +48,13 @@ func (r *CartRepository) GetCart(ctx context.Context, cartID string) (*models.Ca
 	query := `
 		SELECT id, user_id, items, created_at, updated_at
 		FROM carts
-		WHERE id = $1
+		WHERE user_id = $1
 	`
 
 	cart := &models.Cart{}
 	var itemsJSON []byte
 
-	err := r.DB.QueryRowContext(dbCtx, query, cartID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
+	err := r.DB.QueryRowContext(dbCtx, query, customerID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
 
 	if err != nil {
 		return nil, err

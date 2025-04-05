@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/redis"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,11 +29,15 @@ func NewUserService(repo *repository.UserRepository, redisRepo *redis.RedisRepo,
 
 func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
 
+	existingUser, _ := s.repo.GetUserByEmail(ctx, req.Email)
+	if existingUser != nil {
+		return nil, errors.DuplicateEntryError("Email already registered")
+	}
+
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.InternalError("Failed to secure password").WithError(err)
 	}
 
 	user := &models.User{
@@ -42,9 +47,8 @@ func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest)
 	}
 
 	err = s.repo.CreateUser(ctx, user)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.DatabaseError("Failed to create user").WithError(err)
 	}
 
 	return user, err
@@ -55,9 +59,8 @@ func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 
 	// check rate limit
 	allowed, remaining, retryAfter, err := s.redisRepo.CheckLoginRateLimit(ctx, req.Email)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.ThirdPartyError("Rate limit check failed").WithError(err)
 	}
 
 	if !allowed {
@@ -91,7 +94,7 @@ func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(s.jwtKey)
 	if err != nil {
-		return nil, errors.New("failed to generate authentication token")
+		return nil, errors.InternalError("Failed to generate authentication token").WithError(err)
 	}
 
 	return &models.LoginResponse{
@@ -102,12 +105,11 @@ func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id string) (*models.User, error) {
+func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 
 	user, err := s.repo.GetUserById(ctx, id)
-
 	if err != nil {
-		return nil, err
+		return nil, errors.NotFoundError("User not found").WithError(err)
 	}
 
 	// Note: Password is already included in repository query

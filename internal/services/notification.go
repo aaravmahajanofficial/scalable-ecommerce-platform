@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/google/uuid"
 )
@@ -20,22 +20,28 @@ type NotificationService interface {
 
 type notificationService struct {
 	repo         *repository.NotificationRepository
+	userRepo     *repository.UserRepository
 	emailService sendGrid.EmailService
 }
 
-func NewNotificationService(repo *repository.NotificationRepository, emailService sendGrid.EmailService) NotificationService {
+func NewNotificationService(repo *repository.NotificationRepository, userRepo *repository.UserRepository, emailService sendGrid.EmailService) NotificationService {
 	return &notificationService{repo: repo, emailService: emailService}
 }
 
 // SendEmail implements NotificationService.
 func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNotificationRequest) (*models.NotificationResponse, error) {
 
+	_, err := s.userRepo.GetUserByEmail(ctx, req.To)
+	if err != nil {
+		return nil, errors.NotFoundError("User not found").WithError(err)
+	}
+
 	var metadataJSON json.RawMessage
 
 	if req.Metadata != nil {
 		metadataBytes, err := json.Marshal(req.Metadata)
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+			return nil, errors.InternalError("Failed to marshal metadata").WithError(err)
 		}
 
 		metadataJSON = metadataBytes
@@ -56,11 +62,10 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 
 	// Save to the database
 	if err := s.repo.CreateNotification(ctx, notification); err != nil {
-		return nil, fmt.Errorf("failed to create notification record: %w", err)
+		return nil, errors.DatabaseError("Failed to create notification").WithError(err)
 	}
 
-	err := s.emailService.Send(ctx, req)
-
+	err = s.emailService.Send(ctx, req)
 	if err != nil {
 
 		notification.Status = models.StatusFailed
@@ -68,7 +73,7 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 
 		_ = s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusFailed, notification.ErrorMessage)
 
-		return nil, fmt.Errorf("failed to send email: %w", err)
+		return nil, errors.ThirdPartyError("Failed to send notification").WithError(err)
 
 	}
 
@@ -76,7 +81,7 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 	notification.Status = models.StatusSent
 
 	if err := s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusSent, ""); err != nil {
-		return nil, fmt.Errorf("notification sent successfully but failed to update notification status: %w", err)
+		return nil, errors.DatabaseError("Failed to update notification status").WithError(err)
 	}
 
 	return &models.NotificationResponse{
@@ -86,14 +91,17 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 		Recipient: notification.Recipient,
 		CreatedAt: notification.CreatedAt,
 	}, nil
-
 }
 
 // GetNotification implements NotificationService.
 func (s *notificationService) GetNotification(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 
-	return s.repo.GetNotificationById(ctx, id)
+	notification, err := s.repo.GetNotificationById(ctx, id)
+	if err != nil {
+		return nil, errors.NotFoundError("Notification not found").WithError(err)
+	}
 
+	return notification, err
 }
 
 // ListNotifications implements NotificationService.
@@ -108,11 +116,9 @@ func (s *notificationService) ListNotifications(ctx context.Context, page int, s
 	}
 
 	notifications, err := s.repo.ListNotifications(ctx, page, size)
-
 	if err != nil {
-		return nil, fmt.Errorf("failed to list notifications: %w", err)
+		return nil, errors.DatabaseError("Failed to fetch notifications").WithError(err)
 	}
 
 	return notifications, nil
-
 }
