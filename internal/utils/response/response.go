@@ -2,11 +2,9 @@ package response
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
-	"github.com/go-playground/validator/v10"
 )
 
 type APIResponse struct {
@@ -88,50 +86,5 @@ func GeneralError(err error) Response {
 		Status: StatusError,
 		Error:  err.Error(),
 	}
-
-}
-
-// package sends the list of errors
-func ValidationError(w http.ResponseWriter, errs validator.ValidationErrors) {
-
-	var errMsgs []string
-
-	for _, err := range errs {
-
-		var message string
-
-		switch err.Tag() {
-		case "required":
-			message = fmt.Sprintf("Field %s is required", err.Field())
-		case "email":
-			message = fmt.Sprintf("Field %s must be a valid email address", err.Field())
-		case "min":
-			message = fmt.Sprintf("Field %s must be at least %s characters", err.Field(), err.Param())
-		case "max":
-			message = fmt.Sprintf("Field %s must be at most %s characters", err.Field(), err.Param())
-		case "gt":
-			message = fmt.Sprintf("Field %s must be greater than %s", err.Field(), err.Param())
-		case "lt":
-			message = fmt.Sprintf("Field %s must be less than %s", err.Field(), err.Param())
-		default:
-			message = fmt.Sprintf("Field %s is invalid: %s=%s", err.Field(), err.Tag(), err.Param())
-		}
-
-		errMsgs = append(errMsgs, message)
-
-	}
-
-	errorResponse := &ErrorResponse{
-		Code:    errors.ErrCodeValidation,
-		Message: "Validation failed",
-		Details: errMsgs,
-	}
-
-	response := APIResponse{
-		Success: false,
-		Error:   errorResponse,
-	}
-
-	WriteJson(w, http.StatusBadRequest, response)
 
 }
