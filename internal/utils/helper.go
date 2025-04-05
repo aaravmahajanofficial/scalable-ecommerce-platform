@@ -11,6 +11,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 func DecodeJSONBody(r *http.Request, dest any) error {
@@ -101,12 +102,23 @@ func formatValidationError(err validator.FieldError) string {
 	}
 }
 
-func ParseID(r *http.Request, paramName string) (int64, error) {
+func ParseInt(r *http.Request, paramName string) (int64, error) {
 	idStr := r.PathValue(paramName)
 	id, err := strconv.ParseInt(idStr, 10, 64)
 
 	if err != nil {
 		return 0, errors.BadRequestError(fmt.Sprintf("Invalid %s ID", paramName))
+	}
+
+	return id, nil
+}
+
+func ParseID(r *http.Request, paramName string) (uuid.UUID, error) {
+	idStr := r.PathValue(paramName)
+	id, err := uuid.Parse(idStr)
+
+	if err != nil {
+		return uuid.Nil, errors.BadRequestError(fmt.Sprintf("Invalid %s ID", paramName))
 	}
 
 	return id, nil

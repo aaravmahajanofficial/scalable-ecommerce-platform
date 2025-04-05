@@ -1,17 +1,16 @@
 package handlers
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 type NotificationHandler struct {
@@ -29,103 +28,65 @@ func NewNotificationHandler(notificationService service.NotificationService) *No
 func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		claims, ok := r.Context().Value("user").(*models.Claims)
+		if !ok {
+			slog.Warn("Unauthorized notification creation attempt")
+			response.Error(w, errors.UnauthorizedError("Authentication required"))
+			return
+		}
+
 		// Decode the request body
 		var req models.EmailNotificationRequest
-
-		// Validate Input
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			return
 		}
 
 		// Call the payment service
 		notification, err := h.notificationService.SendEmail(r.Context(), &req)
-
 		if err != nil {
-			slog.Error("Error sending email", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("Failed to create notification",
+				slog.String("type", "Email"),
+				slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		slog.Info("Email sent successfully", slog.String("notificationID: ", fmt.Sprintf("%v", notification.ID)))
-		response.WriteJson(w, http.StatusCreated, notification)
-
-	}
-}
-
-func (h *NotificationHandler) GetNotification() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-
-		idStr := r.PathValue("id")
-
-		if idStr == "" {
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("notification ID is required")))
-			return
-		}
-
-		id, err := uuid.Parse(idStr)
-
-		if err != nil {
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("invalid notification ID")))
-			return
-		}
-
-		// Call the payment service
-		notification, err := h.notificationService.GetNotification(r.Context(), id)
-
-		if err != nil {
-			slog.Error("Failed to retrieve notification", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
-			return
-		}
-
-		if notification == nil {
-			response.WriteJson(w, http.StatusNotFound, response.GeneralError(fmt.Errorf("notification not found")))
-			return
-		}
-
-		response.WriteJson(w, http.StatusOK, notification)
-
+		slog.Info("Notification created",
+			slog.String("notificationId", notification.ID.String()),
+			slog.String("createdBy", claims.UserID.String()))
+		response.Success(w, http.StatusCreated, notification)
 	}
 }
 
 func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// extract pagination parameters
-		page, size := 1, 10
-
-		if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-			if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
-				page = p
-			}
+		claims, ok := r.Context().Value("user").(*models.Claims)
+		if !ok {
+			slog.Warn("Unauthorized order access attempt")
+			response.Error(w, errors.UnauthorizedError("Authentication required"))
+			return
 		}
 
-		if sizeStr := r.URL.Query().Get("size"); sizeStr != "" {
-			if s, err := strconv.Atoi(sizeStr); err == nil && s > 0 && s <= 100 {
-				size = s
-			}
+		page, err := strconv.Atoi(r.URL.Query().Get("page"))
+		if err != nil || page < 1 {
+			page = 1
+		}
+		pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if err != nil || pageSize < 1 || pageSize > 100 {
+			pageSize = 10
 		}
 
 		// Call the service
-		notifications, err := h.notificationService.ListNotifications(r.Context(), page, size)
-
+		notifications, err := h.notificationService.ListNotifications(r.Context(), page, pageSize)
 		if err != nil {
-			slog.Error("Failed to retrieve notifications", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("Failed to get user notifications",
+				slog.String("userId", claims.UserID.String()),
+				slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		if notifications == nil {
-			response.WriteJson(w, http.StatusNotFound, response.GeneralError(fmt.Errorf("notifications not found")))
-			return
-		}
-
-		response.WriteJson(w, http.StatusOK, map[string]any{
-			"Notifications": notifications,
-			"Total":         len(notifications),
-			"Page":          page,
-			"Size":          size,
-		})
-
+		response.Success(w, http.StatusOK, notifications)
 	}
 }

@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -11,7 +10,6 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
-	"github.com/google/uuid"
 )
 
 type ProductHandler struct {
@@ -39,47 +37,43 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 
 		if err != nil {
 			slog.Error("Error during product creation", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			response.Error(w, err)
 			return
 		}
 
-		slog.Info("Product created successfully", slog.String("productId", fmt.Sprintf("%v", product.ID)))
-		response.WriteJson(w, http.StatusCreated, product)
-
+		slog.Info("Product created successfully", slog.String("productId", product.ID.String()))
+		response.Success(w, http.StatusCreated, product)
 	}
 }
 
 func (h *ProductHandler) GetProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		idStr := r.PathValue("id")
-		id, err := uuid.Parse(idStr)
-
+		id, err := utils.ParseID(r, "id")
 		if err != nil {
-			http.Error(w, "Invalid product id", http.StatusBadRequest)
+			slog.Warn("Invalid product id", slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
 		product, err := h.productService.GetProductByID(r.Context(), id)
-
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			slog.Warn("Failed to get product", slog.String("id", id.String()), slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		response.WriteJson(w, http.StatusCreated, product)
-
+		response.Success(w, http.StatusCreated, product)
 	}
 }
 
 func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		idStr := r.PathValue("id")
-		id, err := uuid.Parse(idStr)
-
+		id, err := utils.ParseID(r, "id")
 		if err != nil {
-			http.Error(w, "Invalid product id", http.StatusBadRequest)
+			slog.Warn("Invalid product id", slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
@@ -95,14 +89,13 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 		product, err := h.productService.UpdateProduct(r.Context(), id, &req)
 
 		if err != nil {
-			slog.Error("Error during product updation", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("Error during product update", slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		slog.Info("Product updated successfully", slog.String("productId", fmt.Sprintf("%v", product.ID)))
-		response.WriteJson(w, http.StatusOK, product)
-
+		slog.Info("Product updated successfully", slog.String("productId", product.ID.String()))
+		response.Success(w, http.StatusOK, product)
 	}
 }
 
@@ -110,18 +103,23 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 func (h *ProductHandler) ListProducts() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-		pageSize, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		page, err := strconv.Atoi(r.URL.Query().Get("page"))
+		if err != nil || page < 1 {
+			page = 1
+		}
+
+		pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if err != nil || pageSize < 1 || pageSize > 100 {
+			pageSize = 10
+		}
 
 		products, err := h.productService.ListProducts(r.Context(), page, pageSize)
-
 		if err != nil {
 			slog.Error("Failed to fetch products", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("failed to fetch products")))
+			response.Error(w, err)
 			return
 		}
 
-		response.WriteJson(w, http.StatusOK, products)
-
+		response.Success(w, http.StatusOK, products)
 	}
 }

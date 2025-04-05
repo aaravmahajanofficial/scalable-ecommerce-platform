@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
@@ -26,94 +26,104 @@ func NewPaymentService(paymentService service.PaymentService) *PaymentHandler {
 func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		claims, ok := r.Context().Value("user").(*models.Claims)
+		if !ok {
+			slog.Warn("Unauthorized order access attempt")
+			response.Error(w, errors.UnauthorizedError("Authentication required"))
+			return
+		}
+
 		// Decode the request body
 		var req models.PaymentRequest
-		
-		// Validate Input
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
+			return
+		}
+
+		if req.CustomerID != claims.UserID.String() {
+			slog.Warn("User attempted to pay for another user's order",
+				slog.String("requesterId", claims.UserID.String()))
+			response.Error(w, errors.ForbiddenError("You can only make payments for your own orders"))
 			return
 		}
 
 		// Call the payment service
 		payment, err := h.paymentService.CreatePayment(r.Context(), &req)
-
 		if err != nil {
-			slog.Error("Error during product creation", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("Failed to initiate payment",
+				slog.String("userId", claims.UserID.String()),
+				slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		slog.Info("Payment initiated successfully", slog.String("productId", fmt.Sprintf("%v", payment.Payment.ID)))
-		response.WriteJson(w, http.StatusCreated, payment)
-
+		slog.Info("Payment initiated",
+			slog.String("paymentId", payment.Payment.ID),
+			slog.String("userId", claims.UserID.String()))
+		response.Success(w, http.StatusOK, payment)
 	}
 }
 
 func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		idStr := r.PathValue("id")
+		claims, ok := r.Context().Value("user").(*models.Claims)
+		if !ok {
+			slog.Warn("Unauthorized order access attempt")
+			response.Error(w, errors.UnauthorizedError("Authentication required"))
+			return
+		}
 
+		idStr := r.PathValue("id")
 		if idStr == "" {
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("payment ID is required")))
+			response.Error(w, errors.BadRequestError("Payment ID is required"))
 			return
 		}
 
 		// Call the service
 		payment, err := h.paymentService.GetPaymentByID(r.Context(), idStr)
-
 		if err != nil {
-			slog.Error("Error while accessing payment", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("Failed to get payment",
+				slog.String("paymentId", payment.ID),
+				slog.String("userId", claims.UserID.String()),
+				slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		response.WriteJson(w, http.StatusOK, payment)
-
+		response.Success(w, http.StatusOK, payment)
 	}
 }
 
 func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		customerIDStr := r.URL.Query().Get("customer_id")
-
-		if customerIDStr == "" {
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("customer ID is required")))
+		claims, ok := r.Context().Value("user").(*models.Claims)
+		if !ok {
+			slog.Warn("Unauthorized order access attempt")
+			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
 
-		// extract pagination parameters
-		page, size := 1, 10
-
-		if pageStr := r.URL.Query().Get("page"); pageStr != "" {
-			if p, err := strconv.Atoi(pageStr); err != nil && p > 0 {
-				page = p
-			}
+		page, err := strconv.Atoi(r.URL.Query().Get("page"))
+		if err != nil || page < 1 {
+			page = 1
 		}
-
-		if sizeStr := r.URL.Query().Get("size"); sizeStr != "" {
-			if s, err := strconv.Atoi(sizeStr); err != nil && s > 0 && s <= 100 {
-				size = s
-			}
+		pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		if err != nil || pageSize < 1 || pageSize > 100 {
+			pageSize = 10
 		}
 
 		// Call the service
-		payments, total, err := h.paymentService.ListPaymentsByCustomer(r.Context(), customerIDStr, page, size)
-
+		payments, _, err := h.paymentService.ListPaymentsByCustomer(r.Context(), claims.UserID.String(), page, pageSize)
 		if err != nil {
-			slog.Error("Error while listing the payments for the customer", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("an unexpected error occurred")))
+			slog.Error("Failed to list user payments",
+				slog.String("userId", claims.UserID.String()),
+				slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		response.WriteJson(w, http.StatusOK, map[string]any{
-			"Payments": payments,
-			"Total":    total,
-			"Page":     page,
-			"Size":     size,
-		})
-
+		response.Success(w, http.StatusOK, payments)
 	}
 }
 
@@ -123,31 +133,31 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		// read the payload/body
 
 		payload, err := io.ReadAll(r.Body)
-
 		if err != nil {
 			slog.Error("Error reading webhook body", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("failed to read request body")))
+			response.Error(w, errors.BadRequestError("Failed to read request body"))
 			return
 		}
 
 		signature := r.Header.Get("Stripe-Signature")
-
 		if signature == "" {
 			slog.Error("Missing Stripe signature")
-			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(fmt.Errorf("missing stripe signature")))
+			response.Error(w, errors.BadRequestError("Stripe Signature is required").WithError(err))
 			return
 		}
 
 		// Call the service
-		_, err = h.paymentService.ProcessWebhook(r.Context(), payload, signature)
-
+		event, err := h.paymentService.ProcessWebhook(r.Context(), payload, signature)
 		if err != nil {
-			slog.Error("Error processing webhook: %w", slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusOK, map[string]string{"status": "received"})
+			slog.Error("Failed to process payment webhook",
+				slog.String("paymentId", event.ID),
+				slog.String("error", err.Error()))
+			response.Error(w, err)
 			return
 		}
 
-		response.WriteJson(w, http.StatusOK, map[string]string{"status": "success"})
-
+		slog.Info("Payment webhook processed",
+			slog.String("paymentId", event.ID))
+		response.Success(w, http.StatusOK, map[string]bool{"success": true})
 	}
 }

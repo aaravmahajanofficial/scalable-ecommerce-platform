@@ -231,7 +231,7 @@ func (r *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 }
 
 // Update Order status
-func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) error {
+func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -243,21 +243,20 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, s
 	result, err := r.DB.ExecContext(dbCtx, query, status, time.Now(), id)
 
 	if err != nil {
-		return fmt.Errorf("failed to update order status: %w", err)
+		return nil, fmt.Errorf("failed to update order status: %w", err)
 	}
 
 	updatedRows, err := result.RowsAffected()
 
 	if updatedRows == 0 {
 
-		return fmt.Errorf("order not found")
+		return nil, fmt.Errorf("order not found")
 
 	} else if err != nil {
-		return fmt.Errorf("failed to update the order: %w", err)
+		return nil, fmt.Errorf("failed to update the order: %w", err)
 	}
 
-	return nil
-
+	return &models.Order{}, nil
 }
 
 // Update the Payment Status and Payment Intent ID of an order

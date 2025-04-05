@@ -2,11 +2,12 @@ package middleware
 
 import (
 	"context"
-	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/golang-jwt/jwt/v5"
@@ -34,7 +35,10 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		authHeader := r.Header.Get("Authorization")
 
 		if authHeader == "" {
-			response.WriteJson(w, http.StatusUnauthorized, "Authorization header is required")
+			slog.Warn("Missing authorization header",
+				slog.String("endpoint", r.URL.Path),
+				slog.String("method", r.Method))
+			response.Error(w, errors.UnauthorizedError("Authorization header is required"))
 			return
 		}
 
@@ -42,7 +46,10 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		tokenParts := strings.Split(authHeader, " ")
 
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			response.WriteJson(w, http.StatusUnauthorized, "Invalid authorization header format")
+			slog.Warn("Invalid authorization header format",
+				slog.String("header", authHeader),
+				slog.String("endpoint", r.URL.Path))
+			response.Error(w, errors.UnauthorizedError("Invalid authorization format"))
 			return
 		}
 
@@ -55,31 +62,43 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 			// check the signing method
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 
-				return nil, errors.New("unexpected signing method")
+				return nil, errors.BadRequestError("unexpected signing method")
 
 			}
 			return m.jwtKey, nil
 		})
 
 		if err != nil {
-			response.WriteJson(w, http.StatusUnauthorized, "Invalid or expired token: "+err.Error())
+			slog.Warn("JWT parsing failed",
+				slog.String("error", err.Error()),
+				slog.String("endpoint", r.URL.Path))
+			response.Error(w, errors.UnauthorizedError("Invalid or expired token"))
 			return
 		}
 
 		if !token.Valid {
-			response.WriteJson(w, http.StatusUnauthorized, "Invalid token")
+			slog.Warn("Invalid token", slog.String("endpoint", r.URL.Path))
+			response.Error(w, errors.UnauthorizedError("Invalid token"))
 			return
 		}
 
 		if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
-			response.WriteJson(w, http.StatusUnauthorized, "Token expired")
+			slog.Warn("Expired token",
+				slog.String("userId", claims.UserID.String()),
+				slog.String("endpoint", r.URL.Path))
+			response.Error(w, errors.UnauthorizedError("Token expired"))
 			return
 		}
 
 		// Add userId to the context
 		// It attaches a new key-value pair ("user": claims) to the context.
 		ctx := context.WithValue(r.Context(), UserContextKey, claims)
-		next.ServeHTTP(w, r.WithContext(ctx))
 
+		slog.Info("User authenticated",
+			slog.String("userId", claims.UserID.String()),
+			slog.String("endpoint", r.URL.Path),
+			slog.String("method", r.Method))
+
+		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 }

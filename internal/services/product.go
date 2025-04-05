@@ -85,15 +85,6 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uuid.UUID, req *m
 // pageSize means "number of products to be displayed per page"
 func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, error) {
 
-	if page < 1 {
-		page = 1
-	}
-
-	if pageSize < 1 || pageSize > 100 {
-		pageSize = 10
-
-	}
-
 	offset := (page - 1) * pageSize
 
 	products, err := s.repo.ListProducts(ctx, offset, pageSize)

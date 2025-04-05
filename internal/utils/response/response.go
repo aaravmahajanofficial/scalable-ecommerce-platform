@@ -19,16 +19,6 @@ type ErrorResponse struct {
 	Details []string `json:"details,omitempty"`
 }
 
-type Response struct {
-	Status string `json:"status"` // or custom status response name
-	Error  string `json:"error"`  // or custom error response name
-}
-
-const (
-	StatusOK    = "OK"
-	StatusError = "Error"
-)
-
 // interface {} == any
 func WriteJson(w http.ResponseWriter, statusCode int, data any) error {
 
@@ -78,13 +68,4 @@ func Error(w http.ResponseWriter, err error) {
 	}
 
 	WriteJson(w, statusCode, response)
-}
-
-func GeneralError(err error) Response {
-
-	return Response{
-		Status: StatusError,
-		Error:  err.Error(),
-	}
-
 }

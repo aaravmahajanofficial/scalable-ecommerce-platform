@@ -1,10 +1,10 @@
 package handlers
 
 import (
-	"errors"
 	"log/slog"
 	"net/http"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
@@ -32,17 +32,15 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		}
 
 		// Call the register service
-		resp, err := h.userService.Register(r.Context(), &req)
-
+		user, err := h.userService.Register(r.Context(), &req)
 		if err != nil {
 			slog.Error("User registration failed", slog.String("email", req.Email), slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			response.Error(w, err)
 			return
 		}
 
-		slog.Info("User registered", slog.String("userId", resp.ID.String()))
-		response.WriteJson(w, http.StatusCreated, resp)
-
+		slog.Info("User registered", slog.String("userId", user.ID.String()))
+		response.Success(w, http.StatusCreated, user)
 	}
 }
 
@@ -59,26 +57,24 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 		// Call the register service
 		resp, err := h.userService.Login(r.Context(), &req)
-
 		if err != nil {
 			slog.Warn("Login failed", slog.String("email", req.Email), slog.String("error", err.Error()))
-			response.WriteJson(w, http.StatusUnauthorized, response.GeneralError(err))
+			response.Error(w, err)
 			return
 		}
 
 		if !resp.Success {
-			status := http.StatusUnauthorized
 			if resp.RetryAfter > 0 {
-				status = http.StatusTooManyRequests
+				response.Error(w, errors.TooManyRequestsError("Too many login attempts").WithDetail("Please try again later"))
+				return
 			}
 
-			response.WriteJson(w, status, resp)
+			response.Error(w, errors.UnauthorizedError("Invalid email or password"))
 			return
 		}
 
 		slog.Info("User logged in", slog.String("email", req.Email))
-		response.WriteJson(w, http.StatusOK, resp)
-
+		response.Success(w, http.StatusCreated, resp)
 	}
 }
 
@@ -87,22 +83,20 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 
 		// Get user claims from context (set by middleware)
 		claims, ok := r.Context().Value("user").(*models.Claims)
-
 		if !ok {
 			slog.Warn("Unauthorized access attempt")
-			response.WriteJson(w, http.StatusNotFound, response.GeneralError(errors.New("unauthorized")))
+			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
 
-		resp, err := h.userService.GetUserByID(r.Context(), claims.UserID)
-
+		user, err := h.userService.GetUserByID(r.Context(), claims.UserID)
 		if err != nil {
 			slog.Warn("User not found", slog.String("userID", claims.UserID.String()))
-			response.WriteJson(w, http.StatusNotFound, response.GeneralError(errors.New("user not found")))
+			response.Error(w, err)
 			return
 		}
 
-		slog.Info("User profile accessed", slog.String("userID", resp.ID.String()))
-		response.WriteJson(w, http.StatusFound, resp)
+		slog.Info("User profile accessed", slog.String("userID", user.ID.String()))
+		response.Success(w, http.StatusOK, user)
 	}
 }

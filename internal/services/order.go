@@ -111,7 +111,7 @@ func (s *OrderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.
 	return order, nil
 }
 
-func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
+func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, error) {
 
 	if page < 1 {
 		page = 1
@@ -121,26 +121,26 @@ func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid
 		size = 10
 	}
 
-	orders, total, err := s.orderRepo.ListOrdersByCustomer(ctx, customerId, page, size)
+	orders, _, err := s.orderRepo.ListOrdersByCustomer(ctx, customerId, page, size)
 	if err != nil {
-		return nil, 0, errors.DatabaseError("Failed to fetch orders").WithError(err)
+		return nil, errors.DatabaseError("Failed to fetch orders").WithError(err)
 	}
 
-	return orders, total, nil
+	return orders, nil
 }
 
-func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) error {
+func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
 
 	// check if order exists or not
 	_, err := s.orderRepo.GetOrderById(ctx, id)
 	if err != nil {
-		return errors.NotFoundError("Order not found").WithError(err)
+		return nil, errors.NotFoundError("Order not found").WithError(err)
 	}
 
-	err = s.orderRepo.UpdateOrderStatus(ctx, id, status)
+	order, err := s.orderRepo.UpdateOrderStatus(ctx, id, status)
 	if err != nil {
-		return errors.DatabaseError("Failed to update order status").WithError(err)
+		return nil, errors.DatabaseError("Failed to update order status").WithError(err)
 	}
 
-	return nil
+	return order, nil
 }

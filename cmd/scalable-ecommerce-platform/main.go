@@ -75,7 +75,6 @@ func main() {
 	router.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.GetProduct()))
 	router.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.UpdateProduct()))
 	router.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(productHandler.ListProducts()))
-	router.HandleFunc("POST /api/v1/carts", authMiddleware.Authenticate(cartHandler.CreateCart()))
 	router.HandleFunc("GET /api/v1/carts", authMiddleware.Authenticate(cartHandler.GetCart()))
 	router.HandleFunc("POST /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.AddItem()))
 	router.HandleFunc("PUT /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.UpdateQuantity()))
@@ -88,7 +87,6 @@ func main() {
 	router.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(paymentHandler.ListPayments()))
 	router.HandleFunc("POST /api/v1/payments/webhook", paymentHandler.HandleStripeWebhook())
 	router.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(notificationHandler.SendEmail()))
-	router.HandleFunc("GET /api/v1/notifications/{id}", authMiddleware.Authenticate(notificationHandler.GetNotification()))
 	router.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(notificationHandler.ListNotifications()))
 
 	// Setup http server
