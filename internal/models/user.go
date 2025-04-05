@@ -4,10 +4,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type User struct {
-	ID        string    `json:"id"`
+	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name" validate:"required"`
 	Username  string    `json:"username" validate:"required"`
 	Email     string    `json:"email" validate:"required"`
@@ -42,7 +43,7 @@ type LoginResponse struct {
 // JWT claims structure
 
 type Claims struct {
-	UserID string `json:"user_id"`
+	UserID uuid.UUID `json:"user_id"`
 	Email  string `json:"email"`
 	jwt.RegisteredClaims
 }
