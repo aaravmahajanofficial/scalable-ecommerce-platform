@@ -83,14 +83,12 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uuid.UUID, req *m
 
 // page means "page number requested"
 // pageSize means "number of products to be displayed per page"
-func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, error) {
+func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, int, error) {
 
-	offset := (page - 1) * pageSize
-
-	products, err := s.repo.ListProducts(ctx, offset, pageSize)
+	products, total, err := s.repo.ListProducts(ctx, page, pageSize)
 	if err != nil {
-		return nil, errors.DatabaseError("Failed to fetch products").WithError(err)
+		return nil, 0, errors.DatabaseError("Failed to fetch products").WithError(err)
 	}
 
-	return products, nil
+	return products, total, nil
 }

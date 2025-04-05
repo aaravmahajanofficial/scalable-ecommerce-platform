@@ -98,10 +98,17 @@ func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, i
 
 }
 
-func (r *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, error) {
+func (r *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
+
+	var total int
+	countQuery := `SELECT COUNT(*) FROM products`
+	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
 
 	offSet := (page - 1) * size
 
@@ -115,7 +122,7 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, page int
 	rows, err := r.DB.QueryContext(dbCtx, query, size, offSet)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to query notifications: %w", err)
+		return nil, 0, fmt.Errorf("failed to query notifications: %w", err)
 	}
 
 	defer rows.Close()
@@ -130,7 +137,7 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, page int
 		err := rows.Scan(&notification.ID, &notification.Type, &notification.Recipient, &notification.Subject, &notification.Content, &notification.Status, &metadata, &notification.ErrorMessage, &notification.CreatedAt, &notification.UpdatedAt)
 
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan notifications: %w", err)
+			return nil, 0, fmt.Errorf("failed to scan notifications: %w", err)
 		}
 
 		notification.Metadata = json.RawMessage(metadata)
@@ -140,9 +147,9 @@ func (r *NotificationRepository) ListNotifications(ctx context.Context, page int
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating over the rows: %w", err)
+		return nil, 0, fmt.Errorf("error iterating over the rows: %w", err)
 	}
 
-	return notifications, nil
+	return notifications, total, nil
 
 }

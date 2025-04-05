@@ -13,7 +13,7 @@ import (
 type PaymentService interface {
 	CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error)
 	GetPaymentByID(ctx context.Context, id string) (*models.Payment, error)
-	ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error)
+	ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, error)
 	ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error)
 }
 
@@ -90,14 +90,14 @@ func (s *paymentService) GetPaymentByID(ctx context.Context, id string) (*models
 }
 
 // ListPaymentsByCustomer implements PaymentService.
-func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
+func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, error) {
 
-	payments, len, err := s.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
+	payments, err := s.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
 	if err != nil {
-		return nil, 0, errors.DatabaseError("Failed to fetch payments").WithError(err)
+		return nil, errors.DatabaseError("Failed to fetch payments").WithError(err)
 	}
 
-	return payments, len, nil
+	return payments, nil
 }
 
 // ProcessWebhook implements PaymentService.
@@ -110,7 +110,6 @@ func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 	}
 
 	switch event.Type {
-
 	case "payment_intent.succeeded":
 		paymentIntent := event.Data.Object
 		stripeID, _ := paymentIntent["id"].(string)
@@ -147,5 +146,5 @@ func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 			return event, errors.DatabaseError("Failed to update payment status").WithError(err)
 		}
 	}
-	return stripe.Event{}, nil
+	return event, nil
 }

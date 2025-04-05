@@ -19,7 +19,7 @@ type PaymentHandler struct {
 	validator      *validator.Validate
 }
 
-func NewPaymentService(paymentService service.PaymentService) *PaymentHandler {
+func NewPaymentHandler(paymentService service.PaymentService) *PaymentHandler {
 	return &PaymentHandler{paymentService: paymentService, validator: validator.New()}
 }
 
@@ -83,7 +83,7 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 		payment, err := h.paymentService.GetPaymentByID(r.Context(), idStr)
 		if err != nil {
 			slog.Error("Failed to get payment",
-				slog.String("paymentId", payment.ID),
+				slog.String("paymentId", idStr),
 				slog.String("userId", claims.UserID.String()),
 				slog.String("error", err.Error()))
 			response.Error(w, err)
@@ -114,7 +114,7 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 		}
 
 		// Call the service
-		payments, _, err := h.paymentService.ListPaymentsByCustomer(r.Context(), claims.UserID.String(), page, pageSize)
+		payments, err := h.paymentService.ListPaymentsByCustomer(r.Context(), claims.UserID.String(), page, pageSize)
 		if err != nil {
 			slog.Error("Failed to list user payments",
 				slog.String("userId", claims.UserID.String()),
@@ -123,7 +123,12 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, payments)
+		response.Success(w, http.StatusOK, map[string]interface{}{
+			"payments": payments,
+			"total":    len(payments),
+			"page":     page,
+			"pageSize": pageSize,
+		})
 	}
 }
 

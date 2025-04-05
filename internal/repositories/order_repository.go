@@ -144,6 +144,13 @@ func (r *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
+	var total int
+	countQuery := `SELECT COUNT(*) FROM products`
+	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
 	// Offset
 	offset := (page - 1) * size
 
@@ -227,7 +234,11 @@ func (r *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 		orders[i].Items = items
 	}
 
-	return orders, len(orders), nil
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return orders, total, nil
 }
 
 // Update Order status

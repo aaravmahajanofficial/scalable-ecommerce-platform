@@ -78,10 +78,20 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, product *models.P
 
 }
 
-func (r *ProductRepository) ListProducts(ctx context.Context, offset, limit int) ([]*models.Product, error) {
+func (r *ProductRepository) ListProducts(ctx context.Context, page, size int) ([]*models.Product, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
+
+	var total int
+	countQuery := `SELECT COUNT(*) FROM products`
+	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Offset
+	offset := (page - 1) * size
 
 	query := `
 		SELECT p.id, p.category_id, p.name, p.description, p.price, 
@@ -93,10 +103,10 @@ func (r *ProductRepository) ListProducts(ctx context.Context, offset, limit int)
 		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := r.DB.QueryContext(dbCtx, query, limit, offset)
+	rows, err := r.DB.QueryContext(dbCtx, query, size, offset)
 
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	defer rows.Close()
@@ -111,7 +121,7 @@ func (r *ProductRepository) ListProducts(ctx context.Context, offset, limit int)
 		err := rows.Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
 
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		product.Category = category
@@ -119,5 +129,9 @@ func (r *ProductRepository) ListProducts(ctx context.Context, offset, limit int)
 
 	}
 
-	return products, nil
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
+
+	return products, total, nil
 }

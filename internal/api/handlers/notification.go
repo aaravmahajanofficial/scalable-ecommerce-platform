@@ -78,7 +78,7 @@ func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 		}
 
 		// Call the service
-		notifications, err := h.notificationService.ListNotifications(r.Context(), page, pageSize)
+		notifications, total, err := h.notificationService.ListNotifications(r.Context(), page, pageSize)
 		if err != nil {
 			slog.Error("Failed to get user notifications",
 				slog.String("userId", claims.UserID.String()),
@@ -87,6 +87,11 @@ func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, notifications)
+		response.Success(w, http.StatusOK, map[string]any{
+			"notifications": notifications,
+			"total":         total,
+			"page":          page,
+			"pageSize":      pageSize,
+		})
 	}
 }

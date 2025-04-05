@@ -59,7 +59,7 @@ func main() {
 	orderService := service.NewOrderService(repos.Order, repos.Cart, repos.Product)
 	orderHandler := handlers.NewOrderHandler(orderService)
 	paymentService := service.NewPaymentService(repos.Payment, stripeClient)
-	paymentHandler := handlers.NewPaymentService(paymentService)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
 	notificationService := service.NewNotificationService(repos.Notification, repos.User, sendGridClient)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)

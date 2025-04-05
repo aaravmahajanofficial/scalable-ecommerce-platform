@@ -113,7 +113,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 		}
 
 		// Call the service
-		orders, err := h.orderService.ListOrdersByCustomer(r.Context(), claims.UserID, page, pageSize)
+		orders, total, err := h.orderService.ListOrdersByCustomer(r.Context(), claims.UserID, page, pageSize)
 		if err != nil {
 			slog.Error("Failed to list orders",
 				slog.String("userId", claims.UserID.String()),
@@ -122,7 +122,12 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, orders)
+		response.Success(w, http.StatusOK, map[string]any{
+			"orders": orders,
+			"total":    total,
+			"page":     page,
+			"pageSize": pageSize,
+		})
 	}
 }
 

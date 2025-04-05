@@ -74,7 +74,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		}
 
 		slog.Info("User logged in", slog.String("email", req.Email))
-		response.Success(w, http.StatusCreated, resp)
+		response.Success(w, http.StatusOK, resp)
 	}
 }
 

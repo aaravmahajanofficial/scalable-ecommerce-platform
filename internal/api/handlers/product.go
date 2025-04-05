@@ -63,7 +63,7 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusCreated, product)
+		response.Success(w, http.StatusOK, product)
 	}
 }
 
@@ -113,13 +113,18 @@ func (h *ProductHandler) ListProducts() http.HandlerFunc {
 			pageSize = 10
 		}
 
-		products, err := h.productService.ListProducts(r.Context(), page, pageSize)
+		products, total, err := h.productService.ListProducts(r.Context(), page, pageSize)
 		if err != nil {
 			slog.Error("Failed to fetch products", slog.String("error", err.Error()))
 			response.Error(w, err)
 			return
 		}
 
-		response.Success(w, http.StatusOK, products)
+		response.Success(w, http.StatusOK, map[string]any{
+			"products": products,
+			"total":    total,
+			"page":     page,
+			"pageSize": pageSize,
+		})
 	}
 }

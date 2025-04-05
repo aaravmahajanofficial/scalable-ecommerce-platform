@@ -111,7 +111,7 @@ func (s *OrderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.
 	return order, nil
 }
 
-func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, error) {
+func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
 
 	if page < 1 {
 		page = 1
@@ -121,12 +121,12 @@ func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid
 		size = 10
 	}
 
-	orders, _, err := s.orderRepo.ListOrdersByCustomer(ctx, customerId, page, size)
+	orders, total, err := s.orderRepo.ListOrdersByCustomer(ctx, customerId, page, size)
 	if err != nil {
-		return nil, errors.DatabaseError("Failed to fetch orders").WithError(err)
+		return nil, 0, errors.DatabaseError("Failed to fetch orders").WithError(err)
 	}
 
-	return orders, nil
+	return orders, total, nil
 }
 
 func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
