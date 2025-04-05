@@ -9,15 +9,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type ProductService struct {
+type ProductService interface {
+	CreateProduct(ctx context.Context, req *models.CreateProductRequest) (*models.Product, error)
+	GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error)
+	UpdateProduct(ctx context.Context, id uuid.UUID, req *models.UpdateProductRequest) (*models.Product, error)
+	ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, int, error)
+}
+type productService struct {
 	repo *repository.ProductRepository
 }
 
-func NewProductService(repo *repository.ProductRepository) *ProductService {
-	return &ProductService{repo: repo}
+func NewProductService(repo *repository.ProductRepository) ProductService {
+	return &productService{repo: repo}
 }
 
-func (s *ProductService) CreateProduct(ctx context.Context, req *models.CreateProductRequest) (*models.Product, error) {
+func (s *productService) CreateProduct(ctx context.Context, req *models.CreateProductRequest) (*models.Product, error) {
 
 	product := &models.Product{
 		CategoryID:    req.CategoryID,
@@ -37,7 +43,7 @@ func (s *ProductService) CreateProduct(ctx context.Context, req *models.CreatePr
 	return product, nil
 }
 
-func (s *ProductService) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
+func (s *productService) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
 
 	product, err := s.repo.GetProductByID(ctx, id)
 	if err != nil {
@@ -47,7 +53,7 @@ func (s *ProductService) GetProductByID(ctx context.Context, id uuid.UUID) (*mod
 	return product, nil
 }
 
-func (s *ProductService) UpdateProduct(ctx context.Context, id uuid.UUID, req *models.UpdateProductRequest) (*models.Product, error) {
+func (s *productService) UpdateProduct(ctx context.Context, id uuid.UUID, req *models.UpdateProductRequest) (*models.Product, error) {
 
 	product, err := s.repo.GetProductByID(ctx, id)
 	if err != nil {
@@ -83,7 +89,7 @@ func (s *ProductService) UpdateProduct(ctx context.Context, id uuid.UUID, req *m
 
 // page means "page number requested"
 // pageSize means "number of products to be displayed per page"
-func (s *ProductService) ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, int, error) {
+func (s *productService) ListProducts(ctx context.Context, page, pageSize int) ([]*models.Product, int, error) {
 
 	products, total, err := s.repo.ListProducts(ctx, page, pageSize)
 	if err != nil {

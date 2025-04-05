@@ -14,11 +14,11 @@ import (
 )
 
 type CartHandler struct {
-	cartService *service.CartService
+	cartService service.CartService
 	validator   *validator.Validate
 }
 
-func NewCartHandler(service *service.CartService) *CartHandler {
+func NewCartHandler(service service.CartService) *CartHandler {
 	return &CartHandler{
 		cartService: service,
 		validator:   validator.New(),

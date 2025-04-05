@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
@@ -28,7 +29,7 @@ func NewNotificationHandler(notificationService service.NotificationService) *No
 func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized notification creation attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -61,7 +62,7 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -87,11 +88,11 @@ func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, map[string]any{
-			"notifications": notifications,
-			"total":         total,
-			"page":          page,
-			"pageSize":      pageSize,
+		response.Success(w, http.StatusOK, models.PaginatedResponse{
+			Data:     notifications,
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
 		})
 	}
 }

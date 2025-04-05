@@ -13,11 +13,11 @@ import (
 )
 
 type ProductHandler struct {
-	productService *service.ProductService
+	productService service.ProductService
 	validator      *validator.Validate
 }
 
-func NewProductHandler(productService *service.ProductService) *ProductHandler {
+func NewProductHandler(productService service.ProductService) *ProductHandler {
 	return &ProductHandler{productService: productService, validator: validator.New()}
 }
 
@@ -120,11 +120,11 @@ func (h *ProductHandler) ListProducts() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, map[string]any{
-			"products": products,
-			"total":    total,
-			"page":     page,
-			"pageSize": pageSize,
+		response.Success(w, http.StatusOK, models.PaginatedResponse{
+			Data:     products,
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
 		})
 	}
 }

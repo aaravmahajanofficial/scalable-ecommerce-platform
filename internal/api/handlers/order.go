@@ -15,11 +15,11 @@ import (
 )
 
 type OrderHandler struct {
-	orderService *service.OrderService
+	orderService service.OrderService
 	validator    *validator.Validate
 }
 
-func NewOrderHandler(orderService *service.OrderService) *OrderHandler {
+func NewOrderHandler(orderService service.OrderService) *OrderHandler {
 	return &OrderHandler{orderService: orderService, validator: validator.New()}
 }
 
@@ -56,7 +56,7 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 func (h *OrderHandler) GetOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -96,7 +96,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 func (h *OrderHandler) ListOrders() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -122,11 +122,11 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, map[string]any{
-			"orders": orders,
-			"total":    total,
-			"page":     page,
-			"pageSize": pageSize,
+		response.Success(w, http.StatusOK, models.PaginatedResponse{
+			Data:     orders,
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
 		})
 	}
 }
@@ -134,7 +134,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))

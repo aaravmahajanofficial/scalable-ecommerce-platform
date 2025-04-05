@@ -13,7 +13,7 @@ import (
 type PaymentService interface {
 	CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error)
 	GetPaymentByID(ctx context.Context, id string) (*models.Payment, error)
-	ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, error)
+	ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error)
 	ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error)
 }
 
@@ -90,14 +90,14 @@ func (s *paymentService) GetPaymentByID(ctx context.Context, id string) (*models
 }
 
 // ListPaymentsByCustomer implements PaymentService.
-func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, error) {
+func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
 
-	payments, err := s.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
+	payments, total, err := s.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
 	if err != nil {
-		return nil, errors.DatabaseError("Failed to fetch payments").WithError(err)
+		return nil, 0, errors.DatabaseError("Failed to fetch payments").WithError(err)
 	}
 
-	return payments, nil
+	return payments, total, nil
 }
 
 // ProcessWebhook implements PaymentService.

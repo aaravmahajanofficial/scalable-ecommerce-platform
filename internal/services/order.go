@@ -10,17 +10,24 @@ import (
 	"github.com/google/uuid"
 )
 
-type OrderService struct {
+type OrderService interface {
+	CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error)
+	GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error)
+	UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error)
+}
+
+type orderService struct {
 	orderRepo   *repository.OrderRepository
 	cartRepo    *repository.CartRepository
 	productRepo *repository.ProductRepository
 }
 
-func NewOrderService(orderRepo *repository.OrderRepository, cartRepo *repository.CartRepository, productRepo *repository.ProductRepository) *OrderService {
-	return &OrderService{orderRepo: orderRepo, cartRepo: cartRepo, productRepo: productRepo}
+func NewOrderService(orderRepo *repository.OrderRepository, cartRepo *repository.CartRepository, productRepo *repository.ProductRepository) OrderService {
+	return &orderService{orderRepo: orderRepo, cartRepo: cartRepo, productRepo: productRepo}
 }
 
-func (s *OrderService) CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error) {
+func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error) {
 
 	// Check if the cart exists or not
 	cart, err := s.cartRepo.GetCartByCustomerID(ctx, req.CustomerID)
@@ -101,7 +108,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 	return order, nil
 }
 
-func (s *OrderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+func (s *orderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 
 	order, err := s.orderRepo.GetOrderById(ctx, id)
 	if err != nil {
@@ -111,7 +118,7 @@ func (s *OrderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.
 	return order, nil
 }
 
-func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
+func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
 
 	if page < 1 {
 		page = 1
@@ -129,7 +136,7 @@ func (s *OrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid
 	return orders, total, nil
 }
 
-func (s *OrderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
+func (s *orderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
 
 	// check if order exists or not
 	_, err := s.orderRepo.GetOrderById(ctx, id)

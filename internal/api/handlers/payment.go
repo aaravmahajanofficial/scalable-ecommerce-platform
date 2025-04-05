@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
@@ -26,7 +27,7 @@ func NewPaymentHandler(paymentService service.PaymentService) *PaymentHandler {
 func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -66,7 +67,7 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -97,7 +98,7 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		claims, ok := r.Context().Value("user").(*models.Claims)
+		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			slog.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
@@ -114,7 +115,7 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 		}
 
 		// Call the service
-		payments, err := h.paymentService.ListPaymentsByCustomer(r.Context(), claims.UserID.String(), page, pageSize)
+		payments, total, err := h.paymentService.ListPaymentsByCustomer(r.Context(), claims.UserID.String(), page, pageSize)
 		if err != nil {
 			slog.Error("Failed to list user payments",
 				slog.String("userId", claims.UserID.String()),
@@ -123,11 +124,11 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 			return
 		}
 
-		response.Success(w, http.StatusOK, map[string]interface{}{
-			"payments": payments,
-			"total":    len(payments),
-			"page":     page,
-			"pageSize": pageSize,
+		response.Success(w, http.StatusOK, models.PaginatedResponse{
+			Data:     payments,
+			Total:    total,
+			Page:     page,
+			PageSize: pageSize,
 		})
 	}
 }
@@ -147,7 +148,7 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		signature := r.Header.Get("Stripe-Signature")
 		if signature == "" {
 			slog.Error("Missing Stripe signature")
-			response.Error(w, errors.BadRequestError("Stripe Signature is required").WithError(err))
+			response.Error(w, errors.BadRequestError("Stripe Signature is required"))
 			return
 		}
 

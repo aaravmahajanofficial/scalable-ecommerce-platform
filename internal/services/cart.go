@@ -10,15 +10,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type CartService struct {
+type CartService interface {
+	CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
+	GetCart(ctx context.Context, customerID uuid.UUID) (*models.Cart, error)
+	AddItem(ctx context.Context, customerID uuid.UUID, req *models.AddItemRequest) (*models.Cart, error)
+	UpdateQuantity(ctx context.Context, customerID uuid.UUID, req *models.UpdateQuantityRequest) (*models.Cart, error)
+}
+
+type cartService struct {
 	repo *repository.CartRepository
 }
 
-func NewCartService(repo *repository.CartRepository) *CartService {
-	return &CartService{repo: repo}
+func NewCartService(repo *repository.CartRepository) CartService {
+	return &cartService{repo: repo}
 }
 
-func (s *CartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
+func (s *cartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
 
 	cart := &models.Cart{
 		ID:        uuid.New(),
@@ -37,7 +44,7 @@ func (s *CartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models
 	return cart, nil
 }
 
-func (s *CartService) GetCart(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
+func (s *cartService) GetCart(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
 
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
@@ -47,7 +54,7 @@ func (s *CartService) GetCart(ctx context.Context, customerID uuid.UUID) (*model
 	return cart, err
 }
 
-func (s *CartService) AddItem(ctx context.Context, customerID uuid.UUID, req *models.AddItemRequest) (*models.Cart, error) {
+func (s *cartService) AddItem(ctx context.Context, customerID uuid.UUID, req *models.AddItemRequest) (*models.Cart, error) {
 
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
@@ -72,7 +79,7 @@ func (s *CartService) AddItem(ctx context.Context, customerID uuid.UUID, req *mo
 	return cart, nil
 }
 
-func (s *CartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, req *models.UpdateQuantityRequest) (*models.Cart, error) {
+func (s *cartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, req *models.UpdateQuantityRequest) (*models.Cart, error) {
 
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
@@ -104,7 +111,7 @@ func (s *CartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, 
 	return cart, nil
 }
 
-func (s *CartService) calculateTotal(items map[string]models.CartItem) float64 {
+func (s *cartService) calculateTotal(items map[string]models.CartItem) float64 {
 
 	var totalPrice float64
 
