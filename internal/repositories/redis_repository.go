@@ -1,4 +1,4 @@
-package redis
+package repository
 
 import (
 	"context"
@@ -11,12 +11,16 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisRepo struct {
+type RedisRepository interface {
+	CheckLoginRateLimit(ctx context.Context, username string) (bool, int, int, error)
+}
+
+type redisRepository struct {
 	client *redis.Client
 	config *config.Config
 }
 
-func NewRedisRepo(cfg *config.Config) (*RedisRepo, error) {
+func NewRedisRepo(cfg *config.Config) (RedisRepository, error) {
 
 	// client := redis.NewClient(&redis.Options{
 	// 	Addr:     cfg.RedisConnect.Host,
@@ -45,12 +49,12 @@ func NewRedisRepo(cfg *config.Config) (*RedisRepo, error) {
 		return nil, fmt.Errorf("failed to connect to database: %v", err)
 	}
 
-	return &RedisRepo{client: client, config: cfg}, nil
+	return &redisRepository{client: client, config: cfg}, nil
 
 }
 
 // Returns isAllowed, attempts left, seconds to wait, error
-func (r *RedisRepo) CheckLoginRateLimit(ctx context.Context, username string) (bool, int, int, error) {
+func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username string) (bool, int, int, error) {
 
 	// create a username key
 	key := fmt.Sprintf("login_attempts:%s", username)

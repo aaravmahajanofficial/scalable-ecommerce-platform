@@ -7,7 +7,6 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/redis"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -21,11 +20,11 @@ type UserService interface {
 
 type userService struct {
 	repo      repository.UserRepository
-	redisRepo *redis.RedisRepo
+	redisRepo repository.RedisRepository
 	jwtKey    []byte
 }
 
-func NewUserService(repo repository.UserRepository, redisRepo *redis.RedisRepo, jwtKey []byte) UserService {
+func NewUserService(repo repository.UserRepository, redisRepo repository.RedisRepository, jwtKey []byte) UserService {
 	return &userService{
 		repo:      repo,
 		redisRepo: redisRepo,

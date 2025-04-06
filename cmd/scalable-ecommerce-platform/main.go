@@ -14,7 +14,6 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/redis"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
@@ -33,7 +32,7 @@ func main() {
 	}
 
 	// Redis setup
-	redisRepo, err := redis.NewRedisRepo(cfg)
+	redisRepo, err := repository.NewRedisRepo(cfg)
 
 	if err != nil {
 		log.Fatalf("❌ Error accessing the redis instance: %v", err)
