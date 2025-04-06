@@ -13,21 +13,27 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type UserService struct {
+type UserService interface {
+	Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error)
+	Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
+}
+
+type userService struct {
 	repo      repository.UserRepository
 	redisRepo *redis.RedisRepo
 	jwtKey    []byte
 }
 
-func NewUserService(repo repository.UserRepository, redisRepo *redis.RedisRepo, jwtKey []byte) *UserService {
-	return &UserService{
+func NewUserService(repo repository.UserRepository, redisRepo *redis.RedisRepo, jwtKey []byte) UserService {
+	return &userService{
 		repo:      repo,
 		redisRepo: redisRepo,
 		jwtKey:    jwtKey,
 	}
 }
 
-func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
+func (s *userService) Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
 
 	existingUser, _ := s.repo.GetUserByEmail(ctx, req.Email)
 	if existingUser != nil {
@@ -55,7 +61,7 @@ func (s *UserService) Register(ctx context.Context, req *models.RegisterRequest)
 
 }
 
-func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
+func (s *userService) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
 
 	// check rate limit
 	allowed, remaining, retryAfter, err := s.redisRepo.CheckLoginRateLimit(ctx, req.Email)
@@ -105,7 +111,7 @@ func (s *UserService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 
 }
 
-func (s *UserService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 
 	user, err := s.repo.GetUserById(ctx, id)
 	if err != nil {
