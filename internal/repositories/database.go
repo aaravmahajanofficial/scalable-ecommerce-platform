@@ -11,12 +11,12 @@ import (
 
 type Repositories struct {
 	DB           *sql.DB
-	User         *UserRepository
-	Product      *ProductRepository
-	Cart         *CartRepository
-	Order        *OrderRepository
-	Payment      *PaymentRepository
-	Notification *NotificationRepository
+	User         UserRepository
+	Product      ProductRepository
+	Cart         CartRepository
+	Order        OrderRepository
+	Payment      PaymentRepository
+	Notification NotificationRepository
 }
 
 func New(cfg *config.Config) (*Repositories, error) {

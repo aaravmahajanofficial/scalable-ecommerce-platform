@@ -18,11 +18,11 @@ type PaymentService interface {
 }
 
 type paymentService struct {
-	repo         *repository.PaymentRepository
+	repo         repository.PaymentRepository
 	stripeClient stripe.Client
 }
 
-func NewPaymentService(repo *repository.PaymentRepository, stripeClient stripe.Client) PaymentService {
+func NewPaymentService(repo repository.PaymentRepository, stripeClient stripe.Client) PaymentService {
 	return &paymentService{repo: repo, stripeClient: stripeClient}
 }
 

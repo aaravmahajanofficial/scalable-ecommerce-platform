@@ -19,12 +19,12 @@ type NotificationService interface {
 }
 
 type notificationService struct {
-	repo         *repository.NotificationRepository
-	userRepo     *repository.UserRepository
+	repo         repository.NotificationRepository
+	userRepo     repository.UserRepository
 	emailService sendGrid.EmailService
 }
 
-func NewNotificationService(repo *repository.NotificationRepository, userRepo *repository.UserRepository, emailService sendGrid.EmailService) NotificationService {
+func NewNotificationService(repo repository.NotificationRepository, userRepo repository.UserRepository, emailService sendGrid.EmailService) NotificationService {
 	return &notificationService{repo: repo, emailService: emailService}
 }
 

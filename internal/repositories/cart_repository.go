@@ -12,15 +12,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type CartRepository struct {
+type CartRepository interface {
+	CreateCart(ctx context.Context, cart *models.Cart) error
+	GetCartByCustomerID(ctx context.Context, customerID uuid.UUID) (*models.Cart, error)
+	UpdateCart(ctx context.Context, cart *models.Cart) error
+}
+
+type cartRepository struct {
 	DB *sql.DB
 }
 
-func NewCartRepo(db *sql.DB) *CartRepository {
-	return &CartRepository{DB: db}
+func NewCartRepo(db *sql.DB) CartRepository {
+	return &cartRepository{DB: db}
 }
 
-func (r *CartRepository) CreateCart(ctx context.Context, cart *models.Cart) error {
+func (r *cartRepository) CreateCart(ctx context.Context, cart *models.Cart) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -40,7 +46,7 @@ func (r *CartRepository) CreateCart(ctx context.Context, cart *models.Cart) erro
 	return r.DB.QueryRowContext(dbCtx, query, cart.ID, cart.UserID, itemsJSON).Scan(&cart.ID, &cart.CreatedAt, &cart.UpdatedAt)
 }
 
-func (r *CartRepository) GetCartByCustomerID(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
+func (r *cartRepository) GetCartByCustomerID(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -68,7 +74,7 @@ func (r *CartRepository) GetCartByCustomerID(ctx context.Context, customerID uui
 
 }
 
-func (r *CartRepository) UpdateCart(ctx context.Context, cart *models.Cart) error {
+func (r *cartRepository) UpdateCart(ctx context.Context, cart *models.Cart) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

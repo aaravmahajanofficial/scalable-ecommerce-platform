@@ -12,15 +12,23 @@ import (
 	"github.com/google/uuid"
 )
 
-type OrderRepository struct {
+type OrderRepository interface {
+	CreateOrder(ctx context.Context, order *models.Order) error
+	GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) 
+	UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error)
+	UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error
+}
+
+type orderRepository struct {
 	DB *sql.DB
 }
 
-func NewOrderRepository(db *sql.DB) *OrderRepository {
-	return &OrderRepository{DB: db}
+func NewOrderRepository(db *sql.DB) OrderRepository {
+	return &orderRepository{DB: db}
 }
 
-func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order) error {
+func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -66,7 +74,7 @@ func (r *OrderRepository) CreateOrder(ctx context.Context, order *models.Order) 
 Get the order
 Get the order items
 */
-func (r *OrderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+func (r *orderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -139,7 +147,7 @@ func (r *OrderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*mode
 	2.
 
 */
-func (r *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
+func (r *orderRepository) ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -242,7 +250,7 @@ func (r *OrderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 }
 
 // Update Order status
-func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
+func (r *orderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -271,7 +279,7 @@ func (r *OrderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, s
 }
 
 // Update the Payment Status and Payment Intent ID of an order
-func (r *OrderRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error {
+func (r *orderRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

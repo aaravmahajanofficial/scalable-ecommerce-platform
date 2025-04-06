@@ -10,15 +10,21 @@ import (
 	"github.com/google/uuid"
 )
 
-type UserRepository struct {
+type UserRepository interface {
+	CreateUser(ctx context.Context, user *models.User) error
+	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
+	GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error)
+}
+
+type userRepository struct {
 	DB *sql.DB
 }
 
-func NewUserRepo(db *sql.DB) *UserRepository {
-	return &UserRepository{DB: db}
+func NewUserRepo(db *sql.DB) UserRepository {
+	return &userRepository{DB: db}
 }
 
-func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) error {
+func (r *userRepository) CreateUser(ctx context.Context, user *models.User) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -32,7 +38,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) erro
 
 }
 
-func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -52,7 +58,7 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 }
 
-func (r *UserRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

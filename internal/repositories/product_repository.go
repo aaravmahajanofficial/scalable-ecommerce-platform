@@ -10,15 +10,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type ProductRepository struct {
+type ProductRepository interface {
+	CreateProduct(ctx context.Context, product *models.Product) error
+	GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error)
+	UpdateProduct(ctx context.Context, product *models.Product) error
+	ListProducts(ctx context.Context, page, size int) ([]*models.Product, int, error)
+}
+
+type productRepository struct {
 	DB *sql.DB
 }
 
-func NewProductRepo(db *sql.DB) *ProductRepository {
-	return &ProductRepository{DB: db}
+func NewProductRepo(db *sql.DB) ProductRepository {
+	return &productRepository{DB: db}
 }
 
-func (r *ProductRepository) CreateProduct(ctx context.Context, product *models.Product) error {
+func (r *productRepository) CreateProduct(ctx context.Context, product *models.Product) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -32,7 +39,7 @@ func (r *ProductRepository) CreateProduct(ctx context.Context, product *models.P
 
 }
 
-func (r *ProductRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
+func (r *productRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -63,7 +70,7 @@ func (r *ProductRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*
 	return product, nil
 }
 
-func (r *ProductRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
+func (r *productRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -78,7 +85,7 @@ func (r *ProductRepository) UpdateProduct(ctx context.Context, product *models.P
 
 }
 
-func (r *ProductRepository) ListProducts(ctx context.Context, page, size int) ([]*models.Product, int, error) {
+func (r *productRepository) ListProducts(ctx context.Context, page, size int) ([]*models.Product, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

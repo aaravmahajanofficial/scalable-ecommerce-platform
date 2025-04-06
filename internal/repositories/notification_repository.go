@@ -12,15 +12,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type NotificationRepository struct {
+type NotificationRepository interface {
+	CreateNotification(ctx context.Context, notification *models.Notification) error
+	GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error)
+	UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error
+	ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error)
+}
+
+type notificationRepository struct {
 	DB *sql.DB
 }
 
-func NewNotificationRepo(db *sql.DB) *NotificationRepository {
-	return &NotificationRepository{DB: db}
+func NewNotificationRepo(db *sql.DB) NotificationRepository {
+	return &notificationRepository{DB: db}
 }
 
-func (r *NotificationRepository) CreateNotification(ctx context.Context, notification *models.Notification) error {
+func (r *notificationRepository) CreateNotification(ctx context.Context, notification *models.Notification) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -40,7 +47,7 @@ func (r *NotificationRepository) CreateNotification(ctx context.Context, notific
 
 }
 
-func (r *NotificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
+func (r *notificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -66,7 +73,7 @@ func (r *NotificationRepository) GetNotificationById(ctx context.Context, id uui
 	return result, nil
 }
 
-func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error {
+func (r *notificationRepository) UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -98,7 +105,7 @@ func (r *NotificationRepository) UpdateNotificationStatus(ctx context.Context, i
 
 }
 
-func (r *NotificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error) {
+func (r *notificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

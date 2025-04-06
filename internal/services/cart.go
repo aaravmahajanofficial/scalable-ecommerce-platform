@@ -18,10 +18,10 @@ type CartService interface {
 }
 
 type cartService struct {
-	repo *repository.CartRepository
+	repo repository.CartRepository
 }
 
-func NewCartService(repo *repository.CartRepository) CartService {
+func NewCartService(repo repository.CartRepository) CartService {
 	return &cartService{repo: repo}
 }
 

@@ -10,15 +10,22 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
 )
 
-type PaymentRepository struct {
+type PaymentRepository interface {
+	CreatePayment(ctx context.Context, payment *models.Payment) error
+	GetPaymentByID(ctx context.Context, id string) (*models.Payment, error)
+	UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error
+	ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error)
+}
+
+type paymentRepository struct {
 	DB *sql.DB
 }
 
-func NewPaymentRepository(db *sql.DB) *PaymentRepository {
-	return &PaymentRepository{DB: db}
+func NewPaymentRepository(db *sql.DB) PaymentRepository {
+	return &paymentRepository{DB: db}
 }
 
-func (r *PaymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
+func (r *paymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -37,7 +44,7 @@ func (r *PaymentRepository) CreatePayment(ctx context.Context, payment *models.P
 	return nil
 }
 
-func (r *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
+func (r *paymentRepository) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -60,7 +67,7 @@ func (r *PaymentRepository) GetPaymentByID(ctx context.Context, id string) (*mod
 
 }
 
-func (r *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error {
+func (r *paymentRepository) UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
@@ -76,7 +83,7 @@ func (r *PaymentRepository) UpdatePaymentStatus(ctx context.Context, id string, 
 
 }
 
-func (r *PaymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
+func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()

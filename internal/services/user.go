@@ -14,12 +14,12 @@ import (
 )
 
 type UserService struct {
-	repo      *repository.UserRepository
+	repo      repository.UserRepository
 	redisRepo *redis.RedisRepo
 	jwtKey    []byte
 }
 
-func NewUserService(repo *repository.UserRepository, redisRepo *redis.RedisRepo, jwtKey []byte) *UserService {
+func NewUserService(repo repository.UserRepository, redisRepo *redis.RedisRepo, jwtKey []byte) *UserService {
 	return &UserService{
 		repo:      repo,
 		redisRepo: redisRepo,
