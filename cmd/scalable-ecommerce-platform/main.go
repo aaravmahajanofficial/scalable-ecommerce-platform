@@ -67,9 +67,9 @@ func main() {
 
 	// Setup router
 	router := http.NewServeMux()
-	router.HandleFunc("POST /api/v1/register", userHandler.Register())
-	router.HandleFunc("POST /api/v1/login", userHandler.Login())
-	router.HandleFunc("GET /api/v1/profile", authMiddleware.Authenticate(userHandler.Profile()))
+	router.HandleFunc("POST /api/v1/users/register", userHandler.Register())
+	router.HandleFunc("POST /api/v1/users/login", userHandler.Login())
+	router.HandleFunc("GET /api/v1/users/profile", authMiddleware.Authenticate(userHandler.Profile()))
 	router.HandleFunc("POST /api/v1/products", authMiddleware.Authenticate(productHandler.CreateProduct()))
 	router.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.GetProduct()))
 	router.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.UpdateProduct()))
