@@ -25,6 +25,8 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger := middleware.LoggerFromContext(r.Context())
+
 		var req models.RegisterRequest
 
 		// Validate Input
@@ -35,18 +37,20 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		// Call the register service
 		user, err := h.userService.Register(r.Context(), &req)
 		if err != nil {
-			slog.Error("User registration failed", slog.String("email", req.Email), slog.String("error", err.Error()))
+			logger.Error("User registration failed", slog.String("email", req.Email), slog.String("error", err.Error()))
 			response.Error(w, err)
 			return
 		}
 
-		slog.Info("User registered", slog.String("userId", user.ID.String()))
+		logger.Info("User registered", slog.String("userId", user.ID.String()))
 		response.Success(w, http.StatusCreated, user)
 	}
 }
 
 func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		logger := middleware.LoggerFromContext(r.Context())
 
 		// Decode the request body
 		var req models.LoginRequest
@@ -59,22 +63,23 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		// Call the register service
 		resp, err := h.userService.Login(r.Context(), &req)
 		if err != nil {
-			slog.Warn("Login failed", slog.String("email", req.Email), slog.String("error", err.Error()))
+			logger.Warn("Login attempt failed", slog.String("email", req.Email), slog.Any("error", err))
 			response.Error(w, err)
 			return
 		}
 
 		if !resp.Success {
 			if resp.RetryAfter > 0 {
+				logger.Warn("Too many login attempts", slog.String("email", req.Email))
 				response.Error(w, errors.TooManyRequestsError("Too many login attempts").WithDetail("Please try again later"))
 				return
 			}
-
+			logger.Warn("Invalid credentials provided", slog.String("email", req.Email))
 			response.Error(w, errors.UnauthorizedError("Invalid email or password"))
 			return
 		}
 
-		slog.Info("User logged in", slog.String("email", req.Email))
+		logger.Info("User logged in", slog.String("email", req.Email))
 		response.Success(w, http.StatusOK, resp)
 	}
 }
@@ -82,22 +87,27 @@ func (h *UserHandler) Login() http.HandlerFunc {
 func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger := middleware.LoggerFromContext(r.Context())
+
 		// Get user claims from context (set by middleware)
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
-			slog.Warn("Unauthorized access attempt")
+			logger.Warn("Unauthorized access attempt: missing user claims in context")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
 
+		logger = logger.With(slog.String("userID", claims.UserID.String()))
+		logger.Info("Attempting to fetch user profile")
+
 		user, err := h.userService.GetUserByID(r.Context(), claims.UserID)
 		if err != nil {
-			slog.Warn("User not found", slog.String("userID", claims.UserID.String()))
+			logger.Warn("User not found", slog.String("userID", claims.UserID.String()))
 			response.Error(w, err)
 			return
 		}
 
-		slog.Info("User profile accessed", slog.String("userID", user.ID.String()))
+		logger.Info("User profile accessed", slog.String("userID", user.ID.String()))
 		response.Success(w, http.StatusOK, user)
 	}
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -21,21 +20,25 @@ import (
 
 func main() {
 
+	// Logger setup
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	// Load config
 	cfg := config.MustLoad()
 
 	// Database setup
 	repos, err := repository.New(cfg)
-
 	if err != nil {
-		log.Fatalf("❌ Error accessing the database: %v", err)
+		slog.Error("❌ Error accessing the database: %v", err)
+		os.Exit(1)
 	}
 
 	// Redis setup
 	redisRepo, err := repository.NewRedisRepo(cfg)
-
 	if err != nil {
-		log.Fatalf("❌ Error accessing the redis instance: %v", err)
+		slog.Error("❌ Error accessing the redis instance: %v", err)
+		os.Exit(1)
 	}
 
 	defer func() {
@@ -66,32 +69,36 @@ func main() {
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 
 	// Setup router
-	router := http.NewServeMux()
-	router.HandleFunc("POST /api/v1/users/register", userHandler.Register())
-	router.HandleFunc("POST /api/v1/users/login", userHandler.Login())
-	router.HandleFunc("GET /api/v1/users/profile", authMiddleware.Authenticate(userHandler.Profile()))
-	router.HandleFunc("POST /api/v1/products", authMiddleware.Authenticate(productHandler.CreateProduct()))
-	router.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.GetProduct()))
-	router.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.UpdateProduct()))
-	router.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(productHandler.ListProducts()))
-	router.HandleFunc("GET /api/v1/carts", authMiddleware.Authenticate(cartHandler.GetCart()))
-	router.HandleFunc("POST /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.AddItem()))
-	router.HandleFunc("PUT /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.UpdateQuantity()))
-	router.HandleFunc("POST /api/v1/orders", authMiddleware.Authenticate(orderHandler.CreateOrder()))
-	router.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(orderHandler.GetOrder()))
-	router.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(orderHandler.ListOrders()))
-	router.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(orderHandler.UpdateOrderStatus()))
-	router.HandleFunc("POST /api/v1/payments", authMiddleware.Authenticate(paymentHandler.CreatePayment()))
-	router.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(paymentHandler.GetPayment()))
-	router.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(paymentHandler.ListPayments()))
-	router.HandleFunc("POST /api/v1/payments/webhook", paymentHandler.HandleStripeWebhook())
-	router.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(notificationHandler.SendEmail()))
-	router.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(notificationHandler.ListNotifications()))
+	routerMux := http.NewServeMux()
+	routerMux.HandleFunc("POST /api/v1/users/register", userHandler.Register())
+	routerMux.HandleFunc("POST /api/v1/users/login", userHandler.Login())
+	routerMux.HandleFunc("GET /api/v1/users/profile", authMiddleware.Authenticate(userHandler.Profile()))
+	routerMux.HandleFunc("POST /api/v1/products", authMiddleware.Authenticate(productHandler.CreateProduct()))
+	routerMux.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.GetProduct()))
+	routerMux.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.UpdateProduct()))
+	routerMux.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(productHandler.ListProducts()))
+	routerMux.HandleFunc("GET /api/v1/carts", authMiddleware.Authenticate(cartHandler.GetCart()))
+	routerMux.HandleFunc("POST /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.AddItem()))
+	routerMux.HandleFunc("PUT /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.UpdateQuantity()))
+	routerMux.HandleFunc("POST /api/v1/orders", authMiddleware.Authenticate(orderHandler.CreateOrder()))
+	routerMux.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(orderHandler.GetOrder()))
+	routerMux.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(orderHandler.ListOrders()))
+	routerMux.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(orderHandler.UpdateOrderStatus()))
+	routerMux.HandleFunc("POST /api/v1/payments", authMiddleware.Authenticate(paymentHandler.CreatePayment()))
+	routerMux.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(paymentHandler.GetPayment()))
+	routerMux.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(paymentHandler.ListPayments()))
+	routerMux.HandleFunc("POST /api/v1/payments/webhook", paymentHandler.HandleStripeWebhook())
+	routerMux.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(notificationHandler.SendEmail()))
+	routerMux.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(notificationHandler.ListNotifications()))
+
+	// Middleware chaining
+	var handler http.Handler = routerMux
+	handler = middleware.Logging(handler)
 
 	// Setup http server
 	server := http.Server{
 		Addr:    cfg.Addr,
-		Handler: router,
+		Handler: handler,
 	}
 
 	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))
@@ -101,8 +108,8 @@ func main() {
 
 	go func() { // Starts the HTTP server in a new goroutine so it doesn't block the main thread.
 
-		if err := server.ListenAndServe(); err != nil {
-			slog.Error("❌ Failed to start server", slog.String("error", err.Error()))
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			slog.Error("❌ Failed to start server", slog.Any("error", err.Error()))
 		}
 	}()
 

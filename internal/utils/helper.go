@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/go-playground/validator/v10"
@@ -16,6 +17,8 @@ import (
 
 func DecodeJSONBody(r *http.Request, dest any) error {
 
+	logger := middleware.LoggerFromContext(r.Context())
+
 	body, err := io.ReadAll(r.Body)
 
 	if err != nil {
@@ -23,13 +26,14 @@ func DecodeJSONBody(r *http.Request, dest any) error {
 			slog.String("error", err.Error()),
 			slog.String("endpoint", r.URL.Path),
 		)
+		logger.Error("Failed to read request body", slog.Any("error", err))
 		return errors.BadRequestError("Failed to read request body").WithError(err)
 	}
 
 	defer r.Body.Close()
 
 	if len(body) == 0 {
-		slog.Warn("Empty request body", slog.String("endpoint", r.URL.Path))
+		logger.Warn("Empty request body received")
 		return errors.BadRequestError("Request body cannot be empty").WithError(err)
 	}
 
@@ -38,6 +42,7 @@ func DecodeJSONBody(r *http.Request, dest any) error {
 			slog.String("error", err.Error()),
 			slog.String("endpoint", r.URL.Path),
 		)
+		logger.Error("Failed to parse request JSON", slog.Any("error", err))
 		return errors.BadRequestError("Invalid JSON format").WithError(err)
 	}
 

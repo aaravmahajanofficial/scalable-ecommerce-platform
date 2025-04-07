@@ -26,29 +26,31 @@ func NewOrderHandler(orderService service.OrderService) *OrderHandler {
 func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger := middleware.LoggerFromContext(r.Context())
+
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
-			slog.Warn("Unauthorized order creation attempt")
+			logger.Warn("Unauthorized order creation attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
+		logger = logger.With(slog.String("userID", claims.UserID.String()))
 
 		// Decode the request body, validate
 		var req models.CreateOrderRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
+			logger.Warn("Invalid create order input")
 			return
 		}
 
 		order, err := h.orderService.CreateOrder(r.Context(), &req)
 		if err != nil {
-			slog.Error("Failed to create order",
-				slog.String("userId", claims.UserID.String()),
-				slog.String("error", err.Error()))
+			logger.Error("Failed to create order", slog.Any("error", err))
 			response.Error(w, err)
 			return
 		}
 
-		slog.Info("Order created", slog.String("orderId", order.ID.String()), slog.String("userID", claims.UserID.String()))
+		logger.Info("Order created successfully", slog.String("orderId", order.ID.String()))
 		response.Success(w, http.StatusCreated, order)
 	}
 }
@@ -56,24 +58,30 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 func (h *OrderHandler) GetOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger := middleware.LoggerFromContext(r.Context())
+
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
-			slog.Warn("Unauthorized order access attempt")
+			logger.Warn("Unauthorized order access attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
 
+		logger = logger.With(slog.String("userID", claims.UserID.String()))
+
 		id, err := utils.ParseID(r, "id")
 		if err != nil {
-			slog.Warn("Invalid product id", slog.String("error", err.Error()))
+			logger.Warn("Invalid order id", slog.String("error", err.Error()))
 			response.Error(w, err)
 			return
 		}
 
+		logger = logger.With(slog.String("orderId", id.String()))
+
 		// Call the service
 		order, err := h.orderService.GetOrderById(r.Context(), id)
 		if err != nil {
-			slog.Error("Failed to get order",
+			logger.Error("Failed to get order",
 				slog.String("orderId", id.String()),
 				slog.String("error", err.Error()))
 			response.Error(w, err)
@@ -81,14 +89,14 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 		}
 
 		if order.CustomerID != claims.UserID {
-			slog.Warn("Attempted to access another user's order",
-				slog.String("orderId", id.String()),
+			logger.Warn("Attempted to access another user's order",
 				slog.String("requesterId", claims.UserID.String()),
 				slog.String("ownerId", order.CustomerID.String()))
 			response.Error(w, errors.ForbiddenError("You don't have permission to access this order"))
 			return
 		}
 
+		logger.Info("Order retrieved successfully")
 		response.Success(w, http.StatusOK, order)
 	}
 }
@@ -96,12 +104,16 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 func (h *OrderHandler) ListOrders() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger := middleware.LoggerFromContext(r.Context())
+
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
-			slog.Warn("Unauthorized order access attempt")
+			logger.Warn("Unauthorized order list attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
+
+		logger = logger.With(slog.String("userID", claims.UserID.String()))
 
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
 		if err != nil || page < 1 {
@@ -112,16 +124,17 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 			pageSize = 10
 		}
 
+		logger = logger.With(slog.Int("page", page), slog.Int("pageSize", pageSize))
+
 		// Call the service
 		orders, total, err := h.orderService.ListOrdersByCustomer(r.Context(), claims.UserID, page, pageSize)
 		if err != nil {
-			slog.Error("Failed to list orders",
-				slog.String("userId", claims.UserID.String()),
-				slog.String("error", err.Error()))
+			logger.Error("Failed to list orders", slog.Any("error", err))
 			response.Error(w, err)
 			return
 		}
 
+		logger.Info("Orders listed successfully", slog.Int("count", len(orders)), slog.Int("total", total))
 		response.Success(w, http.StatusOK, models.PaginatedResponse{
 			Data:     orders,
 			Total:    total,
@@ -134,40 +147,43 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		logger := middleware.LoggerFromContext(r.Context())
+
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
-			slog.Warn("Unauthorized order access attempt")
+			logger.Warn("Unauthorized order status update attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
 			return
 		}
 
+		logger = logger.With(slog.String("updaterUserID", claims.UserID.String()))
+
 		id, err := utils.ParseID(r, "id")
 		if err != nil {
-			slog.Warn("Invalid product id", slog.String("error", err.Error()))
+			logger.Warn("Invalid order id", slog.String("error", err.Error()))
 			response.Error(w, err)
 			return
 		}
+
+		logger = logger.With(slog.String("orderId", id.String()))
 
 		// Decode the request body
 		var req models.UpdateOrderStatusRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
+			logger.Warn("Invalid update order status input")
 			return
 		}
 
+		logger = logger.With(slog.String("newStatus", string(req.Status)))
+
 		order, err := h.orderService.UpdateOrderStatus(r.Context(), id, req.Status)
 		if err != nil {
-			slog.Error("Failed to update order status",
-				slog.String("orderId", id.String()),
-				slog.String("status", string(req.Status)),
-				slog.String("error", err.Error()))
+			logger.Error("Failed to update order status", slog.Any("error", err))
 			response.Error(w, err)
 			return
 		}
 
-		slog.Info("Order status updated",
-			slog.String("orderId", id.String()),
-			slog.String("status", string(req.Status)),
-			slog.String("updatedBy", claims.UserID.String()))
+		logger.Info("Order status updated successfully")
 		response.Success(w, http.StatusOK, order)
 	}
 }
