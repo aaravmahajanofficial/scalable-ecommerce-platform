@@ -13,6 +13,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/metrics"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
@@ -92,52 +93,63 @@ func main() {
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
 	notificationService := service.NewNotificationService(repos.Notification, repos.User, sendGridClient)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
+
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 
-	// Setup router
-	routerMux := http.NewServeMux()
+	// Setup router for handling api routes only
+	apiMux := http.NewServeMux()
 
-	routerMux.Handle("/swagger/", httpSwagger.WrapHandler)
+	apiMux.HandleFunc("POST /api/v1/users/register", userHandler.Register())
+	apiMux.HandleFunc("POST /api/v1/users/login", userHandler.Login())
+	apiMux.HandleFunc("GET /api/v1/users/profile", authMiddleware.Authenticate(userHandler.Profile()))
+	apiMux.HandleFunc("POST /api/v1/products", authMiddleware.Authenticate(productHandler.CreateProduct()))
+	apiMux.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.GetProduct()))
+	apiMux.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.UpdateProduct()))
+	apiMux.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(productHandler.ListProducts()))
+	apiMux.HandleFunc("GET /api/v1/carts", authMiddleware.Authenticate(cartHandler.GetCart()))
+	apiMux.HandleFunc("POST /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.AddItem()))
+	apiMux.HandleFunc("PUT /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.UpdateQuantity()))
+	apiMux.HandleFunc("POST /api/v1/orders", authMiddleware.Authenticate(orderHandler.CreateOrder()))
+	apiMux.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(orderHandler.GetOrder()))
+	apiMux.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(orderHandler.ListOrders()))
+	apiMux.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(orderHandler.UpdateOrderStatus()))
+	apiMux.HandleFunc("POST /api/v1/payments", authMiddleware.Authenticate(paymentHandler.CreatePayment()))
+	apiMux.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(paymentHandler.GetPayment()))
+	apiMux.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(paymentHandler.ListPayments()))
+	apiMux.HandleFunc("POST /api/v1/payments/webhook", authMiddleware.Authenticate(paymentHandler.HandleStripeWebhook()))
+	apiMux.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(notificationHandler.SendEmail()))
+	apiMux.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(notificationHandler.ListNotifications()))
 
+	// Main router
+	mainMux := http.NewServeMux()
+
+	// Metrics handler
+	mainMux.Handle("/metrics", metrics.Handler())
+
+	// Swagger UI enpoint handler
+	mainMux.Handle("/swagger/", httpSwagger.WrapHandler)
 	slog.Info("Swagger UI available at http://" + swaggerHost + "/swagger/index.html")
 
-	routerMux.HandleFunc("POST /api/v1/users/register", userHandler.Register())
-	routerMux.HandleFunc("POST /api/v1/users/login", userHandler.Login())
-	routerMux.HandleFunc("GET /api/v1/users/profile", authMiddleware.Authenticate(userHandler.Profile()))
-	routerMux.HandleFunc("POST /api/v1/products", authMiddleware.Authenticate(productHandler.CreateProduct()))
-	routerMux.HandleFunc("GET /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.GetProduct()))
-	routerMux.HandleFunc("PUT /api/v1/products/{id}", authMiddleware.Authenticate(productHandler.UpdateProduct()))
-	routerMux.HandleFunc("GET /api/v1/products", authMiddleware.Authenticate(productHandler.ListProducts()))
-	routerMux.HandleFunc("GET /api/v1/carts", authMiddleware.Authenticate(cartHandler.GetCart()))
-	routerMux.HandleFunc("POST /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.AddItem()))
-	routerMux.HandleFunc("PUT /api/v1/carts/items", authMiddleware.Authenticate(cartHandler.UpdateQuantity()))
-	routerMux.HandleFunc("POST /api/v1/orders", authMiddleware.Authenticate(orderHandler.CreateOrder()))
-	routerMux.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(orderHandler.GetOrder()))
-	routerMux.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(orderHandler.ListOrders()))
-	routerMux.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(orderHandler.UpdateOrderStatus()))
-	routerMux.HandleFunc("POST /api/v1/payments", paymentHandler.CreatePayment())
-	routerMux.HandleFunc("GET /api/v1/payments/{id}", paymentHandler.GetPayment())
-	routerMux.HandleFunc("GET /api/v1/payments", paymentHandler.ListPayments())
-	routerMux.HandleFunc("POST /api/v1/payments/webhook", paymentHandler.HandleStripeWebhook())
-	routerMux.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(notificationHandler.SendEmail()))
-	routerMux.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(notificationHandler.ListNotifications()))
-
 	// Middleware chaining
-	var handler http.Handler = routerMux
-	handler = middleware.Logging(handler)
+	var apiHandler http.Handler = apiMux // raw router as base handler
+	apiHandler = metrics.Middleware(apiHandler)
+	apiHandler = middleware.Logging(apiHandler)
+
+	mainMux.Handle("/api/v1/", apiHandler)
 
 	// Setup http server
 	server := http.Server{
 		Addr:         cfg.Addr,
-		Handler:      handler,
+		Handler:      mainMux,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
 
 	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))
+	slog.Info("📊 Metrics available at http://" + cfg.Addr + "/metrics") // Log metrics endpoint
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
