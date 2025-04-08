@@ -30,14 +30,14 @@ func main() {
 	// Database setup
 	repos, err := repository.New(cfg)
 	if err != nil {
-		slog.Error("❌ Error accessing the database: %v", err)
+		slog.Error("❌ Error accessing the database", "error", err.Error())
 		os.Exit(1)
 	}
 
 	// Redis setup
 	redisRepo, err := repository.NewRedisRepo(cfg)
 	if err != nil {
-		slog.Error("❌ Error accessing the redis instance: %v", err)
+		slog.Error("❌ Error accessing the redis instance", "error", err.Error())
 		os.Exit(1)
 	}
 
