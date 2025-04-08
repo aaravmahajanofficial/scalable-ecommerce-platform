@@ -43,7 +43,7 @@ func init() {
 			slog.String("error", err.Error()))
 	}
 
-	if err := prometheus.Register(prometheus.NewGoCollector()); err != nil {
+	if err := prometheus.Register(collectors.NewGoCollector()); err != nil {
 		slog.Debug("GoCollector registration skipped (likely already registered)",
 			slog.String("error", err.Error()))
 	}
