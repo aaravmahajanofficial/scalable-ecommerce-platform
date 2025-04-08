@@ -25,6 +25,16 @@ func NewCartHandler(service service.CartService) *CartHandler {
 	}
 }
 
+// GetCart godoc
+// @Summary      Get the user's shopping cart
+// @Description  Retrieves the current shopping cart contents for the authenticated user. Creates a cart if one doesn't exist.
+// @Tags         Cart
+// @Produce      json
+// @Success      200 {object} models.Cart "Successfully retrieved or created cart"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      500 {object} response.ErrorResponse "Internal server error (e.g., failed to create cart)"
+// @Security     BearerAuth
+// @Router       /carts [get]
 func (h *CartHandler) GetCart() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -52,6 +62,20 @@ func (h *CartHandler) GetCart() http.HandlerFunc {
 	}
 }
 
+// AddItem godoc
+// @Summary      Add an item to the cart
+// @Description  Adds a specified quantity of a product to the authenticated user's shopping cart. Creates cart if needed.
+// @Tags         Cart
+// @Accept       json
+// @Produce      json
+// @Param        item body models.AddItemRequest true "Item details (Product ID and Quantity)"
+// @Success      200 {object} models.Cart "Item successfully added/updated in cart"
+// @Failure      400 {object} response.ErrorResponse "Validation error or invalid product ID/quantity"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      404 {object} response.ErrorResponse "Product not found"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /carts/items [post]
 func (h *CartHandler) AddItem() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -108,6 +132,20 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 	}
 }
 
+// UpdateQuantity godoc
+// @Summary      Update item quantity in the cart
+// @Description  Updates the quantity of a specific item in the authenticated user's shopping cart.
+// @Tags         Cart
+// @Accept       json
+// @Produce      json
+// @Param        item body models.UpdateQuantityRequest true "Item details (Product ID and new Quantity)"
+// @Success      200 {object} models.Cart "Quantity successfully updated"
+// @Failure      400 {object} response.ErrorResponse "Validation error or invalid product ID/quantity"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      404 {object} response.ErrorResponse "Cart or item not found"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /carts/items [put]
 func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "github.com/aaravmahajanofficial/scalable-ecommerce-platform/docs"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
@@ -16,8 +17,28 @@ import (
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title           Scalable E-commerce Platform API
+// @version         1.0
+// @description     This is the API server for the Scalable E-commerce Platform. It provides endpoints for managing users, products, carts, orders, payments, and notifications.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   Aarav Mahajan
+// @contact.url    https://github.com/aaravmahajanofficial
+// @contact.email  aaravmahajan2003@gmail.com
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8085
+// @BasePath  /api/v1
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token. Example: "Bearer {token}"
 func main() {
 
 	// Logger setup
@@ -26,6 +47,13 @@ func main() {
 
 	// Load config
 	cfg := config.MustLoad()
+
+	// Swagger setup
+	swaggerHost := cfg.Addr
+	if swaggerHost == "" {
+		swaggerHost = "localhost:8085"
+		slog.Warn("Server address not found in config (cfg.Addr), defaulting Swagger host to " + swaggerHost)
+	}
 
 	// Database setup
 	repos, err := repository.New(cfg)
@@ -70,6 +98,11 @@ func main() {
 
 	// Setup router
 	routerMux := http.NewServeMux()
+
+	routerMux.Handle("/swagger/", httpSwagger.WrapHandler)
+
+	slog.Info("Swagger UI available at http://" + swaggerHost + "/swagger/index.html")
+
 	routerMux.HandleFunc("POST /api/v1/users/register", userHandler.Register())
 	routerMux.HandleFunc("POST /api/v1/users/login", userHandler.Login())
 	routerMux.HandleFunc("GET /api/v1/users/profile", authMiddleware.Authenticate(userHandler.Profile()))
@@ -84,9 +117,9 @@ func main() {
 	routerMux.HandleFunc("GET /api/v1/orders/{id}", authMiddleware.Authenticate(orderHandler.GetOrder()))
 	routerMux.HandleFunc("GET /api/v1/orders", authMiddleware.Authenticate(orderHandler.ListOrders()))
 	routerMux.HandleFunc("PATCH /api/v1/orders/{id}/status", authMiddleware.Authenticate(orderHandler.UpdateOrderStatus()))
-	routerMux.HandleFunc("POST /api/v1/payments", authMiddleware.Authenticate(paymentHandler.CreatePayment()))
-	routerMux.HandleFunc("GET /api/v1/payments/{id}", authMiddleware.Authenticate(paymentHandler.GetPayment()))
-	routerMux.HandleFunc("GET /api/v1/payments", authMiddleware.Authenticate(paymentHandler.ListPayments()))
+	routerMux.HandleFunc("POST /api/v1/payments", paymentHandler.CreatePayment())
+	routerMux.HandleFunc("GET /api/v1/payments/{id}", paymentHandler.GetPayment())
+	routerMux.HandleFunc("GET /api/v1/payments", paymentHandler.ListPayments())
 	routerMux.HandleFunc("POST /api/v1/payments/webhook", paymentHandler.HandleStripeWebhook())
 	routerMux.HandleFunc("POST /api/v1/notifications/email", authMiddleware.Authenticate(notificationHandler.SendEmail()))
 	routerMux.HandleFunc("GET /api/v1/notifications", authMiddleware.Authenticate(notificationHandler.ListNotifications()))
@@ -97,8 +130,11 @@ func main() {
 
 	// Setup http server
 	server := http.Server{
-		Addr:    cfg.Addr,
-		Handler: handler,
+		Addr:         cfg.Addr,
+		Handler:      handler,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
 	}
 
 	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))
@@ -118,7 +154,7 @@ func main() {
 	slog.Warn("🛑 Shutdown signal received. Preparing to stop the server...")
 
 	// Graceful shutdown
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {

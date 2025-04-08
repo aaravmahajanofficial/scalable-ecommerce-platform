@@ -22,6 +22,19 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 	return &ProductHandler{productService: productService, validator: validator.New()}
 }
 
+// CreateProduct godoc
+// @Summary      Create a new product
+// @Description  Adds a new product to the catalog. Requires authentication.
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        product body models.CreateProductRequest true "Product Creation Details"
+// @Success      201 {object} models.Product "Successfully created product"
+// @Failure      400 {object} response.ErrorResponse "Validation error or invalid input"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /products [post]
 func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -51,6 +64,19 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 	}
 }
 
+// GetProduct godoc
+// @Summary      Get a product by ID
+// @Description  Retrieves details for a specific product using its ID. Requires authentication.
+// @Tags         Products
+// @Produce      json
+// @Param        id   path      string  true  "Product ID (UUID)" Format(uuid)
+// @Success      200 {object} models.Product "Successfully retrieved product"
+// @Failure      400 {object} response.ErrorResponse "Invalid product ID format"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      404 {object} response.ErrorResponse "Product not found"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /products/{id} [get]
 func (h *ProductHandler) GetProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -78,6 +104,21 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 	}
 }
 
+// UpdateProduct godoc
+// @Summary      Update a product by ID
+// @Description  Updates details for an existing product using its ID. Requires authentication.
+// @Tags         Products
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "Product ID (UUID)" Format(uuid)
+// @Param        product body models.UpdateProductRequest true "Product Update Details"
+// @Success      200 {object} models.Product "Successfully updated product"
+// @Failure      400 {object} response.ErrorResponse "Invalid product ID format or validation error"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      404 {object} response.ErrorResponse "Product not found"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /products/{id} [put]
 func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -116,6 +157,18 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 	}
 }
 
+// ListProducts godoc
+// @Summary      List products with pagination
+// @Description  Retrieves a paginated list of available products. Requires authentication.
+// @Tags         Products
+// @Produce      json
+// @Param        page      query     int  false  "Page number for pagination (default: 1)" minimum(1)
+// @Param        pageSize  query     int  false  "Number of items per page (default: 10, max: 100)" minimum(1) maximum(100)
+// @Success      200 {object} models.PaginatedResponse{Data=[]models.Product} "Successfully retrieved list of products"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /products [get]
 // for eg: GET /products?page=1&page_size=10
 func (h *ProductHandler) ListProducts() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

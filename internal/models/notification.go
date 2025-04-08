@@ -31,7 +31,7 @@ type Notification struct {
 	Content      string             `json:"content"`
 	Status       NotificationStatus `json:"status"`
 	ErrorMessage string             `json:"error_message,omitempty"`
-	Metadata     json.RawMessage    `json:"metadata,omitempty"` //highly dynamic
+	Metadata     json.RawMessage    `json:"metadata,omitempty" swaggertype:"object"` //highly dynamic
 	CreatedAt    time.Time          `json:"created_at"`
 	UpdatedAt    time.Time          `json:"updated_at"`
 	SentAt       *time.Time         `json:"sent_at,omitempty"`
@@ -57,7 +57,7 @@ type NotificationResponse struct {
 
 type NotificationListResponse struct {
 	Notifications []*Notification `json:"notifications"`
-	Total         int            `json:"total"`
-	Page          int            `json:"page"`
-	PageSize      int            `json:"page_size"`
+	Total         int             `json:"total"`
+	Page          int             `json:"page"`
+	PageSize      int             `json:"page_size"`
 }

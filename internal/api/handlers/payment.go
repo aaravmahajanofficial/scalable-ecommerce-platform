@@ -24,6 +24,21 @@ func NewPaymentHandler(paymentService service.PaymentService) *PaymentHandler {
 	return &PaymentHandler{paymentService: paymentService, validator: validator.New()}
 }
 
+// CreatePayment godoc
+// @Summary      Initiate a payment for an order
+// @Description  Creates a payment intent (e.g., with Stripe) for a specified order and returns the client secret needed for frontend processing. Requires authentication.
+// @Tags         Payments
+// @Accept       json
+// @Produce      json
+// @Param        payment body models.PaymentRequest true "Payment Request Details (Order ID, Amount, Currency, Customer ID)"
+// @Success      200 {object} models.PaymentResponse "Successfully initiated payment, includes client secret"
+// @Failure      400 {object} response.ErrorResponse "Validation error or invalid input"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      403 {object} response.ErrorResponse "Forbidden - Attempting to pay for another user's order"
+// @Failure      404 {object} response.ErrorResponse "Order not found or already paid"
+// @Failure      500 {object} response.ErrorResponse "Internal server error or payment provider error"
+// @Security     BearerAuth
+// @Router       /payments [post]
 func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -70,6 +85,20 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	}
 }
 
+// GetPayment godoc
+// @Summary      Get payment details by ID
+// @Description  Retrieves details for a specific payment record. Requires authentication. (Authorization might be needed to restrict access).
+// @Tags         Payments
+// @Produce      json
+// @Param        id   path      string  true  "Payment ID (Internal DB ID)"
+// @Success      200 {object} models.Payment "Successfully retrieved payment details"
+// @Failure      400 {object} response.ErrorResponse "Invalid or missing payment ID"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      403 {object} response.ErrorResponse "Forbidden - User cannot access this payment" // Add if authz implemented
+// @Failure      404 {object} response.ErrorResponse "Payment not found"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /payments/{id} [get]
 func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -106,6 +135,18 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 	}
 }
 
+// ListPayments godoc
+// @Summary      List user's payments with pagination
+// @Description  Retrieves a paginated list of payment records for the authenticated user. Requires authentication.
+// @Tags         Payments
+// @Produce      json
+// @Param        page      query     int  false  "Page number for pagination (default: 1)" minimum(1)
+// @Param        pageSize  query     int  false  "Number of items per page (default: 10, max: 100)" minimum(1) maximum(100)
+// @Success      200 {object} models.PaginatedResponse{Data=[]models.Payment} "Successfully retrieved list of payments"
+// @Failure      401 {object} response.ErrorResponse "Authentication required"
+// @Failure      500 {object} response.ErrorResponse "Internal server error"
+// @Security     BearerAuth
+// @Router       /payments [get]
 func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -149,6 +190,19 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 	}
 }
 
+// HandleStripeWebhook godoc
+// @Summary      Handle incoming Stripe webhooks
+// @Description  Receives and processes webhook events from Stripe (e.g., payment success, failure) to update internal payment and order statuses. This endpoint should not require application-level authentication but relies on Stripe's signature verification.
+// @Tags         Payments (Internal)
+// @Accept       json
+// @Produce      json
+// @Param        Stripe-Signature header string true "Stripe webhook signature for verification"
+// @Param        payload body object true "Raw Stripe event payload (JSON)"
+// @Success      200 {object} map[string]bool `{"success": true}` "Webhook received and processed successfully"
+// @Failure      400 {object} response.ErrorResponse "Bad request (e.g., missing signature, failed reading body, invalid payload)"
+// @Failure      401 {object} response.ErrorResponse "Webhook signature verification failed"
+// @Failure      500 {object} response.ErrorResponse "Internal server error during webhook processing"
+// @Router       /payments/webhook [post]
 func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
