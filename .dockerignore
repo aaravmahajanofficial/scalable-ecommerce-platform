@@ -1,0 +1,31 @@
+# .dockerignore
+
+# Ignore git directory
+.git
+.gitignore
+
+# Ignore Dockerfile itself and dockerignore
+Dockerfile
+.dockerignore
+
+# Ignore local environment variables
+.env
+
+# Ignore build artifacts (the runtime stage handles the final binary)
+bin/
+
+# Ignore OS-specific files
+*.DS_Store
+Thumbs.db
+
+# Ignore any local config overrides not meant for the container
+config.local.yaml
+
+# Ignore test files if not needed in the image
+*_test.go
+
+# Ignore vendor directory if you are using modules (go mod download handles it)
+vendor/
+
+# Ignore log files
+*.log

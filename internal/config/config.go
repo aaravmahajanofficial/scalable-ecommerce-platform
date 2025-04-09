@@ -15,7 +15,7 @@ type HTTPServer struct {
 }
 
 type Database struct {
-	Host            string        `yaml:"PG_HOST" env:"PG_HOST" env-default:"localhost"`
+	Host            string        `yaml:"PG_HOST" env:"PG_HOST" env-default:"0.0.0.0"`
 	Port            string        `yaml:"PG_PORT" env:"PG_PORT" env-default:"5432"`
 	User            string        `yaml:"PG_USER" env:"PG_USER" env-required:"true"`
 	Password        string        `yaml:"PG_PASSWORD" env:"PG_PASSWORD" env-required:"true"`

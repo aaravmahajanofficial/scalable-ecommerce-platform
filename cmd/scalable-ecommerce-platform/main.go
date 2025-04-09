@@ -33,7 +33,7 @@ import (
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host      localhost:8085
+// @host      0.0.0.0:8085
 // @BasePath  /api/v1
 
 // @securityDefinitions.apikey BearerAuth
@@ -52,7 +52,7 @@ func main() {
 	// Swagger setup
 	swaggerHost := cfg.Addr
 	if swaggerHost == "" {
-		swaggerHost = "localhost:8085"
+		swaggerHost = "0.0.0.0:8085"
 		slog.Warn("Server address not found in config (cfg.Addr), defaulting Swagger host to " + swaggerHost)
 	}
 

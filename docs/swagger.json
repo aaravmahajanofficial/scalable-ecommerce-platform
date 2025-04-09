@@ -15,7 +15,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:8085",
+    "host": "0.0.0.0:8085",
     "basePath": "/api/v1",
     "paths": {
         "/carts": {
