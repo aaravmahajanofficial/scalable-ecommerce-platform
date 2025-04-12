@@ -1927,7 +1927,7 @@ const docTemplate = `{
                 "name": {
                     "type": "string"
                 },
-                "update_at": {
+                "updated_at": {
                     "type": "string"
                 },
                 "username": {
