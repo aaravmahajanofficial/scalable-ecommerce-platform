@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -19,6 +20,13 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 )
 
 // @title           Scalable E-commerce Platform API
@@ -40,6 +48,55 @@ import (
 // @in header
 // @name Authorization
 // @description Type "Bearer" followed by a space and JWT token. Example: "Bearer {token}"
+
+// Creates and Register the Jaeger exporter and OTel TracerProvider
+func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
+
+	ctx := context.Background()
+
+	exporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(cfg.OTel.ExporterEndpoint), otlptracehttp.WithInsecure())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
+	}
+
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName(cfg.OTel.ServiceName),
+			semconv.ServiceVersion("1.0.0"),
+			semconv.DeploymentEnvironmentName(cfg.Env),
+		),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create resource: %w", err)
+	}
+
+	samplingRatio := cfg.OTel.SamplerRatio
+	if samplingRatio <= 0 || samplingRatio > 1 {
+		samplingRatio = 1.0
+	}
+
+	sampler := sdktrace.ParentBased(sdktrace.TraceIDRatioBased(samplingRatio))
+
+	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exporter), sdktrace.WithResource(res), sdktrace.WithSampler(sampler))
+
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	slog.Info("OpenTelemetry Tracer initialized",
+		slog.String("service_name", cfg.OTel.ServiceName),
+		slog.String("exporter_endpoint", cfg.OTel.ExporterEndpoint),
+		slog.Float64("sampling_ratio", samplingRatio),
+	)
+
+	return func(ctx context.Context) error {
+		shutdown, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+
+		return tp.Shutdown(shutdown)
+	}, nil
+}
+
 func main() {
 
 	// Logger setup
@@ -48,6 +105,20 @@ func main() {
 
 	// Load config
 	cfg := config.MustLoad()
+
+	tracerShutdown, err := initTracer(cfg)
+	if err != nil {
+		slog.Error("❌ Failed to initialize OpenTelemetry Tracer", "error", err.Error())
+		os.Exit(1)
+	}
+	defer func() {
+		slog.Info("Shutting down tracer...")
+		if err := tracerShutdown(context.Background()); err != nil {
+			slog.Error("⚠️ Error shutting down tracer", "error", err)
+		} else {
+			slog.Info("✅ Tracer shut down successfully.")
+		}
+	}()
 
 	// Swagger setup
 	swaggerHost := cfg.Addr
@@ -134,6 +205,8 @@ func main() {
 
 	// Middleware chaining
 	var apiHandler http.Handler = apiMux // raw router as base handler
+
+	apiHandler = otelhttp.NewHandler(apiHandler, "http.server")
 	apiHandler = metrics.Middleware(apiHandler)
 	apiHandler = middleware.Logging(apiHandler)
 

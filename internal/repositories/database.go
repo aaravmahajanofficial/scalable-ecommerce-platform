@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/XSAM/otelsql"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	_ "github.com/lib/pq"
 )
@@ -21,10 +23,20 @@ type Repositories struct {
 
 func New(cfg *config.Config) (*Repositories, error) {
 
-	db, err := sql.Open("postgres", cfg.Database.GetDSN())
-
+	db, err := otelsql.Open("postgres", cfg.Database.GetDSN(),
+		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
+		otelsql.WithAttributes(semconv.DBName(cfg.Database.Name)),
+	)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w", err)
+		return nil, fmt.Errorf("failed to open instrumented database connection: %w", err)
+	}
+
+	// DB stats collector
+	if err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
+		semconv.DBSystemPostgreSQL,
+		semconv.DBName(cfg.Database.Name),
+	)); err != nil {
+		return nil, fmt.Errorf("failed to register DB stats metrics: %w", err)
 	}
 
 	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
@@ -40,12 +52,13 @@ func New(cfg *config.Config) (*Repositories, error) {
 	// Initialize repositories
 	return &Repositories{
 		DB:           db,
-		User:         NewUserRepo(db),    // Initialize UserRepository
-		Product:      NewProductRepo(db), // Initialize ProductRepository
-		Cart:         NewCartRepo(db),    // Initialize CartRepository
+		User:         NewUserRepo(db),
+		Product:      NewProductRepo(db),
+		Cart:         NewCartRepo(db),
 		Order:        NewOrderRepository(db),
 		Payment:      NewPaymentRepository(db),
-		Notification: NewNotificationRepo(db)}, nil
+		Notification: NewNotificationRepo(db),
+	}, nil
 }
 
 func (r *Repositories) Close() error {

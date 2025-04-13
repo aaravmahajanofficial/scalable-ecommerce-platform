@@ -60,8 +60,8 @@ type Security struct {
 
 type OTelConfig struct {
 	ServiceName      string  `yaml:"SERVICE_NAME" env:"OTEL_SERVICE_NAME" env-default:"scalable-ecommerce-platform"`
-	ExporterEndpoint string  `yaml:"EXPORTER_ENDPOINT" env:"OTEL_EXPORTER_JAEGER_ENDPOINT" env-default:"http://localhost:14268/api/traces"`
-	SamplerRatio     float64 `yaml:"SAMPLER_RATIO" env:"OTEL_TRACES_SAMPLER_RATIO" env-default:"1.0"`
+	ExporterEndpoint string  `yaml:"EXPORTER_ENDPOINT" env:"OTEL_EXPORTER_ENDPOINT" env-default:"http://localhost:4318/v1/traces"`
+	SamplerRatio     float64 `yaml:"SAMPLER_RATIO" env:"OTEL_TRACES_SAMPLER_ARG" env-default:"1.0"`
 }
 
 type Config struct {
