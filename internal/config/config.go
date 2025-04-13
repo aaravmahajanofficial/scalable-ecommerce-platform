@@ -127,7 +127,6 @@ func MustLoad() *Config {
 
 func (d *Database) GetDSN() string {
 	host := d.Host
-	port := d.Port
 	user := d.User
 	password := d.Password
 	name := d.Name
@@ -135,9 +134,6 @@ func (d *Database) GetDSN() string {
 
 	if envHost := os.Getenv("PG_HOST"); envHost != "" {
 		host = envHost
-	}
-	if envPort := os.Getenv("PG_PORT"); envPort != "" {
-		port = envPort
 	}
 	if envUser := os.Getenv("PG_USER"); envUser != "" {
 		user = envUser
@@ -152,6 +148,6 @@ func (d *Database) GetDSN() string {
 		sslmode = envSSLMode
 	}
 
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		user, password, host, port, name, sslmode)
+	return fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s",
+		user, password, host, name, sslmode)
 }

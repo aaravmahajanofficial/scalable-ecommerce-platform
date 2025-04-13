@@ -33,17 +33,13 @@ import (
 // @version         1.0
 // @description     This is the API server for the Scalable E-commerce Platform. It provides endpoints for managing users, products, carts, orders, payments, and notifications.
 // @termsOfService  http://swagger.io/terms/
-
 // @contact.name   Aarav Mahajan
 // @contact.url    https://github.com/aaravmahajanofficial
 // @contact.email  aaravmahajan2003@gmail.com
-
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
 // @host      0.0.0.0:8085
 // @BasePath  /api/v1
-
 // @securityDefinitions.apikey BearerAuth
 // @in header
 // @name Authorization
@@ -59,10 +55,8 @@ func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
 		return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
 	}
 
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewWithAttributes(
-			semconv.SchemaURL,
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
 			semconv.ServiceName(cfg.OTel.ServiceName),
 			semconv.ServiceVersion("1.0.0"),
 			semconv.DeploymentEnvironmentName(cfg.Env),

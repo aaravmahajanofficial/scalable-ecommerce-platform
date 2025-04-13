@@ -6,7 +6,7 @@ import (
 
 	"github.com/XSAM/otelsql"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
 	_ "github.com/lib/pq"
 )
@@ -25,7 +25,7 @@ func New(cfg *config.Config) (*Repositories, error) {
 
 	db, err := otelsql.Open("postgres", cfg.Database.GetDSN(),
 		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
-		otelsql.WithAttributes(semconv.DBName(cfg.Database.Name)),
+		otelsql.WithAttributes(semconv.DBNamespace(cfg.Database.Name)),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open instrumented database connection: %w", err)
@@ -34,7 +34,7 @@ func New(cfg *config.Config) (*Repositories, error) {
 	// DB stats collector
 	if err := otelsql.RegisterDBStatsMetrics(db, otelsql.WithAttributes(
 		semconv.DBSystemPostgreSQL,
-		semconv.DBName(cfg.Database.Name),
+		semconv.DBNamespace(cfg.Database.Name),
 	)); err != nil {
 		return nil, fmt.Errorf("failed to register DB stats metrics: %w", err)
 	}
