@@ -9,8 +9,12 @@ import (
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const userTracerName = "ecommerce/userservice"
 
 type UserService interface {
 	Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error)
@@ -61,6 +65,12 @@ func (s *userService) Register(ctx context.Context, req *models.RegisterRequest)
 }
 
 func (s *userService) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
+
+	tracer := otel.Tracer(userTracerName)
+	ctx, span := tracer.Start(ctx, "LoginUser")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("user.email", req.Email))
 
 	// check rate limit
 	allowed, remaining, retryAfter, err := s.redisRepo.CheckLoginRateLimit(ctx, req.Email)

@@ -50,7 +50,7 @@ func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
 
 	ctx := context.Background()
 
-	exporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(cfg.OTel.ExporterEndpoint), otlptracehttp.WithInsecure())
+	exporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(cfg.OTel.ExporterEndpoint), otlptracehttp.WithURLPath("/v1/traces"), otlptracehttp.WithInsecure())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OTLP trace exporter: %w", err)
 	}
@@ -74,6 +74,7 @@ func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
 	sampler := sdktrace.ParentBased(sdktrace.TraceIDRatioBased(samplingRatio))
 
 	tp := sdktrace.NewTracerProvider(sdktrace.WithBatcher(exporter), sdktrace.WithResource(res), sdktrace.WithSampler(sampler))
+	otel.SetTracerProvider(tp)
 
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
@@ -200,7 +201,7 @@ func main() {
 	// Middleware chaining
 	var apiHandler http.Handler = apiMux // raw router as base handler
 
-	apiHandler = otelhttp.NewHandler(apiHandler, "http.server")
+	apiHandler = otelhttp.NewHandler(apiHandler, cfg.OTel.ServiceName)
 	apiHandler = metrics.Middleware(apiHandler)
 	apiHandler = middleware.Logging(apiHandler)
 

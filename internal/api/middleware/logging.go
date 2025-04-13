@@ -58,7 +58,7 @@ func Logging(next http.Handler) http.Handler {
 
 		rw := newResponseWriter(w)
 
-		next.ServeHTTP(w, r.WithContext(ctx))
+		next.ServeHTTP(rw, r.WithContext(ctx))
 
 		// log the completed request
 		requestLogger.Info("Request Completed", slog.Int("http_status", rw.statusCode), slog.Duration("duration", time.Since(start)))
