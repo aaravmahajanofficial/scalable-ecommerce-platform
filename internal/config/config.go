@@ -58,9 +58,14 @@ type Security struct {
 	JWTExpiryHours int    `yaml:"JWT_EXPIRY_HOURS" env:"JWT_EXPIRY_HOURS" env-default:"24"`
 }
 
+type OTelConfig struct {
+	ServiceName      string  `yaml:"SERVICE_NAME" env:"OTEL_SERVICE_NAME" env-default:"scalable-ecommerce-platform"`
+	ExporterEndpoint string  `yaml:"EXPORTER_ENDPOINT" env:"OTEL_EXPORTER_JAEGER_ENDPOINT" env-default:"http://localhost:14268/api/traces"`
+	SamplerRatio     float64 `yaml:"SAMPLER_RATIO" env:"OTEL_TRACES_SAMPLER_RATIO" env-default:"1.0"`
+}
+
 type Config struct {
 	Env          string `yaml:"env" env:"ENV" env-required:"true"`
-	StoragePath  string `yaml:"storage_path" env-required:"true"`
 	HTTPServer   `yaml:"http_server"`
 	Database     Database     `yaml:"database"`
 	RedisConnect RedisConnect `yaml:"redis"`
@@ -68,6 +73,7 @@ type Config struct {
 	Stripe       Stripe       `yaml:"stripe"`
 	SendGrid     SendGrid     `yaml:"sendgrid"`
 	Security     Security     `yaml:"security"`
+	OTel         OTelConfig   `yaml:"otel"`
 }
 
 func MustLoad() *Config {
@@ -85,9 +91,13 @@ func MustLoad() *Config {
 		configPath = *flags
 
 		if configPath == "" {
-
-			log.Fatal("Config path is not set")
-
+			defaultPath := "./config/local.yaml"
+			if _, err := os.Stat(defaultPath); err == nil {
+				configPath = defaultPath
+				log.Printf("Config path not specified, using default: %s", configPath)
+			} else {
+				log.Fatal("Config path is not set and default ./config/local.yaml not found")
+			}
 		}
 
 	}
@@ -102,7 +112,13 @@ func MustLoad() *Config {
 
 	if err != nil {
 
-		log.Fatalf("can not read config file: %s", err.Error())
+		log.Fatalf("cannot read config file: %s", err.Error())
+	}
+
+	// Environment variables can override the defaults
+	err = cleanenv.ReadEnv(&cfg)
+	if err != nil {
+		log.Fatalf("cannot read environment variables: %s", err.Error())
 	}
 
 	return &cfg
@@ -110,6 +126,32 @@ func MustLoad() *Config {
 }
 
 func (d *Database) GetDSN() string {
-	return fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
-		d.User, d.Password, d.Host, d.Name, d.SSLMode)
+	host := d.Host
+	port := d.Port
+	user := d.User
+	password := d.Password
+	name := d.Name
+	sslmode := d.SSLMode
+
+	if envHost := os.Getenv("PG_HOST"); envHost != "" {
+		host = envHost
+	}
+	if envPort := os.Getenv("PG_PORT"); envPort != "" {
+		port = envPort
+	}
+	if envUser := os.Getenv("PG_USER"); envUser != "" {
+		user = envUser
+	}
+	if envPassword := os.Getenv("PG_PASSWORD"); envPassword != "" {
+		password = envPassword
+	}
+	if envName := os.Getenv("PG_DBNAME"); envName != "" {
+		name = envName
+	}
+	if envSSLMode := os.Getenv("PG_SSLMODE"); envSSLMode != "" {
+		sslmode = envSSLMode
+	}
+
+	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		user, password, host, port, name, sslmode)
 }
