@@ -13,6 +13,7 @@ import (
 	_ "github.com/aaravmahajanofficial/scalable-ecommerce-platform/docs"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/cache"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/metrics"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
@@ -122,47 +123,71 @@ func main() {
 		slog.Warn("Server address not found in config (cfg.Addr), defaulting Swagger host to " + swaggerHost)
 	}
 
-	// Database setup
-	repos, err := repository.New(cfg)
+	// --- Redis Client Initialization ---
+	redisClient, err := repository.NewRedisClient(cfg)
 	if err != nil {
-		slog.Error("❌ Error accessing the database", "error", err.Error())
+		slog.Error("❌ Failed to initialize Redis client", "error", err.Error())
 		os.Exit(1)
 	}
-
-	// Redis setup
-	redisRepo, err := repository.NewRedisRepo(cfg)
-	if err != nil {
-		slog.Error("❌ Error accessing the redis instance", "error", err.Error())
-		os.Exit(1)
-	}
-
+	// Defer closing the Redis client connection
 	defer func() {
-		if err := repos.Close(); err != nil {
-			slog.Error("⚠️ Error closing database connection", slog.String("error", err.Error()))
+		slog.Info("Closing Redis connection...")
+		if err := redisClient.Close(); err != nil {
+			slog.Error("⚠️ Error closing Redis connection", slog.String("error", err.Error()))
 		} else {
-			slog.Info("✅ Database connection closed")
+			slog.Info("✅ Redis connection closed")
+		}
+	}()
+
+	// --- Cache Initialization ---
+	redisCache := cache.NewRedisCache(redisClient, &cfg.Cache)
+	slog.Info("Cache Initialized", slog.String("type", "redis"), slog.String("defaultTTL", cfg.Cache.DefaultTTL.String()))
+
+	// --- Rate Limiter Initialization ---
+	rateLimiter := repository.NewRateLimitRepo(redisClient, cfg)
+	slog.Info("Rate Limiter Initialized", slog.String("type", "redis"))
+
+	// --- Database and Repositories Initialization ---
+	repos, err := repository.New(cfg, redisClient, redisCache, rateLimiter)
+	if err != nil {
+		slog.Error("❌ Error initializing repositories", "error", err.Error())
+		os.Exit(1)
+	}
+	// Defer closing the DB connection
+	defer func() {
+		slog.Info("Closing repository connections (DB, Redis)...")
+		if err := repos.Close(); err != nil {
+			slog.Error("⚠️ Error closing repository connections", slog.String("error", err.Error()))
+		} else {
+			slog.Info("✅ Repository connections closed")
 		}
 	}()
 
 	jwtKey := []byte(cfg.Security.JWTKey)
 	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
 	sendGridClient := sendGrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
-	userService := service.NewUserService(repos.User, redisRepo, jwtKey)
+
+	userService := service.NewUserService(repos.User, repos.RateLimiter, jwtKey)
 	userHandler := handlers.NewUserHandler(userService)
+
 	productService := service.NewProductService(repos.Product)
 	productHandler := handlers.NewProductHandler(productService)
+
 	cartService := service.NewCartService(repos.Cart)
 	cartHandler := handlers.NewCartHandler(cartService)
+
 	orderService := service.NewOrderService(repos.Order, repos.Cart, repos.Product)
 	orderHandler := handlers.NewOrderHandler(orderService)
+
 	paymentService := service.NewPaymentService(repos.Payment, stripeClient)
 	paymentHandler := handlers.NewPaymentHandler(paymentService)
+
 	notificationService := service.NewNotificationService(repos.Notification, repos.User, sendGridClient)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
-	slog.Info("storage initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
+	slog.Info("Storage Initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 
 	// Setup router for handling api routes only
 	apiMux := http.NewServeMux()

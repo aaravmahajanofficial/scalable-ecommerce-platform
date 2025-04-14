@@ -72,7 +72,6 @@ require (
 	github.com/sendgrid/sendgrid-go v3.16.0+incompatible
 	github.com/swaggo/http-swagger v1.3.4
 	go.opentelemetry.io/otel v1.35.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	olympos.io/encoding/edn v0.0.0-20201019073823-d3554ca0b0a3 // indirect

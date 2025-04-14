@@ -32,6 +32,7 @@ type RedisConnect struct {
 	Username string `yaml:"REDIS_USER" env:"REDIS_USER" env-required:"true"`
 	Password string `yaml:"REDIS_PASSWORD" env:"REDIS_PASSWORD" env-required:"true"`
 	DB       int    `yaml:"REDIS_DB" env:"REDIS_DB" env-default:"0"`
+	Port     string `yaml:"REDIS_PORT" env:"REDIS_PORT" env-default:"6379"`
 }
 
 type RateConfig struct {
@@ -64,6 +65,10 @@ type OTelConfig struct {
 	SamplerRatio     float64 `yaml:"SAMPLER_RATIO" env:"OTEL_TRACES_SAMPLER_ARG" env-default:"1.0"`
 }
 
+type CacheConfig struct {
+	DefaultTTL time.Duration `yaml:"default_ttl" env:"CACHE_DEFAULT_TTL" env-default:"5m"`
+}
+
 type Config struct {
 	Env          string `yaml:"env" env:"ENV" env-required:"true"`
 	HTTPServer   `yaml:"http_server"`
@@ -74,6 +79,7 @@ type Config struct {
 	SendGrid     SendGrid     `yaml:"sendgrid"`
 	Security     Security     `yaml:"security"`
 	OTel         OTelConfig   `yaml:"otel"`
+	Cache        CacheConfig  `yaml:"cache"`
 }
 
 func MustLoad() *Config {

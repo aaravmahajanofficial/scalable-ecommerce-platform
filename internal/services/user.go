@@ -24,11 +24,11 @@ type UserService interface {
 
 type userService struct {
 	repo      repository.UserRepository
-	redisRepo repository.RedisRepository
+	redisRepo repository.RateLimitRepository
 	jwtKey    []byte
 }
 
-func NewUserService(repo repository.UserRepository, redisRepo repository.RedisRepository, jwtKey []byte) UserService {
+func NewUserService(repo repository.UserRepository, redisRepo repository.RateLimitRepository, jwtKey []byte) UserService {
 	return &userService{
 		repo:      repo,
 		redisRepo: redisRepo,

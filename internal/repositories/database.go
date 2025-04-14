@@ -5,7 +5,9 @@ import (
 	"fmt"
 
 	"github.com/XSAM/otelsql"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/cache"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
+	"github.com/redis/go-redis/v9"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 
 	_ "github.com/lib/pq"
@@ -13,15 +15,18 @@ import (
 
 type Repositories struct {
 	DB           *sql.DB
+	RedisClient  *redis.Client
 	User         UserRepository
 	Product      ProductRepository
 	Cart         CartRepository
 	Order        OrderRepository
 	Payment      PaymentRepository
 	Notification NotificationRepository
+	RateLimiter  RateLimitRepository
+	Cache        cache.Cache
 }
 
-func New(cfg *config.Config) (*Repositories, error) {
+func New(cfg *config.Config, redisClient *redis.Client, cacheImpl cache.Cache, rateLimiter RateLimitRepository) (*Repositories, error) {
 
 	db, err := otelsql.Open("postgres", cfg.Database.GetDSN(),
 		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
@@ -52,15 +57,28 @@ func New(cfg *config.Config) (*Repositories, error) {
 	// Initialize repositories
 	return &Repositories{
 		DB:           db,
+		RedisClient:  redisClient,
 		User:         NewUserRepo(db),
 		Product:      NewProductRepo(db),
 		Cart:         NewCartRepo(db),
 		Order:        NewOrderRepository(db),
 		Payment:      NewPaymentRepository(db),
 		Notification: NewNotificationRepo(db),
+		RateLimiter:  rateLimiter,
+		Cache:        cacheImpl,
 	}, nil
 }
 
 func (r *Repositories) Close() error {
-	return r.DB.Close()
+	// Close DB connection
+	dbErr := r.DB.Close()
+	redisErr := r.RedisClient.Close()
+
+	if dbErr != nil {
+		return fmt.Errorf("error closing database: %w", dbErr)
+	}
+	if redisErr != nil {
+		return fmt.Errorf("error closing redis: %w", redisErr)
+	}
+	return nil
 }

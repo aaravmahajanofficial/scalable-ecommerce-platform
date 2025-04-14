@@ -3,40 +3,39 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
-	"strconv"
+	"log/slog"
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisRepository interface {
+type RateLimitRepository interface {
 	CheckLoginRateLimit(ctx context.Context, username string) (bool, int, int, error)
 }
 
 type redisRepository struct {
 	client *redis.Client
-	config *config.Config
+	cfg    *config.Config
 }
 
-func NewRedisRepo(cfg *config.Config) (RedisRepository, error) {
+func NewRedisClient(cfg *config.Config) (*redis.Client, error) {
 
-	// client := redis.NewClient(&redis.Options{
-	// 	Addr:     cfg.RedisConnect.Host,
-	// 	Username: cfg.RedisConnect.Username,
-	// 	Password: cfg.RedisConnect.Password,
-	// 	DB:       cfg.RedisConnect.DB,
-	// })
-
-	// Redis connection
-	redisURL := "redis://default:fctMBxFvOnFqMammXZeavtHQhwNsvJKw@ballast.proxy.rlwy.net:25502"
+	redisURL := fmt.Sprintf("redis://%s:%s@%s:%s",
+		cfg.RedisConnect.Username,
+		cfg.RedisConnect.Password,
+		cfg.RedisConnect.Host,
+		cfg.RedisConnect.Port,
+	)
+	slog.Info("Connecting to Redis", slog.String("url", fmt.Sprintf("redis://%s:<password>@%s:%s", cfg.RedisConnect.Username, cfg.RedisConnect.Host, cfg.RedisConnect.Port)))
 
 	// Parse the Redis URL
 	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
-		log.Fatalf("Failed to parse Redis URL: %v", err)
+		slog.Error("Failed to parse Redis URL", slog.Any("error", err), slog.String("url", redisURL))
+		return nil, fmt.Errorf("failed to parse Redis URL: %w", err)
 	}
+	opt.DB = cfg.RedisConnect.DB
 
 	client := redis.NewClient(opt)
 
@@ -44,13 +43,19 @@ func NewRedisRepo(cfg *config.Config) (RedisRepository, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Test the connection to make sure Redis is reachable
+	// Test the connection
 	if err := client.Ping(ctx).Err(); err != nil {
-		return nil, fmt.Errorf("failed to connect to database: %v", err)
+		slog.Error("Failed to connect to Redis", slog.Any("error", err))
+		return nil, fmt.Errorf("failed to connect to Redis: %w", err)
 	}
 
-	return &redisRepository{client: client, config: cfg}, nil
+	slog.Info("✅ Successfully connected to Redis")
+	return client, nil
 
+}
+
+func NewRateLimitRepo(client *redis.Client, cfg *config.Config) RateLimitRepository {
+	return &redisRepository{client: client, cfg: cfg}
 }
 
 // Returns isAllowed, attempts left, seconds to wait, error
@@ -62,7 +67,7 @@ func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username stri
 	now := time.Now().Unix()
 
 	// This means only login attempts after 'this time' are counted.
-	windowStart := now - int64(r.config.RateConfig.WindowSize.Seconds())
+	windowStart := now - int64(r.cfg.RateConfig.WindowSize.Seconds())
 
 	// redis pipeline for executing multiple commands
 	pipe := r.client.Pipeline()
@@ -73,42 +78,44 @@ func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username stri
 	// add the current login attempt
 	pipe.ZAdd(ctx, key, redis.Z{Score: float64(now), Member: now})
 
-	// count the number of login attempts
+	// count the number of login attempts, currently in the window
 	count := pipe.ZCard(ctx, key)
 
 	// delete the redis key after expiry
-	pipe.Expire(ctx, key, r.config.RateConfig.WindowSize)
+	pipe.Expire(ctx, key, r.cfg.RateConfig.WindowSize)
 
 	// execute the commands
 	_, err := pipe.Exec(ctx)
-
 	if err != nil {
-		return false, 0, 0, err
+		slog.Error("Redis pipeline execution failed for rate limit", slog.String("key", key), slog.Any("error", err))
+		return false, 0, 0, fmt.Errorf("redis pipeline error for rate limit check: %w", err)
 	}
 
 	// remaining attempts
 	attempts := count.Val()
-	remaining := r.config.RateConfig.MaxAttempts - attempts
+	remaining := r.cfg.RateConfig.MaxAttempts - attempts
 
-	if attempts >= r.config.RateConfig.MaxAttempts {
-		oldest, err := r.client.ZRange(ctx, key, 0, 0).Result()
-		if err != nil || len(oldest) == 0 {
-			return false, 0, 0, err
+	if attempts >= r.cfg.RateConfig.MaxAttempts {
+
+		oldestScoreCmd := r.client.ZRangeArgsWithScores(ctx, redis.ZRangeArgs{
+			Key: key, Start: 0, Stop: 0,
+		})
+
+		scores, err := oldestScoreCmd.Result()
+		if err != nil || len(scores) == 0 {
+			slog.Error("Failed to get oldest attempt time for rate limit", slog.String("key", key), slog.Any("error", err))
+			return false, 0, int(r.cfg.RateConfig.WindowSize.Seconds()), fmt.Errorf("failed to get oldest attempt time: %w", err)
 		}
 
-		// convert the oldest attempt into a time value.
-		oldestTime, err := strconv.ParseInt(oldest[0], 10, 64)
-		if err != nil {
-			return false, 0, 0, err
-		}
+		oldestTimestamp := int64(scores[0].Score)
 
-		retryAfter := int64(r.config.RateConfig.WindowSize.Seconds()) - (now - oldestTime)
+		retryAfter := max((oldestTimestamp+int64(r.cfg.RateConfig.WindowSize.Seconds()))-now, 0)
 
-		return false, 0, int(retryAfter), err
+		slog.Warn("Rate limit exceeded for user", slog.String("username", username), slog.Int64("attempts", attempts))
+		return false, 0, int(retryAfter), nil
 	}
 
 	return true, int(remaining), 0, nil
-
 }
 
 // login attempts stored in redis
