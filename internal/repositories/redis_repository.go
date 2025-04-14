@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
 	"github.com/redis/go-redis/v9"
 )
@@ -61,6 +62,8 @@ func NewRateLimitRepo(client *redis.Client, cfg *config.Config) RateLimitReposit
 // Returns isAllowed, attempts left, seconds to wait, error
 func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username string) (bool, int, int, error) {
 
+	logger := middleware.LoggerFromContext(ctx)
+
 	// create a username key
 	key := fmt.Sprintf("login_attempts:%s", username)
 
@@ -87,7 +90,7 @@ func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username stri
 	// execute the commands
 	_, err := pipe.Exec(ctx)
 	if err != nil {
-		slog.Error("Redis pipeline execution failed for rate limit", slog.String("key", key), slog.Any("error", err))
+		logger.Error("Redis pipeline execution failed for rate limit", slog.String("key", key), slog.Any("error", err))
 		return false, 0, 0, fmt.Errorf("redis pipeline error for rate limit check: %w", err)
 	}
 
@@ -103,7 +106,7 @@ func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username stri
 
 		scores, err := oldestScoreCmd.Result()
 		if err != nil || len(scores) == 0 {
-			slog.Error("Failed to get oldest attempt time for rate limit", slog.String("key", key), slog.Any("error", err))
+			logger.Error("Failed to get oldest attempt time for rate limit", slog.String("key", key), slog.Any("error", err))
 			return false, 0, int(r.cfg.RateConfig.WindowSize.Seconds()), fmt.Errorf("failed to get oldest attempt time: %w", err)
 		}
 
@@ -111,10 +114,11 @@ func (r *redisRepository) CheckLoginRateLimit(ctx context.Context, username stri
 
 		retryAfter := max((oldestTimestamp+int64(r.cfg.RateConfig.WindowSize.Seconds()))-now, 0)
 
-		slog.Warn("Rate limit exceeded for user", slog.String("username", username), slog.Int64("attempts", attempts))
+		logger.Warn("Rate limit exceeded for user", slog.String("username", username), slog.Int64("attempts", attempts))
 		return false, 0, int(retryAfter), nil
 	}
 
+	logger.Debug("Rate limit check passed", slog.String("username", username), slog.Int64("attempts", attempts), slog.Int64("remaining", remaining))
 	return true, int(remaining), 0, nil
 }
 
