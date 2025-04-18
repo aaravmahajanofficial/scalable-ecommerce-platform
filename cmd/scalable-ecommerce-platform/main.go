@@ -15,6 +15,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/cache"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/health"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/metrics"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
@@ -189,6 +190,19 @@ func main() {
 
 	slog.Info("Storage Initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
 
+	healthEndpoints := &health.HealthEndpoint{
+		DB:           repos.DB,
+		RedisClient:  repos.RedisClient,
+		StripeClient: &stripeClient,
+	}
+
+	healthChecker, err := health.NewHealthHandler(cfg, healthEndpoints)
+	if err != nil {
+		slog.Error("❌ Failed to initialize health checker", "error", err.Error())
+		os.Exit(1)
+	}
+	slog.Info("✅ Health checks initialized")
+
 	// Setup router for handling api routes only
 	apiMux := http.NewServeMux()
 
@@ -218,6 +232,10 @@ func main() {
 
 	// Metrics handler
 	mainMux.Handle("/metrics", metrics.Handler())
+
+	// Health check handler
+	mainMux.Handle("/healthz", healthChecker.Handler())
+	slog.Info("⚕️ Health checks available at http://"+cfg.Addr+"/healthz", slog.String("address", cfg.Addr))
 
 	// Swagger UI enpoint handler
 	mainMux.Handle("/swagger/", httpSwagger.WrapHandler)

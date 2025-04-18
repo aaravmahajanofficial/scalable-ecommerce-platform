@@ -16,13 +16,13 @@ import (
 	"github.com/stripe/stripe-go/v81/balance"
 )
 
-type Endpoints struct {
+type HealthEndpoint struct {
 	DB           *sql.DB
 	RedisClient  *redis.Client
 	StripeClient *stripeClient.Client
 }
 
-func NewHealthHandler(cfg *config.Config, endpoints *Endpoints) (*health.Health, error) {
+func NewHealthHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (*health.Health, error) {
 
 	h, err := health.New(
 		health.WithComponent(health.Component{
@@ -55,7 +55,7 @@ func NewHealthHandler(cfg *config.Config, endpoints *Endpoints) (*health.Health,
 				Timeout:   5 * time.Second,
 				SkipOnErr: false,
 				Check: func(ctx context.Context) error {
-					if endpoints.StripeClient == nil {
+					if healthEndpoint.StripeClient == nil {
 						return fmt.Errorf("stripe client is not initialized")
 					}
 					params := &stripe.BalanceParams{
