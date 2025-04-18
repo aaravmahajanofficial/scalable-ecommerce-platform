@@ -157,3 +157,30 @@ func (d *Database) GetDSN() string {
 	return fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s",
 		user, password, host, name, sslmode)
 }
+
+func (r *RedisConnect) GetDSN() string {
+	user := r.Username
+	password := r.Password
+	host := r.Host
+	port := r.Port
+
+	if envHost := os.Getenv("REDIS_HOST"); envHost != "" {
+		host = envHost
+	}
+	if envUser := os.Getenv("REDIS_USER"); envUser != "" {
+		user = envUser
+	}
+	if envPassword := os.Getenv("REDIS_PASSWORD"); envPassword != "" {
+		password = envPassword
+	}
+	if envPort := os.Getenv("REDIS_PORT"); envPort != "" {
+		port = envPort
+	}
+
+	return fmt.Sprintf("redis://%s:%s@%s:%s",
+		user,
+		password,
+		host,
+		port,
+	)
+}
