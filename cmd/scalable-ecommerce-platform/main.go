@@ -168,24 +168,23 @@ func main() {
 	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
 	sendGridClient := sendGrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
 
+	// Service Init
 	userService := service.NewUserService(repos.User, repos.RateLimiter, jwtKey)
-	userHandler := handlers.NewUserHandler(userService)
-
 	productService := service.NewProductService(repos.Product)
-	productHandler := handlers.NewProductHandler(productService)
-
 	cartService := service.NewCartService(repos.Cart)
-	cartHandler := handlers.NewCartHandler(cartService)
-
 	orderService := service.NewOrderService(repos.Order, repos.Cart, repos.Product)
-	orderHandler := handlers.NewOrderHandler(orderService)
-
 	paymentService := service.NewPaymentService(repos.Payment, stripeClient)
-	paymentHandler := handlers.NewPaymentHandler(paymentService)
-
 	notificationService := service.NewNotificationService(repos.Notification, repos.User, sendGridClient)
+
+	// Handler Init
+	userHandler := handlers.NewUserHandler(userService)
+	productHandler := handlers.NewProductHandler(productService)
+	cartHandler := handlers.NewCartHandler(cartService)
+	orderHandler := handlers.NewOrderHandler(orderService)
+	paymentHandler := handlers.NewPaymentHandler(paymentService)
 	notificationHandler := handlers.NewNotificationHandler(notificationService)
 
+	// Middleware Init
 	authMiddleware := middleware.NewAuthMiddleware(jwtKey)
 
 	slog.Info("Storage Initialized", slog.String("env", cfg.Env), slog.String("version", "1.0.0"))
@@ -196,11 +195,14 @@ func main() {
 		StripeClient: &stripeClient,
 	}
 
-	healthChecker, err := health.NewHealthHandler(cfg, healthEndpoints)
+	readinessHandler, err := health.NewReadinessHandler(cfg, healthEndpoints)
 	if err != nil {
-		slog.Error("❌ Failed to initialize health checker", "error", err.Error())
+		slog.Error("❌ Failed to initialize readiness checker", "error", err.Error())
 		os.Exit(1)
 	}
+
+	livenessHandler := health.NewLivenessHandler()
+
 	slog.Info("✅ Health checks initialized")
 
 	// Setup router for handling api routes only
@@ -233,20 +235,24 @@ func main() {
 	// Metrics handler
 	mainMux.Handle("/metrics", metrics.Handler())
 
-	// Health check handler
-	mainMux.Handle("/healthz", healthChecker.Handler())
-	slog.Info("⚕️ Health checks available at http://"+cfg.Addr+"/healthz", slog.String("address", cfg.Addr))
+	// Liveness check endpoint
+	mainMux.Handle("/livez", livenessHandler)
+	slog.Info("⚕️ Liveness probe available", slog.String("path", "/livez"))
 
-	// Swagger UI enpoint handler
+	// Readiness check endpoint
+	mainMux.Handle("/readyz", readinessHandler)
+	slog.Info("⚕️ Readiness probe available", slog.String("path", "/readyz"))
+
+	// Swagger UI enpoint
 	mainMux.Handle("/swagger/", httpSwagger.WrapHandler)
 	slog.Info("Swagger UI available at http://" + swaggerHost + "/swagger/index.html")
 
-	// Middleware chaining
 	var apiHandler http.Handler = apiMux // raw router as base handler
 
-	apiHandler = otelhttp.NewHandler(apiHandler, cfg.OTel.ServiceName)
+	// Middleware chaining -> Reverse order of execution, 
+	apiHandler = middleware.Logging(apiHandler) // Log all info
 	apiHandler = metrics.Middleware(apiHandler)
-	apiHandler = middleware.Logging(apiHandler)
+	apiHandler = otelhttp.NewHandler(apiHandler, cfg.OTel.ServiceName) //  Wraps actual business logic
 
 	mainMux.Handle("/api/v1/", apiHandler)
 
@@ -260,7 +266,7 @@ func main() {
 	}
 
 	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))
-	slog.Info("📊 Metrics available at http://" + cfg.Addr + "/metrics") // Log metrics endpoint
+	slog.Info("📊 Metrics available", slog.String("path", "/metrics"))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -268,22 +274,24 @@ func main() {
 	go func() { // Starts the HTTP server in a new goroutine so it doesn't block the main thread.
 
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			slog.Error("❌ Failed to start server", slog.Any("error", err.Error()))
+			slog.Error("❌ Server failed to start", "error", err.Error())
+			close(done)
 		}
 	}()
 
+	slog.Info("✅ Server started successfully")
 	<-done // blocking, until no signal is added to "done" channel, after the some signal is received the code after this point would be executed
 
-	slog.Warn("🛑 Shutdown signal received. Preparing to stop the server...")
-
 	// Graceful shutdown
+	slog.Info("⏳ Server shutting down...")
+
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
-		slog.Error("⚠️ Server shutdown encountered an issue", slog.String("error", err.Error()))
+		slog.Error("⚠️ Server shutdown failed", "error", err)
 	} else {
-		slog.Info("✅ Server shut down gracefully. All connections closed.")
+		slog.Info("✅ Server shutdown complete")
 	}
 
 }

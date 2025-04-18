@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
@@ -22,12 +23,12 @@ type HealthEndpoint struct {
 	StripeClient *stripeClient.Client
 }
 
-func NewHealthHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (*health.Health, error) {
+func NewReadinessHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (http.Handler, error) {
 
 	h, err := health.New(
-		health.WithComponent(health.Component{
 
-			Name:    "scalable-ecommerce-platform",
+		health.WithComponent(health.Component{
+			Name:    cfg.OTel.ServiceName,
 			Version: "1.0.0",
 		}),
 		health.WithSystemInfo(),
@@ -58,13 +59,20 @@ func NewHealthHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (*heal
 					if healthEndpoint.StripeClient == nil {
 						return fmt.Errorf("stripe client is not initialized")
 					}
+
+					reqCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
+					defer cancel()
+
 					params := &stripe.BalanceParams{
 						Params: stripe.Params{
-							Context: ctx,
+							Context: reqCtx,
 						},
 					}
 					_, err := balance.Get(params)
 					if err != nil {
+						if ctxErr := reqCtx.Err(); ctxErr == context.DeadlineExceeded {
+							return fmt.Errorf("stripe API call timed out: %w", ctxErr)
+						}
 						return fmt.Errorf("failed to connect to stripe: %w", err)
 					}
 					return nil
@@ -74,8 +82,16 @@ func NewHealthHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (*heal
 	)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to create health instance: %w", err)
+		return nil, fmt.Errorf("failed to create readiness health instance: %w", err)
 	}
 
-	return h, nil
+	return h.Handler(), nil
+}
+
+func NewLivenessHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "text/plain")
+		fmt.Fprintf(w, "Service is alive. Time: %s\n", time.Now().Format(time.RFC3339))
+	}
 }
