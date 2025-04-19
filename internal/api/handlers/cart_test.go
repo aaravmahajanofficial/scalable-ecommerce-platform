@@ -108,7 +108,7 @@ func TestGetCart(t *testing.T) {
 		err := json.Unmarshal(recorder.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.False(t, resp.Success)
-		assert.Contains(t, resp.Error.Message, "Authentication required")
+		assert.Equal(t, "Authentication required", resp.Error.Message)
 	})
 
 	t.Run("Failure - Cart Not Found", func(t *testing.T) {
@@ -324,7 +324,7 @@ func TestAddItem(t *testing.T) {
 		err := json.Unmarshal(recorder.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.False(t, resp.Success)
-		assert.Contains(t, resp.Error.Message, "Failed to parse request")
+		assert.Equal(t, "Invalid JSON format", resp.Error.Message)
 
 		mockCartService.AssertExpectations(t)
 	})
