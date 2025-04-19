@@ -16,15 +16,19 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks" // Assuming mocks are in services/mocks
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func createTestRequestWithContext(method, target string, body io.Reader, userID uuid.UUID) *http.Request {
+func createTestRequestWithContext(method, target string, body io.Reader, userID uuid.UUID, pathParams map[string]string) *http.Request {
 	req := httptest.NewRequest(method, target, body)
+
+	for key, value := range pathParams {
+		req.SetPathValue(key, value)
+	}
 
 	claims := &models.Claims{UserID: userID, Email: "test@example.com"}
 
@@ -34,8 +38,12 @@ func createTestRequestWithContext(method, target string, body io.Reader, userID 
 	return req.WithContext(ctx)
 }
 
-func createTestRequestWithoutContext(method, target string, body io.Reader) *http.Request {
+func createTestRequestWithoutContext(method, target string, body io.Reader, pathParams map[string]string) *http.Request {
 	req := httptest.NewRequest(method, target, body)
+
+	for key, value := range pathParams {
+		req.SetPathValue(key, value)
+	}
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx := context.WithValue(req.Context(), middleware.LoggerKey, logger)
@@ -47,6 +55,7 @@ func TestCreateOrder(t *testing.T) {
 	mockOrderService := new(mocks.OrderService)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	userID := uuid.New()
+	orderID := uuid.New()
 
 	t.Run("Success - Order Created", func(t *testing.T) {
 		// Arrange
@@ -56,8 +65,8 @@ func TestCreateOrder(t *testing.T) {
 				Street:     "123 Test Street",
 				City:       "Test City",
 				State:      "TS",
-				PostalCode: "12345",     
-				Country:    "Testland",  
+				PostalCode: "12345",
+				Country:    "US",
 			},
 			Items: []models.OrderItem{
 				{
@@ -68,15 +77,15 @@ func TestCreateOrder(t *testing.T) {
 			},
 		}
 		expectedOrder := &models.Order{
-			ID:         uuid.New(),
+			ID:         orderID,
 			CustomerID: userID,
 			Status:     models.OrderStatusPending,
 			ShippingAddress: &models.Address{
-				Street: "123 Test Street",
+				Street:     "123 Test Street",
 				City:       "Test City",
 				State:      "TS",
-				PostalCode: "12345",     
-				Country:    "Testland",  
+				PostalCode: "12345",
+				Country:    "US",
 			},
 			Items: []models.OrderItem{
 				{
@@ -95,7 +104,10 @@ func TestCreateOrder(t *testing.T) {
 
 		// Create request body
 		bodyBytes, _ := json.Marshal(createReq)
-		req := createTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -129,16 +141,22 @@ func TestCreateOrder(t *testing.T) {
 		// Arrange
 		createReq := models.CreateOrderRequest{
 			ShippingAddress: models.Address{
-				Street: "123 Test Street",
+				Street:     "123 Test Street",
 				City:       "Test City",
 				State:      "TS",
-				PostalCode: "12345",     
-				Country:    "Testland",  
+				PostalCode: "12345",
+				Country:    "US",
 			},
-			Items: []models.OrderItem{},
+			Items: []models.OrderItem{
+				{
+					ProductID: uuid.New(),
+					Quantity:  1,
+					UnitPrice: 50.0,
+				},
+			},
 		}
 		bodyBytes, _ := json.Marshal(createReq)
-		req := createTestRequestWithoutContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes))
+		req := createTestRequestWithoutContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -153,7 +171,7 @@ func TestCreateOrder(t *testing.T) {
 
 	t.Run("Failure - Invalid Input", func(t *testing.T) {
 		// Arrange
-		req := createTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader([]byte("{invalid json")), userID) // Invalid JSON
+		req := createTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader([]byte("{invalid json")), userID, nil)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -169,20 +187,27 @@ func TestCreateOrder(t *testing.T) {
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
 		createReq := models.CreateOrderRequest{
+			CustomerID: uuid.New(),
 			ShippingAddress: models.Address{
-				Street: "123 Test Street",
+				Street:     "123 Test Street",
 				City:       "Test City",
 				State:      "TS",
-				PostalCode: "12345",     
-				Country:    "Testland",  
+				PostalCode: "12345",
+				Country:    "US",
 			},
-			Items: []models.OrderItem{},
+			Items: []models.OrderItem{
+				{
+					ProductID: uuid.New(),
+					Quantity:  1,
+					UnitPrice: 50.0,
+				},
+			},
 		}
 		// Mock Call
 		mockOrderService.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.CreateOrderRequest")).Return(nil, appErrors.DatabaseError("DB Connection Failed")).Once()
 
 		bodyBytes, _ := json.Marshal(createReq)
-		req := createTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID)
+		req := createTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID, nil)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -215,7 +240,10 @@ func TestGetOrder(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(expectedOrder, nil).Once()
 
-		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -245,7 +273,7 @@ func TestGetOrder(t *testing.T) {
 
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
-		req := createTestRequestWithoutContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil)
+		req := createTestRequestWithoutContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -259,7 +287,7 @@ func TestGetOrder(t *testing.T) {
 
 	t.Run("Failure - Invalid Order ID", func(t *testing.T) {
 		// Arrange
-		req := createTestRequestWithContext(http.MethodGet, "/orders/invalid-uuid", nil, userID)
+		req := createTestRequestWithContext(http.MethodGet, "/orders/invalid-uuid", nil, userID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -277,8 +305,10 @@ func TestGetOrder(t *testing.T) {
 
 		// Mock Call
 		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(nil, notFoundErr).Once()
-
-		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -301,8 +331,10 @@ func TestGetOrder(t *testing.T) {
 
 		// Mock Call
 		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(orderFromOtherUser, nil).Once()
-
-		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -319,8 +351,10 @@ func TestGetOrder(t *testing.T) {
 
 		// Mock Call
 		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(nil, appErrors.DatabaseError("DB Connection Failed")).Once()
-
-		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodGet, fmt.Sprintf("/orders/%s", orderID), nil, userID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -333,7 +367,6 @@ func TestGetOrder(t *testing.T) {
 	})
 }
 
-// TestListOrders tests the ListOrders handler
 func TestListOrders(t *testing.T) {
 	mockOrderService := new(mocks.OrderService)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
@@ -352,7 +385,7 @@ func TestListOrders(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("ListOrdersByCustomer", mock.Anything, userID, expectedPage, expectedPageSize).Return(expectedOrders, expectedTotal, nil).Once()
 
-		req := createTestRequestWithContext(http.MethodGet, "/orders", nil, userID)
+		req := createTestRequestWithContext(http.MethodGet, "/orders", nil, userID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -379,12 +412,11 @@ func TestListOrders(t *testing.T) {
 		ordersBytes, err := json.Marshal(dataMap["data"])
 		assert.NoError(t, err)
 
-		// Need to remarshal/unmarshal Data to compare []models.Order
 		var respOrders []models.Order
 		err = json.Unmarshal(ordersBytes, &respOrders)
 		assert.NoError(t, err)
 
-		// Assert the product data
+		// Assert the order data
 		assert.Len(t, respOrders, len(respOrders))
 		assert.Equal(t, expectedOrders[0].ID, respOrders[0].ID)
 		assert.Equal(t, expectedOrders[1].CustomerID, respOrders[1].CustomerID)
@@ -407,7 +439,7 @@ func TestListOrders(t *testing.T) {
 		mockOrderService.On("ListOrdersByCustomer", mock.Anything, userID, page, pageSize).Return(expectedOrders, expectedTotal, nil).Once()
 
 		target := fmt.Sprintf("/orders?page=%d&pageSize=%d", page, pageSize)
-		req := createTestRequestWithContext(http.MethodGet, target, nil, userID)
+		req := createTestRequestWithContext(http.MethodGet, target, nil, userID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -434,12 +466,12 @@ func TestListOrders(t *testing.T) {
 		ordersBytes, err := json.Marshal(dataMap["data"])
 		assert.NoError(t, err)
 
-		// Unmarshal the product data
+		// Unmarshal the order data
 		var respOrders []models.Order
 		err = json.Unmarshal(ordersBytes, &respOrders)
 		assert.NoError(t, err)
 
-		// Assert the product data
+		// Assert the order data
 		assert.Len(t, respOrders, len(expectedOrders))
 		assert.Equal(t, expectedOrders[0].ID, respOrders[0].ID)
 
@@ -466,12 +498,12 @@ func TestListOrders(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				// Arrange
 				expectedOrders := []models.Order{}
-				total := 0
+				expectedTotal := 0
 
 				mockOrderService.On("ListOrdersByCustomer", mock.Anything, userID, tc.expectPage, tc.expectSize).
-					Return(expectedOrders, total, nil).Once()
+					Return(expectedOrders, expectedTotal, nil).Once()
 
-				req := createTestRequestWithContext(http.MethodGet, tc.query, nil, userID)
+				req := createTestRequestWithContext(http.MethodGet, tc.query, nil, userID, nil)
 				rr := httptest.NewRecorder()
 
 				// Act
@@ -481,12 +513,18 @@ func TestListOrders(t *testing.T) {
 				// Assert
 				assert.Equal(t, http.StatusOK, rr.Code)
 
-				var resp models.PaginatedResponse
+				// Unmarshal the base API response
+				var resp *response.APIResponse
 				err := json.Unmarshal(rr.Body.Bytes(), &resp)
 				assert.NoError(t, err)
-				assert.Equal(t, total, resp.Total)
-				assert.Equal(t, tc.expectPage, resp.Page)
-				assert.Equal(t, tc.expectSize, resp.PageSize)
+				assert.True(t, resp.Success)
+				assert.NotEmpty(t, resp.Data)
+
+				dataMap, ok := resp.Data.(map[string]any)
+				assert.True(t, ok, "resp.Data should be a map[string]any")
+				assert.EqualValues(t, tc.expectPage, dataMap["page"])
+				assert.EqualValues(t, tc.expectSize, dataMap["pageSize"])
+				assert.EqualValues(t, expectedTotal, dataMap["total"])
 
 				mockOrderService.AssertExpectations(t)
 			})
@@ -495,7 +533,7 @@ func TestListOrders(t *testing.T) {
 
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
-		req := createTestRequestWithoutContext(http.MethodGet, "/orders", nil) // No user context
+		req := createTestRequestWithoutContext(http.MethodGet, "/orders", nil, nil) // No user context
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -515,7 +553,7 @@ func TestListOrders(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("ListOrdersByCustomer", mock.Anything, userID, defaultPage, defaultPageSize).Return(nil, 0, appErrors.DatabaseError("DB Failed")).Once()
 
-		req := createTestRequestWithContext(http.MethodGet, "/orders", nil, userID)
+		req := createTestRequestWithContext(http.MethodGet, "/orders", nil, userID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -551,7 +589,10 @@ func TestUpdateOrderStatus(t *testing.T) {
 		mockOrderService.On("UpdateOrderStatus", mock.Anything, orderID, updateReq.Status).Return(expectedOrder, nil).Once()
 
 		bodyBytes, _ := json.Marshal(updateReq)
-		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -585,7 +626,10 @@ func TestUpdateOrderStatus(t *testing.T) {
 		// Arrange
 		updateReq := models.UpdateOrderStatusRequest{Status: models.OrderStatusShipping}
 		bodyBytes, _ := json.Marshal(updateReq)
-		req := createTestRequestWithoutContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes))
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithoutContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), pathParams)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -602,7 +646,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		// Arrange
 		updateReq := models.UpdateOrderStatusRequest{Status: models.OrderStatusShipping}
 		bodyBytes, _ := json.Marshal(updateReq)
-		req := createTestRequestWithContext(http.MethodPatch, "/orders/invalid-uuid/status", bytes.NewReader(bodyBytes), adminUserID)
+		req := createTestRequestWithContext(http.MethodPatch, "/orders/invalid-uuid/status", bytes.NewReader(bodyBytes), adminUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -618,7 +662,10 @@ func TestUpdateOrderStatus(t *testing.T) {
 	t.Run("Invalid Input - Bad JSON", func(t *testing.T) {
 		// Arrange
 		invalidBody := `{"status": "invalid_status"}`
-		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader([]byte(invalidBody)), adminUserID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader([]byte(invalidBody)), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -640,7 +687,10 @@ func TestUpdateOrderStatus(t *testing.T) {
 		mockOrderService.On("UpdateOrderStatus", mock.Anything, orderID, updateReq.Status).Return(nil, notFoundErr).Once()
 
 		bodyBytes, _ := json.Marshal(updateReq)
-		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
@@ -662,7 +712,10 @@ func TestUpdateOrderStatus(t *testing.T) {
 		mockOrderService.On("UpdateOrderStatus", mock.Anything, orderID, updateReq.Status).Return(nil, appErrors.DatabaseError("DB Update Failed")).Once()
 
 		bodyBytes, _ := json.Marshal(updateReq)
-		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID)
+		pathParams := map[string]string{
+			"id": orderID.String(),
+		}
+		req := createTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
