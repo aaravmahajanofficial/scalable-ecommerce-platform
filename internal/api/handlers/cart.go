@@ -166,8 +166,9 @@ func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 			return
 		}
 
-		// ProductID refers to the item being updated in the cart
-		logger = logger.With(slog.String("productID", req.ProductID.String()), slog.Int("newQuantity", req.Quantity))
+		logger = middleware.LoggerFromContext(r.Context()).
+			With(slog.String("userID", claims.UserID.String())).
+			With(slog.String("productID", req.ProductID.String()), slog.Int("newQuantity", req.Quantity))
 		logger.Info("Attempting to update cart item quantity")
 
 		cart, err := h.cartService.UpdateQuantity(r.Context(), claims.UserID, &req)
