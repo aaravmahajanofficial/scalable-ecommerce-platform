@@ -502,6 +502,9 @@ func TestListProducts(t *testing.T) {
 		handler := productHandler.ListProducts()
 		handler.ServeHTTP(rr, req)
 
+		// Assert
+		assert.Equal(t, http.StatusOK, rr.Code)
+
 		// Unmarshal the base API response
 		var resp *response.APIResponse
 		err := json.Unmarshal(rr.Body.Bytes(), &resp)
