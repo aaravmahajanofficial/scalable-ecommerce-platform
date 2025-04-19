@@ -112,6 +112,8 @@ definitions:
         type: integer
     required:
     - category_id
+    - name
+    - price
     - sku
     - stock_quantity
     type: object

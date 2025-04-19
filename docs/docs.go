@@ -1402,6 +1402,8 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "category_id",
+                "name",
+                "price",
                 "sku",
                 "stock_quantity"
             ],
