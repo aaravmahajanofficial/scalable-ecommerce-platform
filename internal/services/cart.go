@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
+	appError "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/google/uuid"
@@ -38,7 +40,7 @@ func (s *cartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models
 
 	err := s.repo.CreateCart(ctx, cart)
 	if err != nil {
-		return nil, errors.DatabaseError("Failed to create cart").WithError(err)
+		return nil, appError.DatabaseError("Failed to create cart").WithError(err)
 	}
 
 	return cart, nil
@@ -48,7 +50,12 @@ func (s *cartService) GetCart(ctx context.Context, customerID uuid.UUID) (*model
 
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
-		return nil, errors.NotFoundError("Cart not found").WithError(err)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, appError.NotFoundError("Cart not found")
+		}
+
+		return nil, appError.InternalError("Failed to retrieve cart").WithError(err)
 	}
 
 	return cart, err
@@ -58,7 +65,7 @@ func (s *cartService) AddItem(ctx context.Context, customerID uuid.UUID, req *mo
 
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
-		return nil, errors.NotFoundError("Cart not found").WithError(err)
+		return nil, appError.NotFoundError("Cart not found").WithError(err)
 	}
 
 	item := models.CartItem{
@@ -73,7 +80,7 @@ func (s *cartService) AddItem(ctx context.Context, customerID uuid.UUID, req *mo
 	cart.Total = s.calculateTotal(cart.Items)
 
 	if err := s.repo.UpdateCart(ctx, cart); err != nil {
-		return nil, errors.DatabaseError("Failed to update cart").WithError(err)
+		return nil, appError.DatabaseError("Failed to update cart").WithError(err)
 	}
 
 	return cart, nil
@@ -83,12 +90,12 @@ func (s *cartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, 
 
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
-		return nil, errors.NotFoundError("Cart not found").WithError(err)
+		return nil, appError.NotFoundError("Cart not found").WithError(err)
 	}
 
 	item, exists := cart.Items[req.ProductID.String()]
 	if !exists {
-		return nil, errors.BadRequestError("Item not found in the cart")
+		return nil, appError.BadRequestError("Item not found in the cart")
 	}
 
 	if req.Quantity == 0 {
@@ -105,7 +112,7 @@ func (s *cartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, 
 
 	err = s.repo.UpdateCart(ctx, cart)
 	if err != nil {
-		return nil, errors.DatabaseError("Failed to update cart").WithError(err)
+		return nil, appError.DatabaseError("Failed to update cart").WithError(err)
 	}
 
 	return cart, nil
