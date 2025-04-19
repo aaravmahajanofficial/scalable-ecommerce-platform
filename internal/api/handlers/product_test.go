@@ -16,6 +16,7 @@ import (
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -37,10 +38,12 @@ func TestCreateProduct(t *testing.T) {
 	t.Run("Success - Product Created", func(t *testing.T) {
 		// Arrange
 		reqBody := models.CreateProductRequest{
+			CategoryID:    uuid.New(),
 			Name:          "Test Product",
 			Description:   "Test Description",
 			Price:         99.99,
 			StockQuantity: 10,
+			SKU:           "TEST-SKU-001",
 		}
 		reqBodyBytes, _ := json.Marshal(reqBody)
 
@@ -67,8 +70,17 @@ func TestCreateProduct(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
+		var resp *response.APIResponse
+		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.True(t, resp.Success)
+
+		// Marshall the Data from map[string]interface{} to bytes
+		databytes, err := json.Marshal(resp.Data)
+		assert.NoError(t, err)
+
 		var respProduct models.Product
-		err := json.Unmarshal(rr.Body.Bytes(), &respProduct)
+		err = json.Unmarshal(databytes, &respProduct)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedProduct.ID, respProduct.ID)
 		assert.Equal(t, expectedProduct.Name, respProduct.Name)
@@ -88,15 +100,18 @@ func TestCreateProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		mockProductService.AssertNotCalled(t, "CreateProduct", mock.Anything, mock.Anything)
+		mockProductService.AssertNotCalled(t, "CreateProduct")
 	})
 
 	t.Run("Invalid Input - Validation Error", func(t *testing.T) {
 		// Arrange
-		reqBody := models.CreateProductRequest{ // Name field not present
+		reqBody := models.CreateProductRequest{
+			CategoryID:    uuid.New(),
+			Name:          "",
 			Description:   "Test Description",
 			Price:         0,
 			StockQuantity: 10,
+			SKU:           "TEST-SKU-001",
 		}
 		reqBodyBytes, _ := json.Marshal(reqBody)
 
@@ -110,17 +125,19 @@ func TestCreateProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		assert.Contains(t, rr.Body.String(), "validation failed")
-		mockProductService.AssertNotCalled(t, "CreateProduct", mock.Anything, mock.Anything)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeValidation)
+		mockProductService.AssertNotCalled(t, "CreateProduct")
 	})
 
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
 		reqBody := models.CreateProductRequest{
+			CategoryID:    uuid.New(),
 			Name:          "Test Product",
 			Description:   "Test Description",
 			Price:         99.99,
 			StockQuantity: 10,
+			SKU:           "TEST-SKU-001",
 		}
 		reqBodyBytes, _ := json.Marshal(reqBody)
 
@@ -136,7 +153,7 @@ func TestCreateProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeInternal)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeDatabaseError)
 		mockProductService.AssertExpectations(t)
 	})
 }
@@ -145,7 +162,7 @@ func TestGetProduct(t *testing.T) {
 	mockProductService := new(mocks.ProductService)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success - Get Product", func(t *testing.T) {
 		// Arrange
 		productID := uuid.New()
 		rr := httptest.NewRecorder()
@@ -171,8 +188,17 @@ func TestGetProduct(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
 
+		var resp *response.APIResponse
+		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.True(t, resp.Success)
+
+		// Marshall the Data from map[string]interface{} to bytes
+		databytes, err := json.Marshal(resp.Data)
+		assert.NoError(t, err)
+
 		var respProduct models.Product
-		err := json.Unmarshal(rr.Body.Bytes(), &respProduct)
+		err = json.Unmarshal(databytes, &respProduct)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedProduct.ID, respProduct.ID)
 		assert.Equal(t, expectedProduct.Name, respProduct.Name)
@@ -193,8 +219,8 @@ func TestGetProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		assert.Contains(t, rr.Body.String(), "Invalid ID format")
-		mockProductService.AssertNotCalled(t, "GetProductByID", mock.Anything, mock.Anything)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeBadRequest)
+		mockProductService.AssertNotCalled(t, "GetProductByID")
 	})
 
 	t.Run("Product Not Found", func(t *testing.T) {
@@ -231,7 +257,7 @@ func TestGetProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeInternal)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeDatabaseError)
 		mockProductService.AssertExpectations(t)
 	})
 }
@@ -240,7 +266,7 @@ func TestUpdateProduct(t *testing.T) {
 	mockProductService := new(mocks.ProductService)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("Success - Update Product", func(t *testing.T) {
 		// Arrange
 		productID := uuid.New()
 		reqBody := models.UpdateProductRequest{
@@ -275,8 +301,17 @@ func TestUpdateProduct(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
 
+		var resp *response.APIResponse
+		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.True(t, resp.Success)
+
+		// Marshall the Data from map[string]interface{} to bytes
+		databytes, err := json.Marshal(resp.Data)
+		assert.NoError(t, err)
+
 		var respProduct models.Product
-		err := json.Unmarshal(rr.Body.Bytes(), &respProduct)
+		err = json.Unmarshal(databytes, &respProduct)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedProduct.ID, respProduct.ID)
 		assert.Equal(t, expectedProduct.Name, respProduct.Name)
@@ -302,8 +337,8 @@ func TestUpdateProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		assert.Contains(t, rr.Body.String(), "Invalid ID format")
-		mockProductService.AssertNotCalled(t, "UpdateProduct", mock.Anything, mock.Anything, mock.Anything)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeBadRequest)
+		mockProductService.AssertNotCalled(t, "UpdateProduct")
 	})
 
 	t.Run("Invalid Input - Bad JSON", func(t *testing.T) {
@@ -320,7 +355,7 @@ func TestUpdateProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		mockProductService.AssertNotCalled(t, "UpdateProduct", mock.Anything, mock.Anything, mock.Anything)
+		mockProductService.AssertNotCalled(t, "UpdateProduct")
 	})
 
 	t.Run("Invalid Input - Validation Error", func(t *testing.T) {
@@ -342,7 +377,7 @@ func TestUpdateProduct(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeValidation)
-		mockProductService.AssertNotCalled(t, "UpdateProduct", mock.Anything, mock.Anything, mock.Anything)
+		mockProductService.AssertNotCalled(t, "UpdateProduct")
 	})
 
 	t.Run("Product Not Found", func(t *testing.T) {
@@ -368,7 +403,7 @@ func TestUpdateProduct(t *testing.T) {
 		mockProductService.AssertExpectations(t)
 	})
 
-	t.Run("Service Error", func(t *testing.T) {
+	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
 		productID := uuid.New()
 		reqBody := models.UpdateProductRequest{Name: stringPtr("Update")}
@@ -387,7 +422,7 @@ func TestUpdateProduct(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeInternal)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeDatabaseError)
 		mockProductService.AssertExpectations(t)
 	})
 }
@@ -401,11 +436,13 @@ func TestListProducts(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodGet, "/products", nil)
 
-		expectedProducts := []models.Product{
+		expectedProducts := []*models.Product{
 			{ID: uuid.New(), Name: "Product 1", Price: 10.0, StockQuantity: 100},
 			{ID: uuid.New(), Name: "Product 2", Price: 20.0, StockQuantity: 50},
 		}
 		expectedTotal := 25
+		expectedPage := 1
+		expectedPageSize := 10
 
 		// Expect default page=1, pageSize=10
 		mockProductService.On("ListProducts", mock.Anything, 1, 10).Return(expectedProducts, expectedTotal, nil).Once()
@@ -417,20 +454,30 @@ func TestListProducts(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
 
-		var resp models.PaginatedResponse
+		var resp *response.APIResponse
 		err := json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
+		assert.True(t, resp.Success)
+		assert.NotEmpty(t, resp.Data)
 
-		assert.Equal(t, 1, resp.Page)
-		assert.Equal(t, 10, resp.PageSize)
-		assert.Equal(t, expectedTotal, resp.Total)
-		assert.Len(t, resp.Data, len(expectedProducts))
+		dataMap, ok := resp.Data.(map[string]any)
+		assert.True(t, ok, "resp.Data should be a map[string]any")
 
-		// Unmarshal the Data field into []models.Product
-		var respProducts []models.Product
-		dataBytes, _ := json.Marshal(resp.Data) // Marshal the interface{} back to bytes
-		err = json.Unmarshal(dataBytes, &respProducts)
+		assert.EqualValues(t, expectedPage, dataMap["page"])
+		assert.EqualValues(t, expectedPageSize, dataMap["pageSize"])
+		assert.EqualValues(t, expectedTotal, dataMap["total"])
+
+		// Marshal the 'data' field within the map back to bytes
+		productsBytes, err := json.Marshal(dataMap["data"])
 		assert.NoError(t, err)
+
+		// Unmarshal the product data
+		var respProducts []*models.Product
+		err = json.Unmarshal(productsBytes, &respProducts)
+		assert.NoError(t, err)
+
+		// Assert the product data
+		assert.Len(t, respProducts, len(expectedProducts))
 		assert.Equal(t, expectedProducts[0].ID, respProducts[0].ID)
 		assert.Equal(t, expectedProducts[1].Name, respProducts[1].Name)
 
@@ -444,7 +491,7 @@ func TestListProducts(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodGet, fmt.Sprintf("/products?page=%d&pageSize=%d", page, pageSize), nil)
 
-		expectedProducts := []models.Product{
+		expectedProducts := []*models.Product{
 			{ID: uuid.New(), Name: "Product 3", Price: 30.0, StockQuantity: 30},
 		}
 		expectedTotal := 8
@@ -455,17 +502,31 @@ func TestListProducts(t *testing.T) {
 		handler := productHandler.ListProducts()
 		handler.ServeHTTP(rr, req)
 
-		// Assert
-		assert.Equal(t, http.StatusOK, rr.Code)
-
-		var resp models.PaginatedResponse
+		// Unmarshal the base API response
+		var resp *response.APIResponse
 		err := json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
+		assert.True(t, resp.Success)
+		assert.NotEmpty(t, resp.Data)
 
-		assert.Equal(t, page, resp.Page)
-		assert.Equal(t, pageSize, resp.PageSize)
-		assert.Equal(t, expectedTotal, resp.Total)
-		assert.Len(t, resp.Data, len(expectedProducts))
+		dataMap, ok := resp.Data.(map[string]any)
+		assert.True(t, ok, "resp.Data should be a map[string]any")
+		assert.EqualValues(t, page, dataMap["page"])
+		assert.EqualValues(t, pageSize, dataMap["pageSize"])
+		assert.EqualValues(t, expectedTotal, dataMap["total"])
+
+		// Marshal the 'data' field within the map back to bytes
+		productsBytes, err := json.Marshal(dataMap["data"])
+		assert.NoError(t, err)
+
+		// Unmarshal the product data
+		var respProducts []*models.Product
+		err = json.Unmarshal(productsBytes, &respProducts)
+		assert.NoError(t, err)
+
+		// Assert the product data
+		assert.Len(t, respProducts, len(expectedProducts))
+		assert.Equal(t, expectedProducts[0].ID, respProducts[0].ID)
 
 		mockProductService.AssertExpectations(t)
 	})
@@ -488,10 +549,12 @@ func TestListProducts(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
+				mockProductService := new(mocks.ProductService)
+				productHandler := handlers.NewProductHandler(mockProductService)
 				rr := httptest.NewRecorder()
 				req := newTestRequest(http.MethodGet, tc.query, nil)
 
-				mockProductService.On("ListProducts", mock.Anything, tc.expectPage, tc.expectSize).Return([]models.Product{}, 0, nil).Once()
+				mockProductService.On("ListProducts", mock.Anything, tc.expectPage, tc.expectSize).Return([]*models.Product{}, 0, nil).Once()
 
 				// Act
 				handler := productHandler.ListProducts()
@@ -499,6 +562,12 @@ func TestListProducts(t *testing.T) {
 
 				// Assert
 				assert.Equal(t, http.StatusOK, rr.Code)
+
+				var resp *response.APIResponse
+				err := json.Unmarshal(rr.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				assert.True(t, resp.Success)
+
 				mockProductService.AssertExpectations(t)
 			})
 		}
@@ -517,7 +586,7 @@ func TestListProducts(t *testing.T) {
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeInternal)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeDatabaseError)
 		mockProductService.AssertExpectations(t)
 	})
 }

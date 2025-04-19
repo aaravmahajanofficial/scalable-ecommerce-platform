@@ -30,9 +30,9 @@ type Product struct {
 
 type CreateProductRequest struct {
 	CategoryID    uuid.UUID `json:"category_id" validate:"required"`
-	Name          string    `json:"name,omitempty" validate:"omitempty,min=3,max=200"`
+	Name          string    `json:"name" validate:"required,min=3,max=200"`
 	Description   string    `json:"description,omitempty"`
-	Price         float64   `json:"price,omitempty" validate:"omitempty,gt=0"`
+	Price         float64   `json:"price" validate:"required,gt=0"`
 	StockQuantity int       `json:"stock_quantity" validate:"required,gte=0"`
 	SKU           string    `json:"sku" validate:"required,min=3,max=50"`
 }
