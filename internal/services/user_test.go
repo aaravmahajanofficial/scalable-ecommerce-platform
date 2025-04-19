@@ -21,7 +21,7 @@ func TestUserService_Register(t *testing.T) {
 
 	// Arrange
 	mockUserRepo := new(mocks.UserRepository)
-	mockRedisRepo := new(mocks.RedisRepository)
+	mockRedisRepo := new(mocks.RateLimitRepository)
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
@@ -36,11 +36,11 @@ func TestUserService_Register(t *testing.T) {
 		}
 
 		// Mock Behavior -> email is fresh!
-		mockUserRepo.On("GetUserByEmail", ctx, req.Email).Return(nil, errors.New("Email not found")).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, errors.New("Email not found")).Once()
 
 		// Mock Behavior -> user was created
 		// mock.AnythingOfType is used when, you don't know the exact value of the user struct, as here, password field may contain hashedPassword
-		mockUserRepo.On("CreateUser", ctx, mock.AnythingOfType("*models.User")).Return(nil).Once()
+		mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*models.User")).Return(nil).Once()
 
 		// Act
 		user, err := userService.Register(ctx, req)
@@ -72,7 +72,7 @@ func TestUserService_Register(t *testing.T) {
 		}
 
 		// Mock Behavior -> email is not fresh!
-		mockUserRepo.On("GetUserByEmail", ctx, req.Email).Return(exisitingUser, nil).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(exisitingUser, nil).Once()
 
 		// Act
 		user, err := userService.Register(ctx, req)
@@ -99,11 +99,11 @@ func TestUserService_Register(t *testing.T) {
 		}
 
 		// Mock Behavior -> email is fresh!
-		mockUserRepo.On("GetUserByEmail", ctx, req.Email).Return(nil, errors.New("not found")).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, errors.New("not found")).Once()
 
 		// Mock Behavior -> something is wrong with database
 		dbErr := errors.New("something exploaded")
-		mockUserRepo.On("CreateUser", ctx, mock.AnythingOfType("*models.User")).Return(dbErr).Once()
+		mockUserRepo.On("CreateUser", mock.Anything, mock.AnythingOfType("*models.User")).Return(dbErr).Once()
 
 		// Act
 		user, err := userService.Register(ctx, req)
@@ -124,7 +124,7 @@ func TestUserService_Register(t *testing.T) {
 
 func TestUserService_Login(t *testing.T) {
 	mockUserRepo := new(mocks.UserRepository)
-	mockRedisRepo := new(mocks.RedisRepository)
+	mockRedisRepo := new(mocks.RateLimitRepository)
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
@@ -149,10 +149,10 @@ func TestUserService_Login(t *testing.T) {
 		}
 
 		// Mock Behavior -> rate limit check
-		mockRedisRepo.On("CheckLoginRateLimit", ctx, req.Email).Return(true, 5, 0, nil).Once()
+		mockRedisRepo.On("CheckLoginRateLimit", mock.Anything, req.Email).Return(true, 5, 0, nil).Once()
 
 		// Mock Behavior -> user exists!
-		mockUserRepo.On("GetUserByEmail", ctx, req.Email).Return(user, nil).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(user, nil).Once()
 
 		// Act
 		resp, err := userService.Login(ctx, req)
@@ -203,10 +203,10 @@ func TestUserService_Login(t *testing.T) {
 		}
 
 		// Mock Behavior -> within limits
-		mockRedisRepo.On("CheckLoginRateLimit", ctx, req.Email).Return(true, 4, 0, nil).Once()
+		mockRedisRepo.On("CheckLoginRateLimit", mock.Anything, req.Email).Return(true, 4, 0, nil).Once()
 
 		// Mock Behavior -> user exists, we can't return any error, otherwise we would miss the password check
-		mockUserRepo.On("GetUserByEmail", ctx, req.Email).Return(user, nil).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(user, nil).Once()
 
 		// Act
 		resp, err := userService.Login(ctx, req)
@@ -231,7 +231,7 @@ func TestUserService_Login(t *testing.T) {
 		}
 
 		// Mock Behavior -> within limits
-		mockRedisRepo.On("CheckLoginRateLimit", ctx, req.Email).Return(false, 0, 30, nil).Once()
+		mockRedisRepo.On("CheckLoginRateLimit", mock.Anything, req.Email).Return(false, 0, 30, nil).Once()
 
 		// Act
 		resp, err := userService.Login(ctx, req)
@@ -259,10 +259,10 @@ func TestUserService_Login(t *testing.T) {
 		}
 
 		// Mock Behavior -> within limits
-		mockRedisRepo.On("CheckLoginRateLimit", ctx, req.Email).Return(true, 5, 0, nil).Once()
+		mockRedisRepo.On("CheckLoginRateLimit", mock.Anything, req.Email).Return(true, 5, 0, nil).Once()
 
 		// Mock Behavior -> user not fresh!
-		mockUserRepo.On("GetUserByEmail", ctx, req.Email).Return(nil, errors.New("User not found")).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, errors.New("User not found")).Once()
 
 		// Act
 		resp, err := userService.Login(ctx, req)
@@ -282,7 +282,7 @@ func TestUserService_Login(t *testing.T) {
 
 func TestUserService_GetUserByID(t *testing.T) {
 	mockUserRepo := new(mocks.UserRepository)
-	mockRedisRepo := new(mocks.RedisRepository)
+	mockRedisRepo := new(mocks.RateLimitRepository)
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
@@ -301,7 +301,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 		}
 
 		// Mock Behavior -> user not fresh!
-		mockUserRepo.On("GetUserById", ctx, userID).Return(exisitingUser, nil).Once()
+		mockUserRepo.On("GetUserById", mock.Anything, userID).Return(exisitingUser, nil).Once()
 
 		// Act
 		resp, err := userService.GetUserByID(ctx, userID)
@@ -322,7 +322,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 		userID := uuid.New()
 
 		// Mock Behavior -> user not fresh!
-		mockUserRepo.On("GetUserById", ctx, userID).Return(nil, errors.New("User not found")).Once()
+		mockUserRepo.On("GetUserById", mock.Anything, userID).Return(nil, errors.New("User not found")).Once()
 
 		// Act
 		resp, err := userService.GetUserByID(ctx, userID)
