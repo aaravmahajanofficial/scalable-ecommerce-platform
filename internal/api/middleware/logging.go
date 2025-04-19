@@ -11,7 +11,7 @@ import (
 
 type logContextKey string
 
-const loggerKey = logContextKey("logger")
+const LoggerKey = logContextKey("logger")
 
 // wrapper around http.ResponseWriter to capture the status code
 type responseWriter struct {
@@ -54,7 +54,7 @@ func Logging(next http.Handler) http.Handler {
 		// Incoming request log
 		requestLogger.Info("Incoming request")
 
-		ctx := context.WithValue(r.Context(), loggerKey, requestLogger)
+		ctx := context.WithValue(r.Context(), LoggerKey, requestLogger)
 
 		rw := newResponseWriter(w)
 
@@ -67,7 +67,7 @@ func Logging(next http.Handler) http.Handler {
 }
 
 func LoggerFromContext(ctx context.Context) *slog.Logger {
-	if logger, ok := ctx.Value(loggerKey).(*slog.Logger); ok {
+	if logger, ok := ctx.Value(LoggerKey).(*slog.Logger); ok {
 		return logger
 	}
 

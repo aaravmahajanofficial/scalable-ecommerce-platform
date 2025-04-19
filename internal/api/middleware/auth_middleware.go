@@ -90,7 +90,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		ctx := context.WithValue(r.Context(), UserContextKey, claims)
 
 		requestScopedLogger := logger.With(slog.String("userId", claims.UserID.String()))
-		ctx = context.WithValue(ctx, loggerKey, requestScopedLogger)
+		ctx = context.WithValue(ctx, LoggerKey, requestScopedLogger)
 
 		requestScopedLogger.Info("User authenticated")
 
