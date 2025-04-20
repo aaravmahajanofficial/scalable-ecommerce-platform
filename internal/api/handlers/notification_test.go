@@ -12,7 +12,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks" // Import the generated mocks
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/testutils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
@@ -20,29 +20,27 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestNotificationHandler_SendEmail(t *testing.T) {
+func TestSendEmail(t *testing.T) {
 	// Arrange
 	mockNotificationService := new(mocks.NotificationService)
 	notificationHandler := handlers.NewNotificationHandler(mockNotificationService)
 	testUserID := uuid.New()
+
 	t.Run("Success - Send Email", func(t *testing.T) {
 		// Arrange
 		reqBody := models.EmailNotificationRequest{
-			To:      testUserID.String(),
+			To:      "test@example.com",
 			Subject: "Test Subject",
 			Content: "Test Body",
 		}
 
 		// Mock Call
-		expectedNotification := &models.Notification{
+		expectedNotification := &models.NotificationResponse{
 			ID:        uuid.New(),
 			Recipient: testUserID.String(),
 			Type:      models.NotificationTypeEmail,
-			Subject:   reqBody.Subject,
-			Content:   reqBody.Content,
 			Status:    models.StatusPending,
 			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
 		}
 		mockNotificationService.On("SendEmail", mock.Anything, &reqBody).Return(expectedNotification, nil).Once()
 
@@ -59,13 +57,20 @@ func TestNotificationHandler_SendEmail(t *testing.T) {
 		// Assert
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
+		var resp *response.APIResponse
+		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		assert.NoError(t, err)
+		assert.True(t, resp.Success)
+
+		// Marshall the Data from map[string]interface{} to bytes
+		databytes, err := json.Marshal(resp.Data)
+		assert.NoError(t, err)
+
 		var respNotification models.Notification
-		err := json.Unmarshal(rr.Body.Bytes(), &respNotification)
+		err = json.Unmarshal(databytes, &respNotification)
 		assert.NoError(t, err)
 		assert.Equal(t, expectedNotification.ID, respNotification.ID)
 		assert.Equal(t, expectedNotification.Recipient, respNotification.Recipient)
-		assert.Equal(t, expectedNotification.Subject, respNotification.Subject)
-		assert.Equal(t, expectedNotification.Content, respNotification.Content)
 		assert.Equal(t, expectedNotification.Status, respNotification.Status)
 
 		mockNotificationService.AssertExpectations(t)
@@ -74,7 +79,7 @@ func TestNotificationHandler_SendEmail(t *testing.T) {
 	t.Run("Failure - Unauthorized (No Claims)", func(t *testing.T) {
 		// Arrange
 		reqBody := models.EmailNotificationRequest{
-			To:      testUserID.String(),
+			To:      "test@example.com",
 			Subject: "Test Subject",
 			Content: "Test Body",
 		}
@@ -110,9 +115,9 @@ func TestNotificationHandler_SendEmail(t *testing.T) {
 	})
 
 	t.Run("Failure - Invalid Input (Validation Error)", func(t *testing.T) {
-		// Arrange - Missing required field (e.g., Subject)
+		// Arrange
 		reqBody := models.EmailNotificationRequest{
-			To:      testUserID.String(),
+			To:      "test@example.com",
 			Content: "Test Body",
 		}
 
@@ -134,7 +139,7 @@ func TestNotificationHandler_SendEmail(t *testing.T) {
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
 		reqBody := models.EmailNotificationRequest{
-			To:      testUserID.String(),
+			To:      "test@example.com",
 			Subject: "Test Subject",
 			Content: "Test Body",
 		}
@@ -160,14 +165,15 @@ func TestNotificationHandler_SendEmail(t *testing.T) {
 	})
 }
 
-func TestNotificationHandler_ListNotifications(t *testing.T) {
-	// Arrange common elements
+func TestListNotifications(t *testing.T) {
+	// Arrange
 	mockNotificationService := new(mocks.NotificationService)
 	notificationHandler := handlers.NewNotificationHandler(mockNotificationService)
 	testUserID := uuid.New()
+
 	t.Run("Success - List Notifications with Pagination", func(t *testing.T) {
 		// Arrange
-		expectedNotifications := []models.Notification{
+		expectedNotifications := []*models.Notification{
 			{ID: uuid.New(), Recipient: testUserID.String(), Type: models.NotificationTypeEmail, Subject: "Notification 1", Status: models.StatusSent},
 			{ID: uuid.New(), Recipient: testUserID.String(), Type: models.NotificationTypeEmail, Subject: "Notification 2", Status: models.StatusFailed},
 		}
@@ -208,7 +214,7 @@ func TestNotificationHandler_ListNotifications(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Unmarshal the order data
-		var respNotifications []models.Notification
+		var respNotifications []*models.Notification
 		err = json.Unmarshal(notificationBytes, &respNotifications)
 		assert.NoError(t, err)
 
@@ -221,7 +227,7 @@ func TestNotificationHandler_ListNotifications(t *testing.T) {
 
 	t.Run("Success - Default Pagination", func(t *testing.T) {
 		// Arrange
-		expectedNotifications := []models.Notification{
+		expectedNotifications := []*models.Notification{
 			{ID: uuid.New(), Recipient: testUserID.String(), Type: models.NotificationTypeEmail, Subject: "Notification A", Status: models.StatusSent},
 		}
 		expectedPage := 1
@@ -258,21 +264,21 @@ func TestNotificationHandler_ListNotifications(t *testing.T) {
 		notificationBytes, err := json.Marshal(dataMap["data"])
 		assert.NoError(t, err)
 
-		var respNotifications []models.Notification
+		var respNotifications []*models.Notification
 		err = json.Unmarshal(notificationBytes, &respNotifications)
 		assert.NoError(t, err)
 
 		// Assert the order data
 		assert.Len(t, respNotifications, len(expectedNotifications))
 		assert.Equal(t, expectedNotifications[0].ID, respNotifications[0].ID)
-		assert.Equal(t, expectedNotifications[1].Recipient, respNotifications[1].Recipient)
+		assert.Equal(t, expectedNotifications[0].Recipient, respNotifications[0].Recipient)
 
 		mockNotificationService.AssertExpectations(t)
 	})
 
 	t.Run("Failure - Unauthorized (No Claims)", func(t *testing.T) {
 		// Arrange
-		req := testutils.CreateTestRequestWithoutContext(http.MethodGet, "/notifications", nil, nil) // No user context
+		req := testutils.CreateTestRequestWithoutContext(http.MethodGet, "/notifications", nil, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -290,9 +296,9 @@ func TestNotificationHandler_ListNotifications(t *testing.T) {
 		defaultPageSize := 10
 
 		// Mock Call
-		mockNotificationService.On("ListNotifications", mock.Anything, testUserID, defaultPage, defaultPageSize).Return(nil, 0, appErrors.DatabaseError("DB Failed")).Once()
+		mockNotificationService.On("ListNotifications", mock.Anything, defaultPage, defaultPageSize).Return(nil, 0, appErrors.DatabaseError("DB Failed")).Once()
 
-		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/orders", nil, testUserID, nil)
+		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/notifications", nil, testUserID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
