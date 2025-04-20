@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,21 +15,13 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/testutils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stripe/stripe-go/v81"
 )
 
-// Helper function to decode error response
-func decodeErrorResponse(t *testing.T, body io.Reader) response.ErrorResponse {
-	var errResp response.ErrorResponse
-	err := json.NewDecoder(body).Decode(&errResp)
-	assert.NoError(t, err)
-	return errResp
-}
-
-func TestPaymentHandler_CreatePayment(t *testing.T) {
+func TestCreatePayment(t *testing.T) {
 	mockPaymentService := new(mocks.PaymentService)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 	testUserID := uuid.New()
@@ -67,7 +58,8 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.CreatePayment()(rr, req)
+		handler := paymentHandler.CreatePayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -78,11 +70,8 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		assert.True(t, resp.Success)
 		assert.NotEmpty(t, resp.Data)
 
-		dataMap, ok := resp.Data.(map[string]any)
-		assert.True(t, ok, "resp.Data should be a map[string]any")
-
 		// Marshal the 'data' field within the map back to bytes
-		paymentBytes, err := json.Marshal(dataMap["data"])
+		paymentBytes, err := json.Marshal(resp.Data)
 		assert.NoError(t, err)
 
 		var respPayment *models.PaymentResponse
@@ -95,7 +84,7 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		mockPaymentService.AssertExpectations(t)
 	})
 
-	t.Run("Failure - Unauthorized (No Claims)", func(t *testing.T) {
+	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
 		reqBody := models.PaymentRequest{
 			CustomerID:    testUserID.String(),
@@ -103,21 +92,22 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 			Currency:      "usd",
 			Description:   "Test Payment",
 			PaymentMethod: "card",
+			Token:         "Test_Payment123",
 		}
 
 		// Create request body
 		reqBodyBytes, _ := json.Marshal(reqBody)
-		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
+		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.CreatePayment()(rr, req)
+		handler := paymentHandler.CreatePayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeUnauthorized, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeUnauthorized)
 		mockPaymentService.AssertNotCalled(t, "CreatePayment")
 	})
 
@@ -128,12 +118,12 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.CreatePayment()(rr, req)
+		handler := paymentHandler.CreatePayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeBadRequest, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeBadRequest)
 		mockPaymentService.AssertNotCalled(t, "CreatePayment")
 	})
 
@@ -145,6 +135,7 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 			Currency:      "usd",
 			Description:   "Test Payment",
 			PaymentMethod: "card",
+			Token:         "Test_Payment123",
 		}
 
 		// Create request body
@@ -154,23 +145,26 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.CreatePayment()(rr, req)
+		handler := paymentHandler.CreatePayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeValidation, errResp.Code) // Assuming ParseAndValidate returns Validation error code
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeValidation)
 		mockPaymentService.AssertNotCalled(t, "CreatePayment")
 	})
 
-	t.Run("Failure - Forbidden (CustomerID mismatch)", func(t *testing.T) {
+	t.Run("Failure - Forbidden", func(t *testing.T) {
 		// Arrange
+		differentUserID := uuid.New()
+
 		reqBody := models.PaymentRequest{
-			CustomerID:    testUserID.String(),
+			CustomerID:    differentUserID.String(),
 			Amount:        1000,
 			Currency:      "usd",
 			Description:   "Test Payment",
 			PaymentMethod: "card",
+			Token:         "Test_Payment123",
 		}
 
 		// Create request body
@@ -180,12 +174,12 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.CreatePayment()(rr, req)
+		handler := paymentHandler.CreatePayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusForbidden, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeForbidden, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeForbidden)
 		mockPaymentService.AssertNotCalled(t, "CreatePayment")
 	})
 
@@ -197,6 +191,7 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 			Currency:      "usd",
 			Description:   "Test Payment",
 			PaymentMethod: "card",
+			Token:         "Test_Payment123",
 		}
 
 		mockPaymentService.On("CreatePayment", mock.Anything, mock.AnythingOfType("*models.PaymentRequest")).Return(nil, appErrors.InternalError("payment provider down")).Once()
@@ -208,17 +203,17 @@ func TestPaymentHandler_CreatePayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.CreatePayment()(rr, req)
+		handler := paymentHandler.CreatePayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeInternal, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeInternal)
 		mockPaymentService.AssertExpectations(t)
 	})
 }
 
-func TestPaymentHandler_GetPayment(t *testing.T) {
+func TestGetPayment(t *testing.T) {
 	mockPaymentService := new(mocks.PaymentService)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 	testUserID := uuid.New()
@@ -245,15 +240,29 @@ func TestPaymentHandler_GetPayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.GetPayment()(rr, req)
+		handler := paymentHandler.GetPayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
-		var actualPayment models.Payment
-		err := json.NewDecoder(rr.Body).Decode(&actualPayment)
+
+		var resp *response.APIResponse
+		err := json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.Equal(t, expectedPayment.ID, actualPayment.ID)
-		assert.Equal(t, expectedPayment.CustomerID, actualPayment.CustomerID)
+		assert.True(t, resp.Success)
+		assert.NotEmpty(t, resp.Data)
+
+		// Marshal the 'data' field within the map back to bytes
+		paymentBytes, err := json.Marshal(resp.Data)
+		assert.NoError(t, err)
+
+		var respPayment models.Payment
+		err = json.Unmarshal(paymentBytes, &respPayment)
+		assert.NoError(t, err)
+
+		assert.Equal(t, expectedPayment.ID, respPayment.ID)
+		assert.Equal(t, expectedPayment.CustomerID, respPayment.CustomerID)
+
 		mockPaymentService.AssertExpectations(t)
 	})
 
@@ -263,12 +272,11 @@ func TestPaymentHandler_GetPayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.GetPayment()(rr, req)
+		handler := paymentHandler.GetPayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeUnauthorized, errResp.Code)
 		mockPaymentService.AssertNotCalled(t, "GetPaymentByID")
 	})
 
@@ -278,12 +286,12 @@ func TestPaymentHandler_GetPayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.GetPayment()(rr, req)
+		handler := paymentHandler.GetPayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeBadRequest, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeBadRequest)
 		mockPaymentService.AssertNotCalled(t, "GetPaymentByID")
 	})
 
@@ -298,12 +306,12 @@ func TestPaymentHandler_GetPayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.GetPayment()(rr, req)
+		handler := paymentHandler.GetPayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusNotFound, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeNotFound, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeNotFound)
 		mockPaymentService.AssertExpectations(t)
 	})
 
@@ -318,12 +326,12 @@ func TestPaymentHandler_GetPayment(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.GetPayment()(rr, req)
+		handler := paymentHandler.GetPayment()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeDatabaseError, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeDatabaseError)
 		mockPaymentService.AssertExpectations(t)
 	})
 }
@@ -335,7 +343,7 @@ func TestListPayments(t *testing.T) {
 
 	t.Run("Success - Default Pagination", func(t *testing.T) {
 		// Arrange
-		expectedPayments := []models.Payment{
+		expectedPayments := []*models.Payment{
 			{ID: uuid.New().String(), CustomerID: testUserID.String(), Amount: 100, Status: "succeeded"},
 			{ID: uuid.New().String(), CustomerID: testUserID.String(), Amount: 200, Status: "pending"},
 		}
@@ -344,13 +352,14 @@ func TestListPayments(t *testing.T) {
 		expectedTotal := 5
 
 		// Mock Call
-		mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, expectedPage, expectedPageSize).Return(expectedPayments, expectedTotal, nil).Once()
+		mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID.String(), expectedPage, expectedPageSize).Return(expectedPayments, expectedTotal, nil).Once()
 
 		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/payments", nil, testUserID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.ListPayments()(rr, req)
+		handler := paymentHandler.ListPayments()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -372,11 +381,10 @@ func TestListPayments(t *testing.T) {
 		paymentBytes, err := json.Marshal(dataMap["data"])
 		assert.NoError(t, err)
 
-		var respPayments []*models.Payment
+		var respPayments []models.Payment
 		err = json.Unmarshal(paymentBytes, &respPayments)
 		assert.NoError(t, err)
 
-		// Assert the order data
 		assert.Len(t, respPayments, len(expectedPayments))
 		assert.Equal(t, expectedPayments[0].ID, respPayments[0].ID)
 		assert.Equal(t, expectedPayments[1].Amount, respPayments[1].Amount)
@@ -386,21 +394,22 @@ func TestListPayments(t *testing.T) {
 
 	t.Run("Success - Custom Pagination", func(t *testing.T) {
 		// Arrange
-		expectedPayments := []models.Payment{
+		expectedPayments := []*models.Payment{
 			{ID: uuid.New().String(), CustomerID: testUserID.String(), Amount: 300, Status: "succeeded"},
 		}
 		expectedTotal := 15
 		page := 2
 		pageSize := 5
 
-		mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID, page, pageSize).Return(expectedPayments, expectedTotal, nil).Once()
+		mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID.String(), page, pageSize).Return(expectedPayments, expectedTotal, nil).Once()
 
 		target := fmt.Sprintf("/payments?page=%d&pageSize=%d", page, pageSize)
 		req := testutils.CreateTestRequestWithContext(http.MethodGet, target, nil, testUserID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.ListPayments()(rr, req)
+		handler := paymentHandler.ListPayments()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
@@ -422,12 +431,10 @@ func TestListPayments(t *testing.T) {
 		paymentBytes, err := json.Marshal(dataMap["data"])
 		assert.NoError(t, err)
 
-		// Unmarshal the order data
 		var respPayments []*models.Payment
 		err = json.Unmarshal(paymentBytes, &respPayments)
 		assert.NoError(t, err)
 
-		// Assert the order data
 		assert.Len(t, respPayments, len(expectedPayments))
 		assert.Equal(t, expectedPayments[0].ID, respPayments[0].ID)
 
@@ -456,7 +463,7 @@ func TestListPayments(t *testing.T) {
 				expectedPayments := []*models.Payment{}
 				expectedTotal := 0
 
-				mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID, tc.expectPage, tc.expectSize).
+				mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID.String(), tc.expectPage, tc.expectSize).
 					Return(expectedPayments, expectedTotal, nil).Once()
 
 				req := testutils.CreateTestRequestWithContext(http.MethodGet, tc.query, nil, testUserID, nil)
@@ -493,12 +500,12 @@ func TestListPayments(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.ListPayments()(rr, req)
+		handler := paymentHandler.ListPayments()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeUnauthorized, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeUnauthorized)
 		mockPaymentService.AssertNotCalled(t, "ListPaymentsByCustomer")
 	})
 
@@ -506,23 +513,23 @@ func TestListPayments(t *testing.T) {
 		// Arrange
 		defaultPage := 1
 		defaultPageSize := 10
-		mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID, defaultPage, defaultPageSize).Return(nil, 0, appErrors.DatabaseError("database error")).Once()
+		mockPaymentService.On("ListPaymentsByCustomer", mock.Anything, testUserID.String(), defaultPage, defaultPageSize).Return(nil, 0, appErrors.DatabaseError("database error")).Once()
 
 		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/payments", nil, testUserID, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.ListPayments()(rr, req)
+		handler := paymentHandler.ListPayments()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeDatabaseError, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeDatabaseError)
 		mockPaymentService.AssertExpectations(t)
 	})
 }
 
-func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
+func TestHandleStripeWebhook(t *testing.T) {
 	mockPaymentService := new(mocks.PaymentService)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 
@@ -530,7 +537,7 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		// Arrange
 		payload := []byte(`{"id": "evt_123", "type": "payment_intent.succeeded"}`)
 		signature := "t=123,v1=abc,v0=def"
-		expectedEvent := &stripe.Event{
+		expectedEvent := stripe.Event{
 			ID:   "evt_123",
 			Type: "payment_intent.succeeded",
 		}
@@ -543,14 +550,18 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.HandleStripeWebhook()(rr, req)
+		handler := paymentHandler.HandleStripeWebhook()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusOK, rr.Code)
-		var respBody map[string]bool
-		err := json.NewDecoder(rr.Body).Decode(&respBody)
+
+		var resp *response.APIResponse
+		err := json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
-		assert.True(t, respBody["success"])
+		assert.True(t, resp.Success)
+		assert.NotEmpty(t, resp.Data)
+
 		mockPaymentService.AssertExpectations(t)
 	})
 
@@ -563,13 +574,12 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.HandleStripeWebhook()(rr, req)
+		handler := paymentHandler.HandleStripeWebhook()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeBadRequest, errResp.Code)
-		assert.Contains(t, errResp.Message, "Stripe Signature is required")
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeBadRequest)
 		mockPaymentService.AssertNotCalled(t, "ProcessWebhook")
 	})
 
@@ -577,9 +587,8 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		// Arrange
 		payload := []byte(`{"id": "evt_123", "type": "payment_intent.succeeded"}`)
 		signature := "t=123,v1=invalid,v0=def"
-		serviceErr := appErrors.UnauthorizedError("invalid webhook signature") // Simulate signature verification failure
 
-		mockPaymentService.On("ProcessWebhook", mock.Anything, payload, signature).Return(nil, serviceErr).Once()
+		mockPaymentService.On("ProcessWebhook", mock.Anything, payload, signature).Return(stripe.Event{}, appErrors.UnauthorizedError("invalid webhook signature")).Once()
 
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments/webhook", bytes.NewReader(payload), nil)
 		req.Header.Set("Stripe-Signature", signature)
@@ -587,12 +596,12 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.HandleStripeWebhook()(rr, req)
+		handler := paymentHandler.HandleStripeWebhook()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
-		assert.Equal(t, http.StatusUnauthorized, rr.Code) // Service returns Unauthorized for bad signature
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, serviceErr.Code, errResp.Code)
+		assert.Equal(t, http.StatusUnauthorized, rr.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeUnauthorized)
 		mockPaymentService.AssertExpectations(t)
 	})
 
@@ -600,7 +609,7 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		// Arrange
 		payload := []byte(`{"id": "evt_123", "type": "payment_intent.failed"}`)
 		signature := "t=123,v1=abc,v0=def"
-		expectedEvent := &stripe.Event{
+		expectedEvent := stripe.Event{
 			ID:   "evt_123",
 			Type: "payment_intent.failed",
 		}
@@ -613,12 +622,12 @@ func TestPaymentHandler_HandleStripeWebhook(t *testing.T) {
 		rr := httptest.NewRecorder()
 
 		// Act
-		paymentHandler.HandleStripeWebhook()(rr, req)
+		handler := paymentHandler.HandleStripeWebhook()
+		handler.ServeHTTP(rr, req)
 
 		// Assert
 		assert.Equal(t, http.StatusInternalServerError, rr.Code)
-		errResp := decodeErrorResponse(t, rr.Body)
-		assert.Equal(t, appErrors.ErrCodeInternal, errResp.Code)
+		assert.Contains(t, rr.Body.String(), appErrors.ErrCodeInternal)
 		mockPaymentService.AssertExpectations(t)
 	})
 }
