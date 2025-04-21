@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
+	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	"github.com/google/uuid"
@@ -48,7 +50,7 @@ func (s *productService) CreateProduct(ctx context.Context, req *models.CreatePr
 	if err != nil {
 		span.RecordError(err)
 		span.SetAttributes(attribute.Bool("db_error", true))
-		return nil, errors.DatabaseError("Failed to create product").WithError(err)
+		return nil, appErrors.DatabaseError("Failed to create product").WithError(err)
 	}
 	span.SetAttributes(attribute.String("product.id", product.ID.String()))
 
@@ -66,7 +68,12 @@ func (s *productService) GetProductByID(ctx context.Context, id uuid.UUID) (*mod
 	if err != nil {
 		span.RecordError(err)
 		span.SetAttributes(attribute.Bool("db.error", true))
-		return nil, errors.NotFoundError("Product not found").WithError(err)
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, appErrors.NotFoundError("Product not found").WithError(err)
+		}
+
+		return nil, appErrors.DatabaseError("Failed to get product").WithError(err)
 	}
 
 	return product, nil
@@ -83,7 +90,7 @@ func (s *productService) UpdateProduct(ctx context.Context, id uuid.UUID, req *m
 	if err != nil {
 		span.RecordError(err)
 		span.SetAttributes(attribute.Bool("db.error", true))
-		return nil, errors.NotFoundError("Product not found").WithError(err)
+		return nil, appErrors.NotFoundError("Product not found").WithError(err)
 	}
 
 	if req.CategoryID != nil {
@@ -109,7 +116,7 @@ func (s *productService) UpdateProduct(ctx context.Context, id uuid.UUID, req *m
 	if err != nil {
 		span.RecordError(err)
 		span.SetAttributes(attribute.Bool("db.error", true))
-		return nil, errors.DatabaseError("Failed to update product").WithError(err)
+		return nil, appErrors.DatabaseError("Failed to update product").WithError(err)
 	}
 
 	return product, err
@@ -128,7 +135,7 @@ func (s *productService) ListProducts(ctx context.Context, page, pageSize int) (
 	if err != nil {
 		span.RecordError(err)
 		span.SetAttributes(attribute.Bool("db.error", true))
-		return nil, 0, errors.DatabaseError("Failed to fetch products").WithError(err)
+		return nil, 0, appErrors.DatabaseError("Failed to fetch products").WithError(err)
 	}
 
 	return products, total, nil
