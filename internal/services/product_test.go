@@ -158,18 +158,34 @@ func TestUpdateProduct(t *testing.T) {
 		Status:        "active",
 	}
 
+	newCategoryID := uuid.New()
 	newName := "New Name"
+	newDescription := "New Description"
 	newPrice := 60.0
+	newStockQuantity := 30
+	newStatus := "inactive"
+
 	req := &models.UpdateProductRequest{
-		Name:  &newName,
-		Price: &newPrice,
+		CategoryID:    &newCategoryID,
+		Name:          &newName,
+		Description:   &newDescription,
+		Price:         &newPrice,
+		StockQuantity: &newStockQuantity,
+		Status:        &newStatus,
 	}
 
 	t.Run("Success - Update Product", func(t *testing.T) {
 		// Arrange
 		mockRepo.On("GetProductByID", mock.Anything, testID).Return(existingProduct, nil).Once()
 		mockRepo.On("UpdateProduct", mock.Anything, mock.MatchedBy(func(p *models.Product) bool {
-			return p.ID == testID && p.Name == *req.Name && p.Price == *req.Price && p.Description == existingProduct.Description && p.CategoryID == existingProduct.CategoryID && p.StockQuantity == existingProduct.StockQuantity && p.Status == existingProduct.Status
+			return p.ID == testID &&
+				p.CategoryID == *req.CategoryID &&
+				p.Name == *req.Name &&
+				p.Description == *req.Description &&
+				p.Price == *req.Price &&
+				p.StockQuantity == *req.StockQuantity &&
+				p.Status == *req.Status &&
+				p.SKU == existingProduct.SKU
 		})).Return(nil).Once()
 
 		// Act
@@ -179,10 +195,13 @@ func TestUpdateProduct(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, updatedProduct)
 		assert.Equal(t, testID, updatedProduct.ID)
+		assert.Equal(t, newCategoryID, updatedProduct.CategoryID)
 		assert.Equal(t, newName, updatedProduct.Name)
+		assert.Equal(t, newDescription, updatedProduct.Description)
 		assert.Equal(t, newPrice, updatedProduct.Price)
-		assert.Equal(t, existingProduct.Description, updatedProduct.Description)
-		assert.Equal(t, existingProduct.StockQuantity, updatedProduct.StockQuantity)
+		assert.Equal(t, newStockQuantity, updatedProduct.StockQuantity)
+		assert.Equal(t, newStatus, updatedProduct.Status)
+		assert.Equal(t, existingProduct.SKU, updatedProduct.SKU)
 		mockRepo.AssertExpectations(t)
 	})
 
