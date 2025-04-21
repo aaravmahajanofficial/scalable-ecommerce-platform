@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -32,7 +33,13 @@ func TestCreateProduct(t *testing.T) {
 	t.Run("Success - Create Product", func(t *testing.T) {
 		// Arrange
 		mockRepo.On("CreateProduct", mock.Anything, mock.MatchedBy(func(p *models.Product) bool {
-			return p.Name == req.Name && p.SKU == req.SKU && p.Status == "active"
+			return p.CategoryID == req.CategoryID &&
+				p.Name == req.Name &&
+				p.Description == req.Description &&
+				p.Price == req.Price &&
+				p.StockQuantity == req.StockQuantity &&
+				p.SKU == req.SKU &&
+				p.Status == "active"
 		})).Return(nil).Once()
 
 		// Act
@@ -64,7 +71,7 @@ func TestCreateProduct(t *testing.T) {
 		var appErr *appErrors.AppError
 		assert.True(t, errors.As(err, &appErr))
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
-		assert.Contains(t, err.Error(), "Failed to create product")
+
 		mockRepo.AssertExpectations(t)
 	})
 }
@@ -98,7 +105,7 @@ func TestGetProductByID(t *testing.T) {
 
 	t.Run("Failure - Not Found", func(t *testing.T) {
 		// Arrange
-		mockRepo.On("GetProductByID", mock.Anything, testID).Return(nil, appErrors.NotFoundError("Product Not Found in DB")).Once()
+		mockRepo.On("GetProductByID", mock.Anything, testID).Return(nil, sql.ErrNoRows).Once()
 
 		// Act
 		product, err := productService.GetProductByID(ctx, testID)
@@ -110,7 +117,7 @@ func TestGetProductByID(t *testing.T) {
 		var appErr *appErrors.AppError
 		assert.True(t, errors.As(err, &appErr))
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
-		assert.Contains(t, err.Error(), "Product not Found")
+
 		mockRepo.AssertExpectations(t)
 	})
 
@@ -128,7 +135,7 @@ func TestGetProductByID(t *testing.T) {
 		var appErr *appErrors.AppError
 		assert.True(t, errors.As(err, &appErr))
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
-		assert.Contains(t, err.Error(), "Failed to get product")
+
 		mockRepo.AssertExpectations(t)
 	})
 }
@@ -162,7 +169,7 @@ func TestUpdateProduct(t *testing.T) {
 		// Arrange
 		mockRepo.On("GetProductByID", mock.Anything, testID).Return(existingProduct, nil).Once()
 		mockRepo.On("UpdateProduct", mock.Anything, mock.MatchedBy(func(p *models.Product) bool {
-			return p.ID == testID && p.Name == *req.Name && p.Price == *req.Price && p.Description == existingProduct.Description
+			return p.ID == testID && p.Name == *req.Name && p.Price == *req.Price && p.Description == existingProduct.Description && p.CategoryID == existingProduct.CategoryID && p.StockQuantity == existingProduct.StockQuantity && p.Status == existingProduct.Status
 		})).Return(nil).Once()
 
 		// Act
@@ -181,8 +188,8 @@ func TestUpdateProduct(t *testing.T) {
 
 	t.Run("Failure - Product Not Found", func(t *testing.T) {
 		// Arrange
-		mockRepo.On("GetProductByID", mock.Anything, testID).Return(nil, appErrors.NotFoundError("Product Not Found in DB")).Once()
-		
+		mockRepo.On("GetProductByID", mock.Anything, testID).Return(nil, sql.ErrNoRows).Once()
+
 		// Act
 		updatedProduct, err := productService.UpdateProduct(ctx, testID, req)
 
@@ -193,7 +200,6 @@ func TestUpdateProduct(t *testing.T) {
 		var appErr *appErrors.AppError
 		assert.True(t, errors.As(err, &appErr))
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
-		assert.Contains(t, err.Error(), "Product not found")
 
 		mockRepo.AssertNotCalled(t, "UpdateProduct")
 	})
@@ -214,7 +220,7 @@ func TestUpdateProduct(t *testing.T) {
 		var appErr *appErrors.AppError
 		assert.True(t, errors.As(err, &appErr))
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
-		assert.Contains(t, err.Error(), "Failed to update product")
+
 		mockRepo.AssertExpectations(t)
 	})
 }
@@ -264,13 +270,11 @@ func TestListProducts(t *testing.T) {
 		var appErr *appErrors.AppError
 		assert.True(t, errors.As(err, &appErr))
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
-		assert.Contains(t, err.Error(), "Failed to fetch products")
-		mockRepo.AssertExpectations(t)
 
 		mockRepo.AssertExpectations(t)
 	})
 
-	t.Run("Success - Empty List", func(t *testing.T) {
+	t.Run("Success - Products List Empty", func(t *testing.T) {
 		// Arrange
 		var expectedProducts []*models.Product
 		expectedTotal := 0

@@ -138,5 +138,9 @@ func (s *productService) ListProducts(ctx context.Context, page, pageSize int) (
 		return nil, 0, appErrors.DatabaseError("Failed to fetch products").WithError(err)
 	}
 
+	if products == nil {
+		return []*models.Product{}, 0, nil
+	}
+
 	return products, total, nil
 }
