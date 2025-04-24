@@ -15,6 +15,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -31,7 +32,7 @@ func newTestRequest(method, target string, body []byte) *http.Request {
 }
 
 func TestCreateProduct(t *testing.T) {
-	mockProductService := new(mocks.ProductService)
+	mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Product Created", func(t *testing.T) {
@@ -158,7 +159,7 @@ func TestCreateProduct(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
-	mockProductService := new(mocks.ProductService)
+		mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Get Product", func(t *testing.T) {
@@ -262,7 +263,7 @@ func TestGetProduct(t *testing.T) {
 }
 
 func TestUpdateProduct(t *testing.T) {
-	mockProductService := new(mocks.ProductService)
+		mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Update Product", func(t *testing.T) {
@@ -427,7 +428,7 @@ func TestUpdateProduct(t *testing.T) {
 }
 
 func TestListProducts(t *testing.T) {
-	mockProductService := new(mocks.ProductService)
+		mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Default Pagination", func(t *testing.T) {
@@ -551,7 +552,7 @@ func TestListProducts(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				mockProductService := new(mocks.ProductService)
+					mockProductService := mocks.NewMockProductService(t)
 				productHandler := handlers.NewProductHandler(mockProductService)
 				rr := httptest.NewRecorder()
 				req := newTestRequest(http.MethodGet, tc.query, nil)

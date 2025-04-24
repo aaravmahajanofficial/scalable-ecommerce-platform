@@ -14,15 +14,30 @@ packages:
   github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/cache:
     config:
       all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"
   github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories:
     config:
       all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"
   github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services:
     config:
       all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"
   github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid:
     config:
       all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"
   github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe:
     config:
       all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      filename: "{{.InterfaceName}}_mock.go"
+      pkgname: "mocks"

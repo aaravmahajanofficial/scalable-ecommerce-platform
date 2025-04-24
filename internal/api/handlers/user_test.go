@@ -12,6 +12,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +21,7 @@ import (
 
 func TestUserHandler_Register(t *testing.T) {
 
-	mockUserService := new(mocks.UserService)
+	mockUserService := mocks.NewMockUserService(t)
 	userHandler := handlers.NewUserHandler(mockUserService)
 
 	t.Run("Success - User Registration", func(t *testing.T) {
@@ -159,7 +160,7 @@ func TestUserHandler_Register(t *testing.T) {
 
 func TestUserHandler_Login(t *testing.T) {
 
-	mockUserService := new(mocks.UserService)
+	mockUserService := mocks.NewMockUserService(t)
 	userHandler := handlers.NewUserHandler(mockUserService)
 
 	t.Run("Success - Valid Login", func(t *testing.T) {
@@ -299,7 +300,7 @@ func TestUserHandler_Login(t *testing.T) {
 
 func TestUserHandler_Profile(t *testing.T) {
 
-	mockUserService := new(mocks.UserService)
+	mockUserService := mocks.NewMockUserService(t)
 	userHandler := handlers.NewUserHandler(mockUserService)
 
 	t.Run("Success - Get Profile", func(t *testing.T) {

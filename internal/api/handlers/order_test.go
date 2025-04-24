@@ -12,6 +12,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/testutils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
@@ -21,7 +22,7 @@ import (
 
 // TestCreateOrder tests the CreateOrder handler
 func TestCreateOrder(t *testing.T) {
-	mockOrderService := new(mocks.OrderService)
+	mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	userID := uuid.New()
 	orderID := uuid.New()
@@ -194,7 +195,7 @@ func TestCreateOrder(t *testing.T) {
 }
 
 func TestGetOrder(t *testing.T) {
-	mockOrderService := new(mocks.OrderService)
+		mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	userID := uuid.New()
 	orderID := uuid.New()
@@ -342,7 +343,7 @@ func TestGetOrder(t *testing.T) {
 }
 
 func TestListOrders(t *testing.T) {
-	mockOrderService := new(mocks.OrderService)
+		mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	userID := uuid.New()
 
@@ -543,7 +544,7 @@ func TestListOrders(t *testing.T) {
 }
 
 func TestUpdateOrderStatus(t *testing.T) {
-	mockOrderService := new(mocks.OrderService)
+		mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	adminUserID := uuid.New() // Assuming an admin/updater user ID
 	orderID := uuid.New()

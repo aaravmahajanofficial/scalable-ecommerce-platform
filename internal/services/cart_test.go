@@ -9,7 +9,7 @@ import (
 
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/mocks"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -17,8 +17,8 @@ import (
 )
 
 func TestCreateCart(t *testing.T) {
-	mockRepo := repository.NewMockCartRepository()
-	cartService := service.NewMockCartService(mockRepo)
+	mockRepo := mocks.NewMockCartRepository(t)
+	cartService := service.NewCartService(mockRepo)
 	ctx := context.Background()
 	userID := uuid.New()
 
@@ -62,8 +62,8 @@ func TestCreateCart(t *testing.T) {
 }
 
 func TestGetCart(t *testing.T) {
-	mockRepo := repository.NewMockCartRepository()
-	cartService := service.NewMockCartService(mockRepo)
+	mockRepo := mocks.NewMockCartRepository(t)
+	cartService := service.NewCartService(mockRepo)
 	ctx := context.Background()
 	customerID := uuid.New()
 	existingCart := &models.Cart{
@@ -127,8 +127,8 @@ func TestGetCart(t *testing.T) {
 }
 
 func TestAddItem(t *testing.T) {
-	mockRepo := repository.NewMockCartRepository()
-	cartService := service.NewMockCartService(mockRepo)
+	mockRepo := mocks.NewMockCartRepository(t)
+	cartService := service.NewCartService(mockRepo)
 	ctx := context.Background()
 	customerID := uuid.New()
 	productID1 := uuid.New()
@@ -260,8 +260,8 @@ func TestAddItem(t *testing.T) {
 }
 
 func TestCartService_UpdateQuantity(t *testing.T) {
-	mockRepo := repository.NewMockCartRepository()
-	cartService := service.NewMockCartService(mockRepo)
+	mockRepo := mocks.NewMockCartRepository(t)
+	cartService := service.NewCartService(mockRepo)
 	ctx := context.Background()
 	customerID := uuid.New()
 	productID1 := uuid.New()

@@ -12,6 +12,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/testutils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
@@ -21,7 +22,7 @@ import (
 )
 
 func TestCreatePayment(t *testing.T) {
-	mockPaymentService := new(mocks.PaymentService)
+	mockPaymentService := mocks.NewMockPaymentService(t)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 	testUserID := uuid.New()
 
@@ -213,7 +214,7 @@ func TestCreatePayment(t *testing.T) {
 }
 
 func TestGetPayment(t *testing.T) {
-	mockPaymentService := new(mocks.PaymentService)
+	mockPaymentService := mocks.NewMockPaymentService(t)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 	testUserID := uuid.New()
 	paymentID := uuid.New().String()
@@ -336,7 +337,7 @@ func TestGetPayment(t *testing.T) {
 }
 
 func TestListPayments(t *testing.T) {
-	mockPaymentService := new(mocks.PaymentService)
+	mockPaymentService := mocks.NewMockPaymentService(t)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 	testUserID := uuid.New()
 
@@ -529,7 +530,7 @@ func TestListPayments(t *testing.T) {
 }
 
 func TestHandleStripeWebhook(t *testing.T) {
-	mockPaymentService := new(mocks.PaymentService)
+	mockPaymentService := mocks.NewMockPaymentService(t)
 	paymentHandler := handlers.NewPaymentHandler(mockPaymentService)
 
 	t.Run("Success", func(t *testing.T) {

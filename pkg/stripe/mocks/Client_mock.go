@@ -2,9 +2,10 @@
 // github.com/vektra/mockery
 // template: testify
 
-package stripe
+package mocks
 
 import (
+	stripe0 "github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stripe/stripe-go/v81"
 )
@@ -370,22 +371,22 @@ func (_c *MockClient_RefundPayment_Call) RunAndReturn(run func(paymentIntentID s
 }
 
 // VerifyWebhookSignature provides a mock function for the type MockClient
-func (_mock *MockClient) VerifyWebhookSignature(payload []byte, signature string) (Event, error) {
+func (_mock *MockClient) VerifyWebhookSignature(payload []byte, signature string) (stripe0.Event, error) {
 	ret := _mock.Called(payload, signature)
 
 	if len(ret) == 0 {
 		panic("no return value specified for VerifyWebhookSignature")
 	}
 
-	var r0 Event
+	var r0 stripe0.Event
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func([]byte, string) (Event, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func([]byte, string) (stripe0.Event, error)); ok {
 		return returnFunc(payload, signature)
 	}
-	if returnFunc, ok := ret.Get(0).(func([]byte, string) Event); ok {
+	if returnFunc, ok := ret.Get(0).(func([]byte, string) stripe0.Event); ok {
 		r0 = returnFunc(payload, signature)
 	} else {
-		r0 = ret.Get(0).(Event)
+		r0 = ret.Get(0).(stripe0.Event)
 	}
 	if returnFunc, ok := ret.Get(1).(func([]byte, string) error); ok {
 		r1 = returnFunc(payload, signature)
@@ -414,12 +415,12 @@ func (_c *MockClient_VerifyWebhookSignature_Call) Run(run func(payload []byte, s
 	return _c
 }
 
-func (_c *MockClient_VerifyWebhookSignature_Call) Return(v Event, err error) *MockClient_VerifyWebhookSignature_Call {
+func (_c *MockClient_VerifyWebhookSignature_Call) Return(v stripe0.Event, err error) *MockClient_VerifyWebhookSignature_Call {
 	_c.Call.Return(v, err)
 	return _c
 }
 
-func (_c *MockClient_VerifyWebhookSignature_Call) RunAndReturn(run func(payload []byte, signature string) (Event, error)) *MockClient_VerifyWebhookSignature_Call {
+func (_c *MockClient_VerifyWebhookSignature_Call) RunAndReturn(run func(payload []byte, signature string) (stripe0.Event, error)) *MockClient_VerifyWebhookSignature_Call {
 	_c.Call.Return(run)
 	return _c
 }

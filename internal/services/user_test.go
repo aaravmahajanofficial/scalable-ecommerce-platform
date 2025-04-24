@@ -8,7 +8,7 @@ import (
 
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/mocks"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -20,8 +20,8 @@ import (
 func TestUserService_Register(t *testing.T) {
 
 	// Arrange
-	mockUserRepo := repository.NewMockUserRepository()
-	mockRedisRepo := repository.NewMockRateLimitRepository()
+	mockUserRepo := mocks.NewMockUserRepository(t)
+	mockRedisRepo := mocks.NewMockRateLimitRepository(t)
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
@@ -123,8 +123,8 @@ func TestUserService_Register(t *testing.T) {
 }
 
 func TestUserService_Login(t *testing.T) {
-	mockUserRepo := repository.NewMockUserRepository()
-	mockRedisRepo := repository.NewMockRateLimitRepository()
+	mockUserRepo := mocks.NewMockUserRepository(t)
+	mockRedisRepo := mocks.NewMockRateLimitRepository(t)
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
@@ -281,8 +281,8 @@ func TestUserService_Login(t *testing.T) {
 }
 
 func TestUserService_GetUserByID(t *testing.T) {
-	mockUserRepo := repository.NewMockUserRepository()
-	mockRedisRepo := repository.NewMockRateLimitRepository()
+	mockUserRepo := mocks.NewMockUserRepository(t)
+	mockRedisRepo := mocks.NewMockRateLimitRepository(t)
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)

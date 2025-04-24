@@ -14,14 +14,15 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func setupCartTest(t *testing.T) *handlers.CartHandler {
-	mockCartService := NewMockCartService()
+func setupCartTest(t *testing.T) (*mocks.MockCartService, *handlers.CartHandler) {
+	mockCartService := mocks.NewMockCartService(t)
 	cartHandler := handlers.NewCartHandler(mockCartService)
 	return mockCartService, cartHandler
 }
@@ -83,7 +84,7 @@ func TestGetCart(t *testing.T) {
 
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
-		_, cartHandler := setupCartTest()
+		_, cartHandler := setupCartTest(t)
 
 		// Request without auth context
 		req := httptest.NewRequest("GET", "/carts", nil)
@@ -112,7 +113,7 @@ func TestGetCart(t *testing.T) {
 
 	t.Run("Failure - Cart Not Found", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 		req, claims := createAuthenticatedRequest("GET", "/carts", nil)
 		recorder := httptest.NewRecorder()
 
@@ -138,7 +139,7 @@ func TestGetCart(t *testing.T) {
 
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 		req, claims := createAuthenticatedRequest("GET", "/carts", nil)
 		recorder := httptest.NewRecorder()
 
@@ -166,7 +167,7 @@ func TestGetCart(t *testing.T) {
 func TestAddItem(t *testing.T) {
 	t.Run("Success - Add Item To Cart", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with item data
 		addItemRequest := models.AddItemRequest{
@@ -216,7 +217,7 @@ func TestAddItem(t *testing.T) {
 
 	t.Run("Success - Create Cart Then Add Item", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with item data
 		addItemRequest := models.AddItemRequest{
@@ -272,7 +273,7 @@ func TestAddItem(t *testing.T) {
 
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
-		_, cartHandler := setupCartTest()
+		_, cartHandler := setupCartTest(t)
 
 		// Request without auth context
 		addItemRequest := models.AddItemRequest{
@@ -300,7 +301,7 @@ func TestAddItem(t *testing.T) {
 
 	t.Run("Failure - Invalid Request Body", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with invalid JSON
 		invalidJSON := []byte(`{"productID": "not-a-uuid", "quantity": "not-a-number"}`)
@@ -330,7 +331,7 @@ func TestAddItem(t *testing.T) {
 
 	t.Run("Failure - Cart Creation Error", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with item data
 		addItemRequest := models.AddItemRequest{
@@ -363,7 +364,7 @@ func TestAddItem(t *testing.T) {
 
 	t.Run("Failure - Service Error When Adding Item", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with item data
 		addItemRequest := models.AddItemRequest{
@@ -397,7 +398,7 @@ func TestAddItem(t *testing.T) {
 func TestUpdateQuantity(t *testing.T) {
 	t.Run("Success - Update Item Quantity", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with update data
 		updateRequest := models.UpdateQuantityRequest{
@@ -445,7 +446,7 @@ func TestUpdateQuantity(t *testing.T) {
 
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
-		_, cartHandler := setupCartTest()
+		_, cartHandler := setupCartTest(t)
 
 		// Request without auth context
 		updateRequest := models.UpdateQuantityRequest{
@@ -472,7 +473,7 @@ func TestUpdateQuantity(t *testing.T) {
 
 	t.Run("Failure - Invalid Request Body", func(t *testing.T) {
 		// Arrange
-		_, cartHandler := setupCartTest()
+		_, cartHandler := setupCartTest(t)
 
 		// Request with invalid JSON
 		invalidJSON := []byte(`{"productID": "not-a-uuid", "quantity": "not-a-number"}`)
@@ -490,7 +491,7 @@ func TestUpdateQuantity(t *testing.T) {
 
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
 
 		// Request with update data
 		updateRequest := models.UpdateQuantityRequest{

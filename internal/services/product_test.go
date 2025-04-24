@@ -8,7 +8,7 @@ import (
 
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/mocks"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -17,7 +17,7 @@ import (
 
 func TestCreateProduct(t *testing.T) {
 	// Arrange
-	mockRepo := repository.NewMockProductRepository(t)
+	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
 	ctx := context.Background()
 
@@ -78,7 +78,7 @@ func TestCreateProduct(t *testing.T) {
 
 func TestGetProductByID(t *testing.T) {
 	// Arrange
-	mockRepo := repository.NewMockProductRepository(t)
+	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
 	ctx := context.Background()
 	testID := uuid.New()
@@ -142,7 +142,7 @@ func TestGetProductByID(t *testing.T) {
 
 func TestUpdateProduct(t *testing.T) {
 	// Arrange
-	mockRepo := repository.NewMockProductRepository(t)
+	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
 	ctx := context.Background()
 	testID := uuid.New()
@@ -246,7 +246,7 @@ func TestUpdateProduct(t *testing.T) {
 
 func TestListProducts(t *testing.T) {
 	// Arrange
-	mockRepo := repository.NewMockProductRepository(t)
+	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
 	ctx := context.Background()
 	page := 1
