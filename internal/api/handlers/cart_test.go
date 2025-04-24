@@ -14,16 +14,15 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
+	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-// setupCartTest -> creates common test dependencies
-func setupCartTest() (*mocks.CartService, *handlers.CartHandler) {
-	mockCartService := new(mocks.CartService)
+func setupCartTest(t *testing.T) (*service.MockCartService, *handlers.CartHandler) {
+	mockCartService := service.NewMockCartService(t)
 	cartHandler := handlers.NewCartHandler(mockCartService)
 	return mockCartService, cartHandler
 }
@@ -51,7 +50,8 @@ func createAuthenticatedRequest(method, url string, body []byte) (*http.Request,
 func TestGetCart(t *testing.T) {
 	t.Run("Success - Retrieve Cart", func(t *testing.T) {
 		// Arrange
-		mockCartService, cartHandler := setupCartTest()
+		mockCartService, cartHandler := setupCartTest(t)
+
 		req, claims := createAuthenticatedRequest("GET", "/carts", nil)
 		recorder := httptest.NewRecorder()
 

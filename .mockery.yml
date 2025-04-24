@@ -1,0 +1,28 @@
+all: false
+dir: "{{.InterfaceDir}}"
+filename: mocks_test.go
+force-file-write: true
+formatter: goimports
+log-level: info
+structname: "{{.Mock}}{{.InterfaceName}}"
+pkgname: "{{.SrcPackageName}}"
+recursive: false
+require-template-schema-exists: true
+template: testify
+template-schema: "{{.Template}}.schema.json"
+packages:
+  github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/cache:
+    config:
+      all: true
+  github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories:
+    config:
+      all: true
+  github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services:
+    config:
+      all: true
+  github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid:
+    config:
+      all: true
+  github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe:
+    config:
+      all: true
