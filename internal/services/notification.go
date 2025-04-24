@@ -25,7 +25,7 @@ type notificationService struct {
 }
 
 func NewNotificationService(repo repository.NotificationRepository, userRepo repository.UserRepository, emailService sendGrid.EmailService) NotificationService {
-	return &notificationService{repo: repo, emailService: emailService}
+	return &notificationService{repo: repo, userRepo: userRepo, emailService: emailService}
 }
 
 // SendEmail implements NotificationService.
