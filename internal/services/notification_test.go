@@ -1,328 +1,349 @@
 package service_test
 
-// import (
-// 	"context"
-// 	"encoding/json"
-// 	"errors"
-// 	"testing"
-// 	"time"
-
-// 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-// 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
-// 	"github.com/google/uuid"
-// 	"github.com/stretchr/testify/assert"
-// 	"github.com/stretchr/testify/mock"
-// )
-
-// func setupNotificationServiceTest(t *testing.T) (service.NotificationService, *mocks.NotificationRepository, *mocks.UserRepository) {
-// 	mockNotificationRepository := mocks.NewNotificationRepository(t)
-// 	mockUserRepository := mocks.NewUserRepository(t)
-// 	notificationService := service.NewNotificationService(mockNotificationRepository, mockUserRepository)
-// 	return notificationService, mockNotificationRepository, mockUserRepository
-// }
-
-// func TestNotificationService_SendEmail(t *testing.T) {
-// 	mockRepo, mockUserRepo, mockEmailService := setupNotificationServiceTest(t)
-// 	ctx := context.Background()
-
-// 	testUser := &models.User{ID: uuid.New(), Email: "test@example.com"}
-// 	testReq := &models.EmailNotificationRequest{
-// 		To:       "test@example.com",
-// 		Subject:  "Test Subject",
-// 		Content:  "Test Content",
-// 		Metadata: map[string]string{"key": "value"},
-// 	}
-// 	metadataBytes, _ := json.Marshal(testReq.Metadata)
-
-// 	t.Run("Success", func(t *testing.T) {
-// 		mockUserRepo.On("GetUserByEmail", ctx, testReq.To).Return(testUser, nil).Once()
-// 		mockRepo.On("CreateNotification", ctx, mock.AnythingOfType("*models.Notification")).Return(nil).Once().Run(func(args mock.Arguments) {
-// 			// Check if notification is created correctly before sending
-// 			notification := args.Get(1).(*models.Notification)
-// 			assert.Equal(t, models.NotificationTypeEmail, notification.Type)
-// 			assert.Equal(t, testReq.To, notification.Recipient)
-// 			assert.Equal(t, testReq.Subject, notification.Subject)
-// 			assert.Equal(t, testReq.Content, notification.Content)
-// 			assert.Equal(t, models.StatusPending, notification.Status)
-// 			assert.Equal(t, json.RawMessage(metadataBytes), notification.Metadata)
-// 		})
-// 		mockEmailService.On("Send", ctx, testReq).Return(nil).Once()
-// 		mockRepo.On("UpdateNotificationStatus", ctx, mock.AnythingOfType("uuid.UUID"), models.StatusSent, "").Return(nil).Once()
-
-// 		resp, err := svc.SendEmail(ctx, testReq)
-
-// 		assert.NoError(t, err)
-// 		assert.NotNil(t, resp)
-// 		assert.Equal(t, models.NotificationTypeEmail, resp.Type)
-// 		assert.Equal(t, models.StatusSent, resp.Status)
-// 		assert.Equal(t, testReq.To, resp.Recipient)
-// 		assert.NotNil(t, resp.ID)
-// 		assert.NotZero(t, resp.CreatedAt)
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		mockRepo.AssertExpectations(t)
-// 		mockEmailService.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Success - No Metadata", func(t *testing.T) {
-// 		reqNoMeta := &models.EmailNotificationRequest{
-// 			To:      "test@example.com",
-// 			Subject: "Test Subject",
-// 			Content: "Test Content",
-// 		}
-// 		mockUserRepo.On("GetUserByEmail", ctx, reqNoMeta.To).Return(testUser, nil).Once()
-// 		mockRepo.On("CreateNotification", ctx, mock.AnythingOfType("*models.Notification")).Return(nil).Once().Run(func(args mock.Arguments) {
-// 			notification := args.Get(1).(*models.Notification)
-// 			assert.Nil(t, notification.Metadata) // Ensure metadata is nil
-// 		})
-// 		mockEmailService.On("Send", ctx, reqNoMeta).Return(nil).Once()
-// 		mockRepo.On("UpdateNotificationStatus", ctx, mock.AnythingOfType("uuid.UUID"), models.StatusSent, "").Return(nil).Once()
-
-// 		resp, err := svc.SendEmail(ctx, reqNoMeta)
-
-// 		assert.NoError(t, err)
-// 		assert.NotNil(t, resp)
-// 		assert.Equal(t, models.StatusSent, resp.Status)
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		mockRepo.AssertExpectations(t)
-// 		mockEmailService.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Error - User Not Found", func(t *testing.T) {
-// 		notFoundErr := errors.New("user not found")
-// 		mockUserRepo.On("GetUserByEmail", ctx, testReq.To).Return(nil, notFoundErr).Once()
-
-// 		resp, err := svc.SendEmail(ctx, testReq)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, resp)
-// 		targetErr := customErrors.NotFoundError("User not found")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		assert.ErrorIs(t, err.(customErrors.AppError).Unwrap(), notFoundErr)
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		// Ensure other mocks were not called
-// 		mockRepo.AssertNotCalled(t, "CreateNotification", mock.Anything, mock.Anything)
-// 		mockEmailService.AssertNotCalled(t, "Send", mock.Anything, mock.Anything)
-// 		mockRepo.AssertNotCalled(t, "UpdateNotificationStatus", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-// 	})
-
-// 	// Note: Testing json.Marshal failure is tricky without specific invalid data types.
-// 	// This case assumes Metadata could potentially cause a marshal error.
-// 	t.Run("Error - Metadata Marshal Failure", func(t *testing.T) {
-// 		// Use a channel, which cannot be marshaled to JSON, to force an error
-// 		reqInvalidMeta := &models.EmailNotificationRequest{
-// 			To:       "test@example.com",
-// 			Subject:  "Test Subject",
-// 			Content:  "Test Content",
-// 			Metadata: map[string]interface{}{"invalid": make(chan int)},
-// 		}
-// 		mockUserRepo.On("GetUserByEmail", ctx, reqInvalidMeta.To).Return(testUser, nil).Once()
-
-// 		resp, err := svc.SendEmail(ctx, reqInvalidMeta)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, resp)
-// 		targetErr := customErrors.InternalError("Failed to marshal metadata")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		_, ok := err.(customErrors.AppError).Unwrap().(*json.UnsupportedTypeError)
-// 		assert.True(t, ok, "Expected underlying error to be json.UnsupportedTypeError")
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		mockRepo.AssertNotCalled(t, "CreateNotification", mock.Anything, mock.Anything)
-// 		mockEmailService.AssertNotCalled(t, "Send", mock.Anything, mock.Anything)
-// 		mockRepo.AssertNotCalled(t, "UpdateNotificationStatus", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-// 	})
-
-// 	t.Run("Error - Create Notification Failure", func(t *testing.T) {
-// 		dbErr := errors.New("database error")
-// 		mockUserRepo.On("GetUserByEmail", ctx, testReq.To).Return(testUser, nil).Once()
-// 		mockRepo.On("CreateNotification", ctx, mock.AnythingOfType("*models.Notification")).Return(dbErr).Once()
-
-// 		resp, err := svc.SendEmail(ctx, testReq)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, resp)
-// 		targetErr := customErrors.DatabaseError("Failed to create notification")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		assert.ErrorIs(t, err.(customErrors.AppError).Unwrap(), dbErr)
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		mockRepo.AssertExpectations(t)
-// 		mockEmailService.AssertNotCalled(t, "Send", mock.Anything, mock.Anything)
-// 		mockRepo.AssertNotCalled(t, "UpdateNotificationStatus", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-// 	})
-
-// 	t.Run("Error - Email Send Failure", func(t *testing.T) {
-// 		sendErr := errors.New("sendgrid error")
-// 		mockUserRepo.On("GetUserByEmail", ctx, testReq.To).Return(testUser, nil).Once()
-// 		mockRepo.On("CreateNotification", ctx, mock.AnythingOfType("*models.Notification")).Return(nil).Once()
-// 		mockEmailService.On("Send", ctx, testReq).Return(sendErr).Once()
-// 		// Expect UpdateNotificationStatus to be called to mark as Failed
-// 		mockRepo.On("UpdateNotificationStatus", ctx, mock.AnythingOfType("uuid.UUID"), models.StatusFailed, sendErr.Error()).Return(nil).Once()
-
-// 		resp, err := svc.SendEmail(ctx, testReq)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, resp)
-// 		targetErr := customErrors.ThirdPartyError("Failed to send notification")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		assert.ErrorIs(t, err.(customErrors.AppError).Unwrap(), sendErr)
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		mockRepo.AssertExpectations(t)
-// 		mockEmailService.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Error - Update Status Failure (after successful send)", func(t *testing.T) {
-// 		updateErr := errors.New("update status error")
-// 		mockUserRepo.On("GetUserByEmail", ctx, testReq.To).Return(testUser, nil).Once()
-// 		mockRepo.On("CreateNotification", ctx, mock.AnythingOfType("*models.Notification")).Return(nil).Once()
-// 		mockEmailService.On("Send", ctx, testReq).Return(nil).Once()
-// 		mockRepo.On("UpdateNotificationStatus", ctx, mock.AnythingOfType("uuid.UUID"), models.StatusSent, "").Return(updateErr).Once()
-
-// 		resp, err := svc.SendEmail(ctx, testReq)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, resp)
-// 		targetErr := customErrors.DatabaseError("Failed to update notification status")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		assert.ErrorIs(t, err.(customErrors.AppError).Unwrap(), updateErr)
-
-// 		mockUserRepo.AssertExpectations(t)
-// 		mockRepo.AssertExpectations(t)
-// 		mockEmailService.AssertExpectations(t)
-// 	})
-// }
-
-// func TestNotificationService_GetNotification(t *testing.T) {
-// 	ctx := context.Background()
-// 	mockRepo := new(MockNotificationRepository)
-// 	// UserRepo and EmailService not needed for GetNotification
-// 	mockUserRepo := new(MockUserRepository)
-// 	mockEmailService := new(MockEmailService)
-// 	svc := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
-
-// 	testID := uuid.New()
-// 	testNotification := &models.Notification{
-// 		ID:        testID,
-// 		Type:      models.NotificationTypeEmail,
-// 		Recipient: "found@example.com",
-// 		Status:    models.StatusSent,
-// 		CreatedAt: time.Now(),
-// 	}
-
-// 	t.Run("Success", func(t *testing.T) {
-// 		mockRepo.On("GetNotificationById", ctx, testID).Return(testNotification, nil).Once()
-
-// 		notification, err := svc.GetNotification(ctx, testID)
-
-// 		assert.NoError(t, err)
-// 		assert.NotNil(t, notification)
-// 		assert.Equal(t, testNotification, notification)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Error - Not Found", func(t *testing.T) {
-// 		notFoundErr := errors.New("not found in db")
-// 		mockRepo.On("GetNotificationById", ctx, testID).Return(nil, notFoundErr).Once()
-
-// 		notification, err := svc.GetNotification(ctx, testID)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, notification)
-// 		targetErr := customErrors.NotFoundError("Notification not found")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		assert.ErrorIs(t, err.(customErrors.AppError).Unwrap(), notFoundErr)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-// }
-
-// func TestNotificationService_ListNotifications(t *testing.T) {
-// 	ctx := context.Background()
-// 	mockRepo := new(MockNotificationRepository)
-// 	mockUserRepo := new(MockUserRepository)
-// 	mockEmailService := new(MockEmailService)
-// 	svc := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
-
-// 	testNotifications := []*models.Notification{
-// 		{ID: uuid.New(), Recipient: "test1@example.com"},
-// 		{ID: uuid.New(), Recipient: "test2@example.com"},
-// 	}
-// 	totalCount := 15
-
-// 	t.Run("Success - Valid Page and Size", func(t *testing.T) {
-// 		page, size := 2, 5
-// 		mockRepo.On("ListNotifications", ctx, page, size).Return(testNotifications, totalCount, nil).Once()
-
-// 		notifications, total, err := svc.ListNotifications(ctx, page, size)
-
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, testNotifications, notifications)
-// 		assert.Equal(t, totalCount, total)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Success - Page < 1", func(t *testing.T) {
-// 		page, size := 0, 5
-// 		expectedPage := 1 // Should default to 1
-// 		mockRepo.On("ListNotifications", ctx, expectedPage, size).Return(testNotifications, totalCount, nil).Once()
-
-// 		notifications, total, err := svc.ListNotifications(ctx, page, size)
-
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, testNotifications, notifications)
-// 		assert.Equal(t, totalCount, total)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Success - Size < 1", func(t *testing.T) {
-// 		page, size := 1, 0
-// 		expectedSize := 10 // Should default to 10
-// 		mockRepo.On("ListNotifications", ctx, page, expectedSize).Return(testNotifications, totalCount, nil).Once()
-
-// 		notifications, total, err := svc.ListNotifications(ctx, page, size)
-
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, testNotifications, notifications)
-// 		assert.Equal(t, totalCount, total)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Success - Size > 10", func(t *testing.T) {
-// 		page, size := 1, 15
-// 		expectedSize := 10 // Should default to 10
-// 		mockRepo.On("ListNotifications", ctx, page, expectedSize).Return(testNotifications, totalCount, nil).Once()
-
-// 		notifications, total, err := svc.ListNotifications(ctx, page, size)
-
-// 		assert.NoError(t, err)
-// 		assert.Equal(t, testNotifications, notifications)
-// 		assert.Equal(t, totalCount, total)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-
-// 	t.Run("Error - Database Error", func(t *testing.T) {
-// 		page, size := 1, 10
-// 		dbErr := errors.New("failed to fetch")
-// 		mockRepo.On("ListNotifications", ctx, page, size).Return(nil, 0, dbErr).Once()
-
-// 		notifications, total, err := svc.ListNotifications(ctx, page, size)
-
-// 		assert.Error(t, err)
-// 		assert.Nil(t, notifications)
-// 		assert.Equal(t, 0, total)
-// 		targetErr := customErrors.DatabaseError("Failed to fetch notifications")
-// 		assert.ErrorAs(t, err, &targetErr)
-// 		assert.ErrorIs(t, err.(customErrors.AppError).Unwrap(), dbErr)
-
-// 		mockRepo.AssertExpectations(t)
-// 	})
-// }
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"testing"
+	"time"
+
+	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	repoMocks "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/mocks"
+	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
+	emailMocks "github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid/mocks"
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+func TestNewNotificationService(t *testing.T) {
+	mockRepo := repoMocks.NewMockNotificationRepository(t)
+	mockUserRepo := repoMocks.NewMockUserRepository(t)
+	mockEmailService := emailMocks.NewMockEmailService(t)
+
+	service := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
+	assert.NotNil(t, service)
+}
+
+func TestSendEmail(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := repoMocks.NewMockNotificationRepository(t)
+	mockUserRepo := repoMocks.NewMockUserRepository(t)
+	mockEmailService := emailMocks.NewMockEmailService(t)
+	service := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
+
+	testEmail := "test@example.com"
+	testSubject := "Test Subject"
+	testContent := "Test Content"
+	testMetadata := map[string]string{"key": "value"}
+	metadataBytes, _ := json.Marshal(testMetadata)
+
+	req := &models.EmailNotificationRequest{
+		To:       testEmail,
+		Subject:  testSubject,
+		Content:  testContent,
+		Metadata: testMetadata,
+	}
+
+	user := &models.User{ID: uuid.New(), Email: testEmail}
+	dbErr := errors.New("database error")
+	sendErr := errors.New("sendgrid error")
+	notFoundErr := errors.New("not found")
+
+	t.Run("Success - Send Email", func(t *testing.T) {
+		// Arrange
+		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(user, nil).Once()
+		mockRepo.EXPECT().CreateNotification(ctx, mock.MatchedBy(func(n *models.Notification) bool {
+			return n.Recipient == testEmail && n.Subject == testSubject && n.Status == models.StatusPending && string(n.Metadata) == string(metadataBytes)
+		})).Return(nil).Once()
+		mockEmailService.EXPECT().Send(ctx, req).Return(nil).Once()
+		mockRepo.EXPECT().UpdateNotificationStatus(ctx, mock.AnythingOfType("uuid.UUID"), models.StatusSent, "").Return(nil).Once()
+
+		// Act
+		resp, err := service.SendEmail(ctx, req)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, testEmail, resp.Recipient)
+		assert.Equal(t, models.NotificationTypeEmail, resp.Type)
+		assert.Equal(t, models.StatusSent, resp.Status)
+		assert.NotEqual(t, uuid.Nil, resp.ID)
+
+		mockRepo.AssertExpectations(t)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailService.AssertExpectations(t)
+	})
+
+	t.Run("Success without metadata", func(t *testing.T) {
+		// Arrange
+		reqNoMeta := &models.EmailNotificationRequest{
+			To:      testEmail,
+			Subject: testSubject,
+			Content: testContent,
+		}
+		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(user, nil).Once()
+		mockRepo.EXPECT().CreateNotification(ctx, mock.MatchedBy(func(n *models.Notification) bool {
+			return n.Recipient == testEmail && n.Subject == testSubject && n.Status == models.StatusPending && n.Metadata == nil
+		})).Return(nil).Once()
+		mockEmailService.EXPECT().Send(ctx, reqNoMeta).Return(nil).Once()
+		mockRepo.EXPECT().UpdateNotificationStatus(ctx, mock.AnythingOfType("uuid.UUID"), models.StatusSent, "").Return(nil).Once()
+
+		// Act
+		resp, err := service.SendEmail(ctx, reqNoMeta)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.NotNil(t, resp)
+		assert.Equal(t, testEmail, resp.Recipient)
+		mockRepo.AssertExpectations(t)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailService.AssertExpectations(t)
+	})
+
+	t.Run("Failure - User Not Found", func(t *testing.T) {
+		// Arrange
+		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(nil, notFoundErr).Once()
+
+		// Act
+		resp, err := service.SendEmail(ctx, req)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
+		assert.ErrorIs(t, err, notFoundErr) // Check underlying error
+		mockRepo.AssertNotCalled(t, "CreateNotification")
+		mockEmailService.AssertNotCalled(t, "Send")
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Create Notification Fails", func(t *testing.T) {
+		// Arrange
+		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(user, nil).Once()
+		mockRepo.EXPECT().CreateNotification(ctx, mock.AnythingOfType("*models.Notification")).Return(dbErr).Once()
+
+		// Act
+		resp, err := service.SendEmail(ctx, req)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
+		assert.ErrorIs(t, err, dbErr)
+		mockEmailService.AssertNotCalled(t, "Send")
+		mockRepo.AssertExpectations(t)
+		mockUserRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Email Send Fails", func(t *testing.T) {
+		// Arrange
+		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(user, nil).Once()
+		mockRepo.EXPECT().CreateNotification(ctx, mock.AnythingOfType("*models.Notification")).Return(nil).Once()
+		mockEmailService.EXPECT().Send(ctx, req).Return(sendErr).Once()
+		mockRepo.EXPECT().UpdateNotificationStatus(ctx, mock.AnythingOfType("uuid.UUID"), models.StatusFailed, sendErr.Error()).Return(nil).Once() // Expect update with error message
+
+		// Act
+		resp, err := service.SendEmail(ctx, req)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
+		assert.ErrorIs(t, err, sendErr)
+		mockRepo.AssertExpectations(t)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailService.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Update Status Fails After Send Success", func(t *testing.T) {
+		// Arrange
+		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(user, nil).Once()
+		mockRepo.EXPECT().CreateNotification(ctx, mock.AnythingOfType("*models.Notification")).Return(nil).Once()
+		mockEmailService.EXPECT().Send(ctx, req).Return(nil).Once()
+		mockRepo.EXPECT().UpdateNotificationStatus(ctx, mock.AnythingOfType("uuid.UUID"), models.StatusSent, "").Return(dbErr).Once() // Update fails
+
+		// Act
+		resp, err := service.SendEmail(ctx, req)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, resp)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
+		assert.ErrorIs(t, err, dbErr)
+		mockRepo.AssertExpectations(t)
+		mockUserRepo.AssertExpectations(t)
+		mockEmailService.AssertExpectations(t)
+	})
+}
+
+func TestGetNotification(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := repoMocks.NewMockNotificationRepository(t)
+	mockUserRepo := repoMocks.NewMockUserRepository(t)    
+	mockEmailService := emailMocks.NewMockEmailService(t)
+	service := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
+
+	testID := uuid.New()
+	expectedNotification := &models.Notification{
+		ID:        testID,
+		Type:      models.NotificationTypeEmail,
+		Recipient: "found@example.com",
+		Status:    models.StatusSent,
+		CreatedAt: time.Now(),
+	}
+	dbErr := errors.New("database error")
+	notFoundErr := errors.New("not found")
+
+	t.Run("Success", func(t *testing.T) {
+		// Arrange
+		mockRepo.EXPECT().GetNotificationById(ctx, testID).Return(expectedNotification, nil).Once()
+		// Act
+		notification, err := service.GetNotification(ctx, testID)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expectedNotification, notification)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Not Found", func(t *testing.T) {
+		// Arrange
+		mockRepo.EXPECT().GetNotificationById(ctx, testID).Return(nil, notFoundErr).Once()
+
+		// Act
+		notification, err := service.GetNotification(ctx, testID)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, notification)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
+		assert.ErrorIs(t, err, notFoundErr)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Other DB Error", func(t *testing.T) {
+		// Arrange
+		mockRepo.EXPECT().GetNotificationById(ctx, testID).Return(nil, dbErr).Once()
+
+		// Act
+		notification, err := service.GetNotification(ctx, testID)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, notification)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code) 
+		assert.ErrorIs(t, err, dbErr)                        
+		mockRepo.AssertExpectations(t)
+	})
+}
+
+func TestListNotifications(t *testing.T) {
+	ctx := context.Background()
+	mockRepo := repoMocks.NewMockNotificationRepository(t)
+	mockUserRepo := repoMocks.NewMockUserRepository(t)    
+	mockEmailService := emailMocks.NewMockEmailService(t) 
+	service := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
+
+	expectedNotifications := []*models.Notification{
+		{ID: uuid.New(), Recipient: "user1@example.com"},
+		{ID: uuid.New(), Recipient: "user2@example.com"},
+	}
+	expectedTotal := 15
+	dbErr := errors.New("database error")
+
+	t.Run("Success - Specific Page and Size", func(t *testing.T) {
+		// Arrange
+		page, size := 2, 5
+		mockRepo.EXPECT().ListNotifications(ctx, page, size).Return(expectedNotifications, expectedTotal, nil).Once()
+
+		// Act
+		notifications, total, err := service.ListNotifications(ctx, page, size)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expectedNotifications, notifications)
+		assert.Equal(t, expectedTotal, total)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Success - Default Page and Size (Page < 1)", func(t *testing.T) {
+		// Arrange
+		page, size := 0, 5 // page < 1 defaults to 1
+		expectedPage := 1
+		mockRepo.EXPECT().ListNotifications(ctx, expectedPage, size).Return(expectedNotifications, expectedTotal, nil).Once()
+
+		// Act
+		notifications, total, err := service.ListNotifications(ctx, page, size)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expectedNotifications, notifications)
+		assert.Equal(t, expectedTotal, total)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Success - Default Page and Size (Size < 1)", func(t *testing.T) {
+		// Arrange
+		page, size := 1, 0 // size < 1 defaults to 10
+		expectedSize := 10
+		mockRepo.EXPECT().ListNotifications(ctx, page, expectedSize).Return(expectedNotifications, expectedTotal, nil).Once()
+
+		// Act
+		notifications, total, err := service.ListNotifications(ctx, page, size)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expectedNotifications, notifications)
+		assert.Equal(t, expectedTotal, total)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Success - Default Page and Size (Size > 10)", func(t *testing.T) {
+		// Arrange
+		page, size := 1, 20 // size > 10 defaults to 10
+		expectedSize := 10
+		mockRepo.EXPECT().ListNotifications(ctx, page, expectedSize).Return(expectedNotifications, expectedTotal, nil).Once()
+
+		// Act
+		notifications, total, err := service.ListNotifications(ctx, page, size)
+
+		// Assert
+		assert.NoError(t, err)
+		assert.Equal(t, expectedNotifications, notifications)
+		assert.Equal(t, expectedTotal, total)
+		mockRepo.AssertExpectations(t)
+	})
+
+	t.Run("Failure - Repository Error", func(t *testing.T) {
+		// Arrange
+		page, size := 1, 10
+		mockRepo.EXPECT().ListNotifications(ctx, page, size).Return(nil, 0, dbErr).Once()
+
+		// Act
+		notifications, total, err := service.ListNotifications(ctx, page, size)
+
+		// Assert
+		assert.Error(t, err)
+		assert.Nil(t, notifications)
+		assert.Equal(t, 0, total)
+		appErr, ok := err.(*appErrors.AppError)
+		assert.True(t, ok)
+		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
+		assert.ErrorIs(t, err, dbErr)
+		mockRepo.AssertExpectations(t)
+	})
+}
