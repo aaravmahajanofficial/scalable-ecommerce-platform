@@ -14,15 +14,14 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func setupCartTest(t *testing.T) (*service.MockCartService, *handlers.CartHandler) {
-	mockCartService := service.NewMockCartService(t)
+func setupCartTest(t *testing.T) *handlers.CartHandler {
+	mockCartService := NewMockCartService()
 	cartHandler := handlers.NewCartHandler(mockCartService)
 	return mockCartService, cartHandler
 }

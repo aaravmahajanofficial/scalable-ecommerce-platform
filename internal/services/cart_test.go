@@ -7,10 +7,9 @@ import (
 	"testing"
 	"time"
 
-	appError "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/mocks"
+	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -18,8 +17,8 @@ import (
 )
 
 func TestCreateCart(t *testing.T) {
-	mockRepo := mocks.NewCartRepository(t)
-	cartService := service.NewCartService(mockRepo)
+	mockRepo := repository.NewMockCartRepository()
+	cartService := service.NewMockCartService(mockRepo)
 	ctx := context.Background()
 	userID := uuid.New()
 
@@ -53,9 +52,9 @@ func TestCreateCart(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
-		appErr, ok := err.(*appError.AppError)
+		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appError.ErrCodeDatabaseError, appErr.Code)
+		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 		assert.Equal(t, "Failed to create cart", appErr.Message)
 		assert.ErrorIs(t, err, dbError)
 		mockRepo.AssertExpectations(t)
@@ -63,8 +62,8 @@ func TestCreateCart(t *testing.T) {
 }
 
 func TestGetCart(t *testing.T) {
-	mockRepo := mocks.NewCartRepository(t)
-	cartService := service.NewCartService(mockRepo)
+	mockRepo := repository.NewMockCartRepository()
+	cartService := service.NewMockCartService(mockRepo)
 	ctx := context.Background()
 	customerID := uuid.New()
 	existingCart := &models.Cart{
@@ -118,9 +117,9 @@ func TestGetCart(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
-		appErr, ok := err.(*appError.AppError)
+		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appError.ErrCodeInternal, appErr.Code)
+		assert.Equal(t, appErrors.ErrCodeInternal, appErr.Code)
 		assert.Equal(t, "Failed to retrieve cart", appErr.Message)
 		assert.ErrorIs(t, err, dbError)
 		mockRepo.AssertExpectations(t)
@@ -128,8 +127,8 @@ func TestGetCart(t *testing.T) {
 }
 
 func TestAddItem(t *testing.T) {
-	mockRepo := mocks.NewCartRepository(t)
-	cartService := service.NewCartService(mockRepo)
+	mockRepo := repository.NewMockCartRepository()
+	cartService := service.NewMockCartService(mockRepo)
 	ctx := context.Background()
 	customerID := uuid.New()
 	productID1 := uuid.New()
@@ -248,9 +247,9 @@ func TestAddItem(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
-		appErr, ok := err.(*appError.AppError)
+		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appError.ErrCodeDatabaseError, appErr.Code)
+		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 		assert.Equal(t, "Failed to update cart", appErr.Message)
 		assert.ErrorIs(t, err, dbError)
 		mockRepo.AssertExpectations(t)
@@ -261,8 +260,8 @@ func TestAddItem(t *testing.T) {
 }
 
 func TestCartService_UpdateQuantity(t *testing.T) {
-	mockRepo := mocks.NewCartRepository(t)
-	cartService := service.NewCartService(mockRepo)
+	mockRepo := repository.NewMockCartRepository()
+	cartService := service.NewMockCartService(mockRepo)
 	ctx := context.Background()
 	customerID := uuid.New()
 	productID1 := uuid.New()
@@ -359,9 +358,9 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
-		appErr, ok := err.(*appError.AppError)
+		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appError.ErrCodeNotFound, appErr.Code)
+		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
 		assert.Equal(t, "Cart not found", appErr.Message)
 		mockRepo.AssertExpectations(t)
 		mockRepo.AssertNotCalled(t, "UpdateCart", mock.Anything, mock.Anything)
@@ -379,9 +378,9 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart) // Cart should not be returned on error
-		appErr, ok := err.(*appError.AppError)
+		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appError.ErrCodeBadRequest, appErr.Code)
+		assert.Equal(t, appErrors.ErrCodeBadRequest, appErr.Code)
 		assert.Equal(t, "Item not found in the cart", appErr.Message)
 		mockRepo.AssertExpectations(t)
 		mockRepo.AssertNotCalled(t, "UpdateCart", mock.Anything, mock.Anything)
@@ -401,9 +400,9 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
-		appErr, ok := err.(*appError.AppError)
+		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appError.ErrCodeDatabaseError, appErr.Code)
+		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 		assert.Equal(t, "Failed to update cart", appErr.Message)
 		assert.ErrorIs(t, err, dbError)
 		mockRepo.AssertExpectations(t)

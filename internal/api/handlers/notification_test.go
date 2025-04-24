@@ -12,7 +12,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services/mocks"
+	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/testutils"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils/response"
 	"github.com/google/uuid"
@@ -22,7 +22,7 @@ import (
 
 func TestSendEmail(t *testing.T) {
 	// Arrange
-	mockNotificationService := new(mocks.NotificationService)
+	mockNotificationService := service.NewMockCartService()
 	notificationHandler := handlers.NewNotificationHandler(mockNotificationService)
 	testUserID := uuid.New()
 
