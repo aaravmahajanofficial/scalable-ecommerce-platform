@@ -135,14 +135,14 @@ func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 		}
 
 	case "charge.refunded":
-		paymentIntent := event.Data.Object
-		stripeID, _ := paymentIntent["id"].(string)
+		chargeObject := event.Data.Object
+		paymentIntentID, piOK := chargeObject["payment_intent"].(string)
 
-		if stripeID == "" {
+		if !piOK || paymentIntentID == "" {
 			return event, errors.ThirdPartyError("Missing payment intent ID in webhook")
 		}
 
-		if err := s.repo.UpdatePaymentStatus(ctx, stripeID, models.PaymentStatusRefunded); err != nil {
+		if err := s.repo.UpdatePaymentStatus(ctx, paymentIntentID, models.PaymentStatusRefunded); err != nil {
 			return event, errors.DatabaseError("Failed to update payment status").WithError(err)
 		}
 	}
