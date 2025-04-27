@@ -41,7 +41,7 @@ func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRe
 	}
 
 	for _, bcc := range req.BCC {
-		personalization.AddCCs(mail.NewEmail("", bcc))
+		personalization.AddBCCs(mail.NewEmail("", bcc))
 	}
 
 	personalization.Subject = req.Subject
