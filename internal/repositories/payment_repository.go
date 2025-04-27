@@ -100,7 +100,7 @@ func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 	defer cancel()
 
 	var total int
-	countQuery := `SELECT COUNT(*) FROM products`
+	countQuery := `SELECT COUNT(*) FROM payments`
 	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
