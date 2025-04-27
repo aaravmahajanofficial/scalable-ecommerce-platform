@@ -77,10 +77,21 @@ func (r *paymentRepository) UpdatePaymentStatus(ctx context.Context, id string, 
 		WHERE id = $3
 	`
 
-	_, err := r.DB.ExecContext(dbCtx, query, status, time.Now(), id)
+	result, err := r.DB.ExecContext(dbCtx, query, status, time.Now(), id)
+	if err != nil {
+		return fmt.Errorf("failed to update the payment status: %w", err)
+	}
 
-	return err
+	updatedRows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get updated rows: %w", err)
+	}
 
+	if updatedRows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
 
 func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
