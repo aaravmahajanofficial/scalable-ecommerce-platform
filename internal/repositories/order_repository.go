@@ -15,7 +15,7 @@ import (
 type OrderRepository interface {
 	CreateOrder(ctx context.Context, order *models.Order) error
 	GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error)
-	ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) 
+	ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error)
 	UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error)
 	UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error
 }
@@ -92,15 +92,16 @@ func (r *orderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*mode
 
 	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
 
-	json.Unmarshal(jsonData, &order.ShippingAddress)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to get the order: %w", err)
+	}
 
 	if err := json.Unmarshal(jsonData, &order.ShippingAddress); err != nil {
 
 		return nil, fmt.Errorf("failed to unmarshal shipping address: %w", err)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to get the order: %w", err)
 	}
 
 	// Get the order items
@@ -112,6 +113,11 @@ func (r *orderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*mode
 	rows, err := r.DB.QueryContext(dbCtx, query, id)
 
 	if err != nil {
+
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
+
 		return nil, fmt.Errorf("failed to get the order items: %w", err)
 	}
 
@@ -153,10 +159,10 @@ func (r *orderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 	defer cancel()
 
 	var total int
-	countQuery := `SELECT COUNT(*) FROM products`
-	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
+	countQuery := `SELECT COUNT(*) FROM orders WHERE customer_id = $1`
+	err := r.DB.QueryRowContext(dbCtx, countQuery, customerID).Scan(&total)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("failed to count orders for customer: %w", err)
 	}
 
 	// Offset
@@ -191,13 +197,12 @@ func (r *orderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 
 		err := rows.Scan(&order.ID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
 
-		if err := json.Unmarshal(jsonData, &order.ShippingAddress); err != nil {
-
-			return nil, 0, fmt.Errorf("failed to unmarshal shipping address: %w", err)
+		if err != nil {
+			return nil, 0, fmt.Errorf("failed to scan order row: %w", err)
 		}
 
-		if err != nil {
-			return nil, 0, fmt.Errorf("failed to scan the orders: %w", err)
+		if err := json.Unmarshal(jsonData, &order.ShippingAddress); err != nil {
+			return nil, 0, fmt.Errorf("failed to unmarshal shipping address for order %s: %w", order.ID, err)
 		}
 
 		orders = append(orders, order)
@@ -243,7 +248,7 @@ func (r *orderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, 0, err
+		return nil, 0, fmt.Errorf("error during order rows iteration: %w", err)
 	}
 
 	return orders, total, nil
@@ -262,20 +267,24 @@ func (r *orderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, s
 	result, err := r.DB.ExecContext(dbCtx, query, status, time.Now(), id)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to update order status: %w", err)
+		return nil, fmt.Errorf("failed to execute update order status query: %w", err)
 	}
 
 	updatedRows, err := result.RowsAffected()
 
-	if updatedRows == 0 {
-
-		return nil, fmt.Errorf("order not found")
-
-	} else if err != nil {
-		return nil, fmt.Errorf("failed to update the order: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed checking rows affected for order status update: %w", err)
 	}
 
-	return &models.Order{}, nil
+	if updatedRows == 0 {
+		return nil, sql.ErrNoRows
+	}
+
+	updatedOrder, err := r.GetOrderById(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch updated order after status update: %w", err)
+	}
+	return updatedOrder, nil
 }
 
 // Update the Payment Status and Payment Intent ID of an order
@@ -285,23 +294,24 @@ func (r *orderRepository) UpdatePaymentStatus(ctx context.Context, id uuid.UUID,
 	defer cancel()
 
 	query := `
-		UPDATE orders set payment_status = $1, payment_intent_id = $2 updated_at = $3 WHERE id = $4
+		UPDATE orders set payment_status = $1, payment_intent_id = $2, updated_at = $3 WHERE id = $4
 	`
 
 	result, err := r.DB.ExecContext(dbCtx, query, status, paymentIntentID, time.Now(), id)
 
 	if err != nil {
-		return fmt.Errorf("failed to update payment status: %w", err)
+		return fmt.Errorf("failed to execute update payment status query: %w", err)
 	}
 
 	updatedRows, err := result.RowsAffected()
 
+	if err != nil {
+		return fmt.Errorf("failed checking rows affected for payment status update: %w", err)
+	}
+
 	if updatedRows == 0 {
-		return fmt.Errorf("order not found")
-	} else if err != nil {
-		return fmt.Errorf("failed to update the order: %w", err)
+		return sql.ErrNoRows
 	}
 
 	return nil
-
 }
