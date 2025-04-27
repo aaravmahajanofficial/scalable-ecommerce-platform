@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -131,56 +132,39 @@ func MustLoad() *Config {
 
 }
 
+func LoadConfigFromPath(configPath string) (*Config, error) {
+	if configPath == "" {
+		return nil, errors.New("config path is empty")
+	}
+
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("config file does not exist: %s", configPath)
+	}
+
+	var cfg Config
+	err := cleanenv.ReadConfig(configPath, &cfg)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read config file: %s", err.Error())
+	}
+
+	err = cleanenv.ReadEnv(&cfg)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read environment variables: %s", err.Error())
+	}
+
+	return &cfg, nil
+}
+
 func (d *Database) GetDSN() string {
-	host := d.Host
-	user := d.User
-	password := d.Password
-	name := d.Name
-	sslmode := d.SSLMode
-
-	if envHost := os.Getenv("PG_HOST"); envHost != "" {
-		host = envHost
-	}
-	if envUser := os.Getenv("PG_USER"); envUser != "" {
-		user = envUser
-	}
-	if envPassword := os.Getenv("PG_PASSWORD"); envPassword != "" {
-		password = envPassword
-	}
-	if envName := os.Getenv("PG_DBNAME"); envName != "" {
-		name = envName
-	}
-	if envSSLMode := os.Getenv("PG_SSLMODE"); envSSLMode != "" {
-		sslmode = envSSLMode
-	}
-
-	return fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s",
-		user, password, host, name, sslmode)
+	return fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
+		d.User, d.Password, d.Host, d.Port, d.Name, d.SSLMode)
 }
 
 func (r *RedisConnect) GetDSN() string {
-	user := r.Username
-	password := r.Password
-	host := r.Host
-	port := r.Port
-
-	if envHost := os.Getenv("REDIS_HOST"); envHost != "" {
-		host = envHost
-	}
-	if envUser := os.Getenv("REDIS_USER"); envUser != "" {
-		user = envUser
-	}
-	if envPassword := os.Getenv("REDIS_PASSWORD"); envPassword != "" {
-		password = envPassword
-	}
-	if envPort := os.Getenv("REDIS_PORT"); envPort != "" {
-		port = envPort
-	}
-
 	return fmt.Sprintf("redis://%s:%s@%s:%s",
-		user,
-		password,
-		host,
-		port,
+		r.Username,
+		r.Password,
+		r.Host,
+		r.Port,
 	)
 }
