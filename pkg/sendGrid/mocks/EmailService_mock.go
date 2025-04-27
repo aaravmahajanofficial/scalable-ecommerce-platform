@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/sendgrid/sendgrid-go"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -36,6 +37,52 @@ type MockEmailService_Expecter struct {
 
 func (_m *MockEmailService) EXPECT() *MockEmailService_Expecter {
 	return &MockEmailService_Expecter{mock: &_m.Mock}
+}
+
+// GetSendGridClient provides a mock function for the type MockEmailService
+func (_mock *MockEmailService) GetSendGridClient() *sendgrid.Client {
+	ret := _mock.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSendGridClient")
+	}
+
+	var r0 *sendgrid.Client
+	if returnFunc, ok := ret.Get(0).(func() *sendgrid.Client); ok {
+		r0 = returnFunc()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*sendgrid.Client)
+		}
+	}
+	return r0
+}
+
+// MockEmailService_GetSendGridClient_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSendGridClient'
+type MockEmailService_GetSendGridClient_Call struct {
+	*mock.Call
+}
+
+// GetSendGridClient is a helper method to define mock.On call
+func (_e *MockEmailService_Expecter) GetSendGridClient() *MockEmailService_GetSendGridClient_Call {
+	return &MockEmailService_GetSendGridClient_Call{Call: _e.mock.On("GetSendGridClient")}
+}
+
+func (_c *MockEmailService_GetSendGridClient_Call) Run(run func()) *MockEmailService_GetSendGridClient_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockEmailService_GetSendGridClient_Call) Return(client *sendgrid.Client) *MockEmailService_GetSendGridClient_Call {
+	_c.Call.Return(client)
+	return _c
+}
+
+func (_c *MockEmailService_GetSendGridClient_Call) RunAndReturn(run func() *sendgrid.Client) *MockEmailService_GetSendGridClient_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // Send provides a mock function for the type MockEmailService

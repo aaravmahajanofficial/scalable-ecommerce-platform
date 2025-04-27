@@ -11,6 +11,7 @@ import (
 
 type EmailService interface {
 	Send(ctx context.Context, req *models.EmailNotificationRequest) error
+	GetSendGridClient() *sendgrid.Client
 }
 
 type emailService struct {
@@ -61,4 +62,9 @@ func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRe
 	}
 
 	return nil
+}
+
+// GetSendGridClient provides access to the internal sendgrid.Client.
+func (e *emailService) GetSendGridClient() *sendgrid.Client {
+	return e.client
 }
