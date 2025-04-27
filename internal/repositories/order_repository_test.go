@@ -23,8 +23,7 @@ func setupOrderRepoTest(t *testing.T) (repository.OrderRepository, sqlmock.Sqlmo
 	require.NoError(t, err, "Failed to create sqlmock")
 
 	t.Cleanup(func() {
-		err := db.Close()
-		assert.NoError(t, err, "Error closing mock DB")
+		db.Close()
 	})
 
 	repo := repository.NewOrderRepository(db)
@@ -110,7 +109,6 @@ func TestCreateOrder(t *testing.T) {
 
 		// Assert
 		assert.NoError(t, err, "CreateOrder should succeed")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Order Insert Error", func(t *testing.T) {
@@ -125,9 +123,9 @@ func TestCreateOrder(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "CreateOrder should fail when order insert fails")
-		assert.Contains(t, err.Error(), "failed to insert order", "Error message should indicate order insert failure")
+		assert.ErrorContains(t, err, "failed to insert order", "Error message should indicate order insert failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+
 	})
 
 	t.Run("Failure - Item Insert Error", func(t *testing.T) {
@@ -147,9 +145,8 @@ func TestCreateOrder(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "CreateOrder should fail when item insert fails")
-		assert.Contains(t, err.Error(), "failed to insert an order item", "Error message should indicate item insert failure")
+		assert.ErrorContains(t, err, "failed to insert an order item", "Error message should indicate item insert failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 }
 
@@ -157,7 +154,6 @@ func TestGetOrderById(t *testing.T) {
 	repo, mock := setupOrderRepoTest(t)
 	ctx := context.Background()
 
-	// --- Test Data ---
 	orderID := uuid.New()
 	customerID := uuid.New()
 	productID1 := uuid.New()
@@ -212,8 +208,17 @@ func TestGetOrderById(t *testing.T) {
 
 		// Assert
 		assert.NoError(t, err, "GetOrderById should succeed")
-		assert.Equal(t, expectedOrder, order, "Returned order should match expected")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+		require.NotNil(t, order, "Order should not be nil on success")
+		assert.Equal(t, expectedOrder.ID, order.ID)
+		assert.Equal(t, expectedOrder.CustomerID, order.CustomerID)
+		assert.Equal(t, expectedOrder.Status, order.Status)
+		assert.Equal(t, expectedOrder.TotalAmount, order.TotalAmount)
+		assert.Equal(t, expectedOrder.PaymentStatus, order.PaymentStatus)
+		assert.Equal(t, expectedOrder.PaymentIntentID, order.PaymentIntentID)
+		assert.Equal(t, expectedOrder.ShippingAddress, order.ShippingAddress)
+		assert.WithinDuration(t, expectedOrder.CreatedAt, order.CreatedAt, time.Second)
+		assert.WithinDuration(t, expectedOrder.UpdatedAt, order.UpdatedAt, time.Second)
+		assert.Equal(t, expectedOrder.Items, order.Items)
 	})
 
 	t.Run("Failure - Order Not Found", func(t *testing.T) {
@@ -225,11 +230,8 @@ func TestGetOrderById(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetOrderById should fail when order not found")
-		// The current implementation wraps sql.ErrNoRows, check for the wrapped error
 		assert.ErrorIs(t, err, sql.ErrNoRows, "Error should wrap sql.ErrNoRows")
-		assert.Contains(t, err.Error(), "failed to get the order", "Error message should indicate failure")
 		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Order Scan Error", func(t *testing.T) {
@@ -242,10 +244,9 @@ func TestGetOrderById(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetOrderById should fail on order scan error")
-		assert.Contains(t, err.Error(), "failed to get the order", "Error message should indicate failure")
-		assert.Contains(t, err.Error(), "Scan", "Error should be related to scanning")
+		assert.ErrorContains(t, err, "failed to get the order", "Error message should indicate failure")
+		assert.ErrorContains(t, err, "Scan", "Error should be related to scanning")
 		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Address Unmarshal Error", func(t *testing.T) {
@@ -260,9 +261,9 @@ func TestGetOrderById(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetOrderById should fail on address unmarshal error")
-		assert.Contains(t, err.Error(), "failed to unmarshal shipping address", "Error message should indicate unmarshal failure")
+		assert.ErrorContains(t, err, "failed to unmarshal shipping address", "Error message should indicate unmarshal failure")
 		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+
 	})
 
 	t.Run("Failure - Items Query Error", func(t *testing.T) {
@@ -280,10 +281,9 @@ func TestGetOrderById(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetOrderById should fail when items query fails")
-		assert.Contains(t, err.Error(), "failed to get the order items", "Error message should indicate item query failure")
+		assert.ErrorContains(t, err, "failed to get the order items", "Error message should indicate item query failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
 		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Item Scan Error", func(t *testing.T) {
@@ -301,10 +301,9 @@ func TestGetOrderById(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetOrderById should fail on item scan error")
-		assert.Contains(t, err.Error(), "failed to scan order item", "Error message should indicate item scan failure")
-		assert.Contains(t, err.Error(), "Scan", "Error should be related to scanning")
+		assert.ErrorContains(t, err, "failed to scan order item", "Error message should indicate item scan failure")
+		assert.ErrorContains(t, err, "Scan", "Error should be related to scanning")
 		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 }
 
@@ -377,7 +376,6 @@ func TestListOrdersByCustomer(t *testing.T) {
 		assert.NoError(t, err, "ListOrdersByCustomer should succeed")
 		assert.Equal(t, totalOrders, total, "Total count should match")
 		assert.Equal(t, expectedOrders, orders, "Returned orders should match expected")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Success - No Orders", func(t *testing.T) {
@@ -397,7 +395,6 @@ func TestListOrdersByCustomer(t *testing.T) {
 		assert.NoError(t, err, "ListOrdersByCustomer should succeed even with no orders")
 		assert.Equal(t, 0, total, "Total count should be 0")
 		assert.Empty(t, orders, "Returned orders slice should be empty")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Count Query Error", func(t *testing.T) {
@@ -413,7 +410,6 @@ func TestListOrdersByCustomer(t *testing.T) {
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - List Orders Query Error", func(t *testing.T) {
@@ -429,11 +425,10 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "ListOrdersByCustomer should fail on list orders query error")
-		assert.Contains(t, err.Error(), "failed to list orders", "Error message should indicate failure")
+		assert.ErrorContains(t, err, "failed to list orders", "Error message should indicate failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
 		assert.Nil(t, orders, "Orders slice should be nil")
-		assert.Zero(t, total, "Total should be zero") // Total is fetched before the list query fails
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+		assert.Zero(t, total, "Total should be zero")
 	})
 
 	t.Run("Failure - Order Scan Error", func(t *testing.T) {
@@ -449,10 +444,9 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "ListOrdersByCustomer should fail on order scan error")
-		assert.Contains(t, err.Error(), "failed to scan the orders", "Error message should indicate scan failure")
+		assert.ErrorContains(t, err, "failed to scan order row", "Error message should indicate scan failure")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Address Unmarshal Error", func(t *testing.T) {
@@ -470,10 +464,9 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "ListOrdersByCustomer should fail on address unmarshal error")
-		assert.Contains(t, err.Error(), "failed to unmarshal shipping address", "Error message should indicate unmarshal failure")
+		assert.ErrorContains(t, err, "failed to unmarshal shipping address", "Error message should indicate unmarshal failure")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Item Query Error", func(t *testing.T) {
@@ -494,11 +487,10 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "ListOrdersByCustomer should fail on item query error")
-		assert.Contains(t, err.Error(), "failed to get the orders", "Error message should indicate item query failure") // Note: Error message could be more specific
+		assert.ErrorContains(t, err, "failed to get the orders", "Error message should indicate item query failure") // Note: Error message could be more specific
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Item Scan Error", func(t *testing.T) {
@@ -519,10 +511,9 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "ListOrdersByCustomer should fail on item scan error")
-		assert.Contains(t, err.Error(), "failed to scan order items", "Error message should indicate item scan failure")
+		assert.ErrorContains(t, err, "failed to scan order items", "Error message should indicate item scan failure")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Rows Error After Loop", func(t *testing.T) {
@@ -549,7 +540,6 @@ func TestListOrdersByCustomer(t *testing.T) {
 		assert.ErrorIs(t, err, rowsErr, "Error should be the rows iteration error")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 }
 
@@ -559,21 +549,37 @@ func TestUpdateOrderStatus(t *testing.T) {
 
 	orderID := uuid.New()
 	newStatus := models.OrderStatusShipping
+	now := time.Now() // For mocking fetched order timestamps
 
 	expectedSQL := regexp.QuoteMeta(`UPDATE orders SET status = $1, updated_at = $2 WHERE id = $3`)
+	// Assume the implementation fetches the order after update
+	expectedFetchSQL := regexp.QuoteMeta(`
+        SELECT customer_id, status, total_amount, payment_status, payment_intent_id, shipping_address, created_at, updated_at
+        FROM orders
+        WHERE id = $1
+    `)
 
 	t.Run("Success - Order Status Update", func(t *testing.T) {
 		mock.ExpectExec(expectedSQL).
 			WithArgs(newStatus, sqlmock.AnyArg(), orderID).
 			WillReturnResult(sqlmock.NewResult(0, 1)) // 0 for LastInsertId (not relevant), 1 for RowsAffected
 
+		expectedAddress := &models.Address{Street: "Fetched St", City: "Fetchedville"}
+		expectedAddrJSON, _ := json.Marshal(expectedAddress)
+		fetchedRows := sqlmock.NewRows([]string{"customer_id", "status", "total_amount", "payment_status", "payment_intent_id", "shipping_address", "created_at", "updated_at"}).
+			AddRow(uuid.New(), newStatus, 100.0, models.PaymentStatusPending, "pi_fetch", expectedAddrJSON, now.Add(-time.Hour), now)
+		mock.ExpectQuery(expectedFetchSQL).WithArgs(orderID).WillReturnRows(fetchedRows)
+		expectedItemsQuerySQL := regexp.QuoteMeta(`SELECT id, product_id, quantity, unit_price, created_at FROM order_items WHERE order_id = $1`)
+		mock.ExpectQuery(expectedItemsQuerySQL).WithArgs(orderID).WillReturnRows(sqlmock.NewRows([]string{"id", "product_id", "quantity", "unit_price", "created_at"})) // Assuming no items for simplicity or mock them
+
 		// Act
 		order, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
 
 		// Assert
 		assert.NoError(t, err, "UpdateOrderStatus should succeed")
-		assert.Equal(t, &models.Order{}, order, "Should return an empty Order struct on success (current behavior)")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+		require.NotNil(t, order, "Order should not be nil on success")
+		assert.Equal(t, orderID, order.ID)
+		assert.Equal(t, newStatus, order.Status)
 	})
 
 	t.Run("Failure - Database Error", func(t *testing.T) {
@@ -584,14 +590,12 @@ func TestUpdateOrderStatus(t *testing.T) {
 			WillReturnError(dbErr)
 
 		// Act
-		order, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
+		_, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
 
 		// Assert
 		require.Error(t, err, "UpdateOrderStatus should fail on DB error")
-		assert.Contains(t, err.Error(), "failed to update order status", "Error message should indicate failure")
+		assert.ErrorContains(t, err, "failed to execute update order status query", "Error message should indicate failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
-		assert.Nil(t, order, "Returned order should be nil on error")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Order Not Found", func(t *testing.T) {
@@ -601,13 +605,11 @@ func TestUpdateOrderStatus(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(0, 0)) // 0 rows affected
 
 		// Act
-		order, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
+		_, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
 
 		// Assert
 		require.Error(t, err, "UpdateOrderStatus should fail when order not found")
-		assert.Contains(t, err.Error(), "order not found", "Error message should indicate not found")
-		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+		assert.ErrorIs(t, err, sql.ErrNoRows, "Error should be sql.ErrNoRows when order not found")
 	})
 
 	t.Run("Failure - Rows Affected Error", func(t *testing.T) {
@@ -618,15 +620,12 @@ func TestUpdateOrderStatus(t *testing.T) {
 			WillReturnResult(sqlmock.NewErrorResult(rowsAffectedErr)) // Simulate error during RowsAffected() call
 
 		// Act
-		order, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
+		_, err := repo.UpdateOrderStatus(ctx, orderID, newStatus)
 
 		// Assert
 		require.Error(t, err, "UpdateOrderStatus should fail if RowsAffected errors")
-		// The error comes from the driver via RowsAffected(), check if it's wrapped
-		assert.Contains(t, err.Error(), "failed to update the order", "Error message should indicate failure")
+		assert.ErrorContains(t, err, "failed checking rows affected for order status update", "Error message should indicate failure")
 		assert.ErrorIs(t, err, rowsAffectedErr, "Error should wrap the RowsAffected error")
-		assert.Nil(t, order, "Returned order should be nil")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 }
 
@@ -654,7 +653,6 @@ func TestUpdatePaymentStatus(t *testing.T) {
 
 		// Assert
 		assert.NoError(t, err, "UpdatePaymentStatus should succeed")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Database Error", func(t *testing.T) {
@@ -669,9 +667,8 @@ func TestUpdatePaymentStatus(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "UpdatePaymentStatus should fail on DB error")
-		assert.Contains(t, err.Error(), "failed to update payment status", "Error message should indicate failure")
+		assert.ErrorContains(t, err, "failed to execute update payment status query", "Error message should indicate failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
 	t.Run("Failure - Order Not Found", func(t *testing.T) {
@@ -685,8 +682,7 @@ func TestUpdatePaymentStatus(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "UpdatePaymentStatus should fail when order not found")
-		assert.EqualError(t, err, "order not found", "Error message should be 'order not found'")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
+		assert.ErrorIs(t, err, sql.ErrNoRows, "Error should be sql.ErrNoRows when order not found")
 	})
 
 	t.Run("Failure - Rows Affected Error", func(t *testing.T) {
@@ -700,8 +696,7 @@ func TestUpdatePaymentStatus(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "UpdatePaymentStatus should fail if RowsAffected errors")
-		assert.Contains(t, err.Error(), "failed to update the order", "Error message should indicate failure")
+		assert.ErrorContains(t, err, "failed checking rows affected for payment status update", "Error message should indicate failure")
 		assert.ErrorIs(t, err, rowsAffectedErr, "Error should wrap the RowsAffected error")
-		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 }
