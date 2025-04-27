@@ -44,7 +44,6 @@ func (r *notificationRepository) CreateNotification(ctx context.Context, notific
 	}
 
 	return nil
-
 }
 
 func (r *notificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
@@ -102,7 +101,6 @@ func (r *notificationRepository) UpdateNotificationStatus(ctx context.Context, i
 	}
 
 	return nil
-
 }
 
 func (r *notificationRepository) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error) {
@@ -111,7 +109,7 @@ func (r *notificationRepository) ListNotifications(ctx context.Context, page int
 	defer cancel()
 
 	var total int
-	countQuery := `SELECT COUNT(*) FROM products`
+	countQuery := `SELECT COUNT(*) FROM notifications`
 	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
@@ -158,5 +156,4 @@ func (r *notificationRepository) ListNotifications(ctx context.Context, page int
 	}
 
 	return notifications, total, nil
-
 }
