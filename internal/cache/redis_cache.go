@@ -10,6 +10,13 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type Cache interface {
+	Get(ctx context.Context, key string, value interface{}) (bool, error)
+	Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error
+	Delete(ctx context.Context, key string) error
+	Close() error
+}
+
 type redisCache struct {
 	client *redis.Client
 	cfg    *config.CacheConfig
@@ -76,3 +83,14 @@ func (r *redisCache) Delete(ctx context.Context, key string) error {
 func (r *redisCache) Close() error {
 	return nil
 }
+
+func Key(prefix string, id string) string {
+	return prefix + ":" + id
+}
+
+const (
+	ProductKeyPrefix = "product"
+	UserKeyPrefix    = "user"
+	OrderKeyPrefix   = "order"
+	CartKeyPrefix    = "cart"
+)
