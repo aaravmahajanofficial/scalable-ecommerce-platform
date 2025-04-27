@@ -91,8 +91,19 @@ func (r *cartRepository) UpdateCart(ctx context.Context, cart *models.Cart) erro
 		WHERE id = $4
 	`
 
-	_, err = r.DB.ExecContext(dbCtx, query, itemsJSON, cart.Total, time.Now(), cart.ID)
+	result, err := r.DB.ExecContext(dbCtx, query, itemsJSON, cart.Total, time.Now(), cart.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update the cart: %w", err)
+	}
 
-	return err
+	updatedRows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get updated rows: %w", err)
+	}
 
+	if updatedRows == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
 }
