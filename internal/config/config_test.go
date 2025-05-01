@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Creates a temporary YAML config file in a temporary directory
 func createTempConfigFile(t *testing.T, content string) (string, func()) {
 	t.Helper()
 	tmpDir := t.TempDir()
@@ -84,7 +85,6 @@ otel:
 cache:
   default_ttl: "10m"
 `
-	// --- Helper to reset environment and args ---
 	resetEnvAndArgs := func() {
 		originalArgs := os.Args
 		t.Cleanup(func() { os.Args = originalArgs })
@@ -94,6 +94,7 @@ cache:
 		os.Unsetenv("REDIS_HOST")
 	}
 
+	// Verifies values from YAML are loaded correctly
 	t.Run("Load from CONFIG_PATH env var", func(t *testing.T) {
 		resetEnvAndArgs()
 		configPath, _ := createTempConfigFile(t, validYAML)
@@ -110,6 +111,7 @@ cache:
 		assert.Equal(t, 10*time.Minute, cfg.Cache.DefaultTTL)
 	})
 
+	// Simulates passing CLI argument -config path/to/config
 	t.Run("Load from -config flag", func(t *testing.T) {
 		resetEnvAndArgs()
 		configPath, _ := createTempConfigFile(t, validYAML)
@@ -123,6 +125,7 @@ cache:
 		assert.Equal(t, "dbhost", cfg.Database.Host)
 	})
 
+	// Uses default config path when no CONFIG_PATH or CLI flag is given
 	t.Run("Load from default ./config/local.yaml", func(t *testing.T) {
 		resetEnvAndArgs()
 
@@ -138,6 +141,7 @@ cache:
 		assert.Equal(t, "dbhost", cfg.Database.Host)
 	})
 
+	// Verifies envs override the YAML values
 	t.Run("Environment variable override", func(t *testing.T) {
 		resetEnvAndArgs()
 		configPath, _ := createTempConfigFile(t, validYAML)
@@ -179,6 +183,8 @@ func TestDatabaseGetDSN(t *testing.T) {
 	expectedBaseDSN := "postgresql://user:password@localhost:5432/dbname?sslmode=disable"
 
 	t.Run("DSN from struct values", func(t *testing.T) {
+
+		// clear any related environment variables to prevent interference
 		os.Unsetenv("PG_HOST")
 		os.Unsetenv("PG_PORT")
 		os.Unsetenv("PG_USER")
@@ -190,7 +196,7 @@ func TestDatabaseGetDSN(t *testing.T) {
 		assert.Equal(t, expectedBaseDSN, dsn)
 	})
 
-	createMinimalValidConfig := func(t *testing.T, dbOverrides, redisOverrides map[string]string) (string, func()) {
+	createMinimalValidConfig := func(t *testing.T, _, _ map[string]string) (string, func()) {
 		t.Helper()
 		content := `
 env: "test-dsn"
@@ -223,7 +229,7 @@ security: {JWT_KEY: "filekey"} # Required field
 		t.Setenv("PG_PASSWORD", "envpass")
 		t.Setenv("PG_DBNAME", "envdb")
 		t.Setenv("PG_SSLMODE", "require")
-		// Cleanup env vars after test
+		
 		t.Cleanup(func() {
 			os.Unsetenv("PG_HOST")
 			os.Unsetenv("PG_PORT")
@@ -251,6 +257,7 @@ security: {JWT_KEY: "filekey"} # Required field
 
 		t.Setenv("PG_HOST", "envhost2")
 		t.Setenv("PG_PASSWORD", "envpass2")
+
 		t.Cleanup(func() {
 			os.Unsetenv("PG_HOST")
 			os.Unsetenv("PG_PASSWORD")
@@ -317,6 +324,7 @@ security: {JWT_KEY: "filekey"} # Required field
 		t.Setenv("REDIS_USER", "envredisuser")
 		t.Setenv("REDIS_PASSWORD", "envredispass")
 		t.Setenv("REDIS_PORT", "16379")
+
 		t.Cleanup(func() {
 			os.Unsetenv("REDIS_HOST")
 			os.Unsetenv("REDIS_USER")
@@ -343,6 +351,7 @@ security: {JWT_KEY: "filekey"} # Required field
 
 		t.Setenv("REDIS_HOST", "envredishost2")
 		t.Setenv("REDIS_PASSWORD", "envredispass2")
+
 		t.Cleanup(func() {
 			os.Unsetenv("REDIS_HOST")
 			os.Unsetenv("REDIS_PASSWORD")
@@ -399,6 +408,7 @@ security: {JWT_KEY: "filekey"} # Required field
 func TestMustLoad_SpecificFieldCheck(t *testing.T) {
 	resetEnvAndArgs := func() {
 		originalArgs := os.Args
+		
 		t.Cleanup(func() { os.Args = originalArgs })
 		os.Unsetenv("CONFIG_PATH")
 		os.Unsetenv("CACHE_DEFAULT_TTL")
@@ -417,7 +427,6 @@ func TestMustLoad_SpecificFieldCheck(t *testing.T) {
 env: "test-cache"
 cache:
   default_ttl: "15m"
-# Add other required fields with dummy values or ensure env vars cover them
 http_server: {address: ":1111"}
 database: {PG_USER: u, PG_PASSWORD: p, PG_DBNAME: d}
 redis: {REDIS_USER: u, REDIS_PASSWORD: p}
