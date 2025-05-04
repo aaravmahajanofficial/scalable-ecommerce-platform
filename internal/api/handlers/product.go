@@ -169,7 +169,6 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 //	@Failure		500			{object}	response.ErrorResponse							"Internal server error"
 //	@Security		BearerAuth
 //	@Router			/products [get]
-// for eg: GET /products?page=1&page_size=10
 func (h *ProductHandler) ListProducts() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
