@@ -31,21 +31,21 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 )
 
-// @title           Scalable E-commerce Platform API
-// @version         1.0
-// @description     This is the API server for the Scalable E-commerce Platform. It provides endpoints for managing users, products, carts, orders, payments, and notifications.
-// @termsOfService  http://swagger.io/terms/
-// @contact.name   Aarav Mahajan
-// @contact.url    https://github.com/aaravmahajanofficial
-// @contact.email  aaravmahajan2003@gmail.com
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-// @host      0.0.0.0:8085
-// @BasePath  /api/v1
-// @securityDefinitions.apikey BearerAuth
-// @in header
-// @name Authorization
-// @description Type "Bearer" followed by a space and JWT token. Example: "Bearer {token}"
+//	@title						Scalable E-commerce Platform API
+//	@version					1.0
+//	@description				This is the API server for the Scalable E-commerce Platform. It provides endpoints for managing users, products, carts, orders, payments, and notifications.
+//	@termsOfService				http://swagger.io/terms/
+//	@contact.name				Aarav Mahajan
+//	@contact.url				https://github.com/aaravmahajanofficial
+//	@contact.email				aaravmahajan2003@gmail.com
+//	@license.name				Apache 2.0
+//	@license.url				http://www.apache.org/licenses/LICENSE-2.0.html
+//	@host						0.0.0.0:8085
+//	@BasePath					/api/v1
+//	@securityDefinitions.apikey	BearerAuth
+//	@in							header
+//	@name						Authorization
+//	@description				Type "Bearer" followed by a space and JWT token. Example: "Bearer {token}"
 
 // Creates and Register the Jaeger exporter and OTel TracerProvider
 func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {

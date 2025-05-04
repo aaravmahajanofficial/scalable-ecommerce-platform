@@ -23,17 +23,17 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 }
 
 // Register godoc
-// @Summary      Register a new user
-// @Description  Creates a new user account with the provided details.
-// @Tags         Users
-// @Accept       json
-// @Produce      json
-// @Param        user body models.RegisterRequest true "User Registration Details"
-// @Success      201  {object}  models.User "Successfully created user"
-// @Failure      400  {object}  response.ErrorResponse "Validation error or invalid input"
-// @Failure      409  {object}  response.ErrorResponse "User with email already exists"
-// @Failure      500  {object}  response.ErrorResponse "Internal server error"
-// @Router       /users/register [post]
+//	@Summary		Register a new user
+//	@Description	Creates a new user account with the provided details.
+//	@Tags			Users
+//	@Accept			json
+//	@Produce		json
+//	@Param			user	body		models.RegisterRequest	true	"User Registration Details"
+//	@Success		201		{object}	models.User				"Successfully created user"
+//	@Failure		400		{object}	response.ErrorResponse	"Validation error or invalid input"
+//	@Failure		409		{object}	response.ErrorResponse	"User with email already exists"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/users/register [post]
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -60,18 +60,18 @@ func (h *UserHandler) Register() http.HandlerFunc {
 }
 
 // Login godoc
-// @Summary      Log in a user
-// @Description  Authenticates a user and returns a JWT token upon successful login.
-// @Tags         Users
-// @Accept       json
-// @Produce      json
-// @Param        credentials body models.LoginRequest true "User Login Credentials"
-// @Success      200  {object}  models.LoginResponse "Successful login, includes JWT token"
-// @Failure      400  {object}  response.ErrorResponse "Validation error or invalid input"
-// @Failure      401  {object}  response.ErrorResponse "Invalid email or password"
-// @Failure      429  {object}  response.ErrorResponse "Too many login attempts"
-// @Failure      500  {object}  response.ErrorResponse "Internal server error"
-// @Router       /users/login [post]
+//	@Summary		Log in a user
+//	@Description	Authenticates a user and returns a JWT token upon successful login.
+//	@Tags			Users
+//	@Accept			json
+//	@Produce		json
+//	@Param			credentials	body		models.LoginRequest		true	"User Login Credentials"
+//	@Success		200			{object}	models.LoginResponse	"Successful login, includes JWT token"
+//	@Failure		400			{object}	response.ErrorResponse	"Validation error or invalid input"
+//	@Failure		401			{object}	response.ErrorResponse	"Invalid email or password"
+//	@Failure		429			{object}	response.ErrorResponse	"Too many login attempts"
+//	@Failure		500			{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/users/login [post]
 func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -110,16 +110,16 @@ func (h *UserHandler) Login() http.HandlerFunc {
 }
 
 // Profile godoc
-// @Summary      Get user profile
-// @Description  Retrieves the profile information for the currently authenticated user.
-// @Tags         Users
-// @Produce      json
-// @Success      200  {object}  models.User "Successfully retrieved user profile"
-// @Failure      401  {object}  response.ErrorResponse "Authentication required (invalid or missing token)"
-// @Failure      404  {object}  response.ErrorResponse "User not found"
-// @Failure      500  {object}  response.ErrorResponse "Internal server error"
-// @Security     BearerAuth
-// @Router       /users/profile [get]
+//	@Summary		Get user profile
+//	@Description	Retrieves the profile information for the currently authenticated user.
+//	@Tags			Users
+//	@Produce		json
+//	@Success		200	{object}	models.User				"Successfully retrieved user profile"
+//	@Failure		401	{object}	response.ErrorResponse	"Authentication required (invalid or missing token)"
+//	@Failure		404	{object}	response.ErrorResponse	"User not found"
+//	@Failure		500	{object}	response.ErrorResponse	"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/users/profile [get]
 func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

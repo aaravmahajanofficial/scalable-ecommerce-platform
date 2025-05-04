@@ -24,19 +24,19 @@ func NewOrderHandler(orderService service.OrderService) *OrderHandler {
 }
 
 // CreateOrder godoc
-// @Summary      Create a new order
-// @Description  Creates a new order from the user's current cart items and provided shipping details. Requires authentication.
-// @Tags         Orders
-// @Accept       json
-// @Produce      json
-// @Param        order body models.CreateOrderRequest true "Order Creation Details (includes shipping, uses current cart)"
-// @Success      201 {object} models.Order "Successfully created order"
-// @Failure      400 {object} response.ErrorResponse "Validation error, empty cart, or insufficient stock"
-// @Failure      401 {object} response.ErrorResponse "Authentication required"
-// @Failure      404 {object} response.ErrorResponse "Cart not found (should be created implicitly if needed)"
-// @Failure      500 {object} response.ErrorResponse "Internal server error"
-// @Security     BearerAuth
-// @Router       /orders [post]
+//	@Summary		Create a new order
+//	@Description	Creates a new order from the user's current cart items and provided shipping details. Requires authentication.
+//	@Tags			Orders
+//	@Accept			json
+//	@Produce		json
+//	@Param			order	body		models.CreateOrderRequest	true	"Order Creation Details (includes shipping, uses current cart)"
+//	@Success		201		{object}	models.Order				"Successfully created order"
+//	@Failure		400		{object}	response.ErrorResponse		"Validation error, empty cart, or insufficient stock"
+//	@Failure		401		{object}	response.ErrorResponse		"Authentication required"
+//	@Failure		404		{object}	response.ErrorResponse		"Cart not found (should be created implicitly if needed)"
+//	@Failure		500		{object}	response.ErrorResponse		"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/orders [post]
 func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -70,19 +70,19 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 }
 
 // GetOrder godoc
-// @Summary      Get an order by ID
-// @Description  Retrieves details for a specific order placed by the authenticated user. Requires authentication.
-// @Tags         Orders
-// @Produce      json
-// @Param        id   path      string  true  "Order ID (UUID)" Format(uuid)
-// @Success      200 {object} models.Order "Successfully retrieved order"
-// @Failure      400 {object} response.ErrorResponse "Invalid order ID format"
-// @Failure      401 {object} response.ErrorResponse "Authentication required"
-// @Failure      403 {object} response.ErrorResponse "Forbidden - User does not own this order"
-// @Failure      404 {object} response.ErrorResponse "Order not found"
-// @Failure      500 {object} response.ErrorResponse "Internal server error"
-// @Security     BearerAuth
-// @Router       /orders/{id} [get]
+//	@Summary		Get an order by ID
+//	@Description	Retrieves details for a specific order placed by the authenticated user. Requires authentication.
+//	@Tags			Orders
+//	@Produce		json
+//	@Param			id	path		string					true	"Order ID (UUID)"	Format(uuid)
+//	@Success		200	{object}	models.Order			"Successfully retrieved order"
+//	@Failure		400	{object}	response.ErrorResponse	"Invalid order ID format"
+//	@Failure		401	{object}	response.ErrorResponse	"Authentication required"
+//	@Failure		403	{object}	response.ErrorResponse	"Forbidden - User does not own this order"
+//	@Failure		404	{object}	response.ErrorResponse	"Order not found"
+//	@Failure		500	{object}	response.ErrorResponse	"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/orders/{id} [get]
 func (h *OrderHandler) GetOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -130,17 +130,17 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 }
 
 // ListOrders godoc
-// @Summary      List user's orders with pagination
-// @Description  Retrieves a paginated list of orders placed by the authenticated user. Requires authentication.
-// @Tags         Orders
-// @Produce      json
-// @Param        page      query     int  false  "Page number for pagination (default: 1)" minimum(1)
-// @Param        pageSize  query     int  false  "Number of items per page (default: 10, max: 100)" minimum(1) maximum(100)
-// @Success      200 {object} models.PaginatedResponse{Data=[]models.Order} "Successfully retrieved list of orders"
-// @Failure      401 {object} response.ErrorResponse "Authentication required"
-// @Failure      500 {object} response.ErrorResponse "Internal server error"
-// @Security     BearerAuth
-// @Router       /orders [get]
+//	@Summary		List user's orders with pagination
+//	@Description	Retrieves a paginated list of orders placed by the authenticated user. Requires authentication.
+//	@Tags			Orders
+//	@Produce		json
+//	@Param			page		query		int												false	"Page number for pagination (default: 1)"			minimum(1)
+//	@Param			pageSize	query		int												false	"Number of items per page (default: 10, max: 100)"	minimum(1)	maximum(100)
+//	@Success		200			{object}	models.PaginatedResponse{Data=[]models.Order}	"Successfully retrieved list of orders"
+//	@Failure		401			{object}	response.ErrorResponse							"Authentication required"
+//	@Failure		500			{object}	response.ErrorResponse							"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/orders [get]
 func (h *OrderHandler) ListOrders() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -185,21 +185,21 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 }
 
 // UpdateOrderStatus godoc
-// @Summary      Update order status (Admin/Internal)
-// @Description  Updates the status of a specific order. Requires authentication (potentially admin-level).
-// @Tags         Orders
-// @Accept       json
-// @Produce      json
-// @Param        id     path      string  true  "Order ID (UUID)" Format(uuid)
-// @Param        status body models.UpdateOrderStatusRequest true "New Order Status"
-// @Success      200 {object} models.Order "Successfully updated order status"
-// @Failure      400 {object} response.ErrorResponse "Invalid order ID format or invalid status value"
-// @Failure      401 {object} response.ErrorResponse "Authentication required"
-// @Failure      403 {object} response.ErrorResponse "Forbidden - Insufficient permissions to update status" // If applicable
-// @Failure      404 {object} response.ErrorResponse "Order not found"
-// @Failure      500 {object} response.ErrorResponse "Internal server error"
-// @Security     BearerAuth
-// @Router       /orders/{id}/status [patch]
+//	@Summary		Update order status (Admin/Internal)
+//	@Description	Updates the status of a specific order. Requires authentication (potentially admin-level).
+//	@Tags			Orders
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string							true	"Order ID (UUID)"	Format(uuid)
+//	@Param			status	body		models.UpdateOrderStatusRequest	true	"New Order Status"
+//	@Success		200		{object}	models.Order					"Successfully updated order status"
+//	@Failure		400		{object}	response.ErrorResponse			"Invalid order ID format or invalid status value"
+//	@Failure		401		{object}	response.ErrorResponse			"Authentication required"
+//	@Failure		403		{object}	response.ErrorResponse			"Forbidden - Insufficient permissions to update status"	//	If	applicable
+//	@Failure		404		{object}	response.ErrorResponse			"Order not found"
+//	@Failure		500		{object}	response.ErrorResponse			"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/orders/{id}/status [patch]
 func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

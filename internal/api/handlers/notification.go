@@ -27,20 +27,20 @@ func NewNotificationHandler(notificationService service.NotificationService) *No
 }
 
 // SendEmail godoc
-// @Summary      Send an email notification (Admin/Internal)
-// @Description  Creates and sends an email notification record. This might be an admin-triggered action or for specific internal purposes. Requires authentication.
-// @Tags         Notifications
-// @Accept       json
-// @Produce      json
-// @Param        notification body models.EmailNotificationRequest true "Email Notification Details (Recipient User ID, Subject, Body)"
-// @Success      201 {object} models.Notification "Successfully created and potentially queued email notification"
-// @Failure      400 {object} response.ErrorResponse "Validation error or invalid input"
-// @Failure      401 {object} response.ErrorResponse "Authentication required"
-// @Failure      403 {object} response.ErrorResponse "Forbidden - Insufficient permissions" // If restricted
-// @Failure      404 {object} response.ErrorResponse "Recipient User not found"
-// @Failure      500 {object} response.ErrorResponse "Internal server error or email sending provider error"
-// @Security     BearerAuth
-// @Router       /notifications/email [post]
+//	@Summary		Send an email notification (Admin/Internal)
+//	@Description	Creates and sends an email notification record. This might be an admin-triggered action or for specific internal purposes. Requires authentication.
+//	@Tags			Notifications
+//	@Accept			json
+//	@Produce		json
+//	@Param			notification	body		models.EmailNotificationRequest	true	"Email Notification Details (Recipient User ID, Subject, Body)"
+//	@Success		201				{object}	models.Notification				"Successfully created and potentially queued email notification"
+//	@Failure		400				{object}	response.ErrorResponse			"Validation error or invalid input"
+//	@Failure		401				{object}	response.ErrorResponse			"Authentication required"
+//	@Failure		403				{object}	response.ErrorResponse			"Forbidden - Insufficient permissions"	//	If	restricted
+//	@Failure		404				{object}	response.ErrorResponse			"Recipient User not found"
+//	@Failure		500				{object}	response.ErrorResponse			"Internal server error or email sending provider error"
+//	@Security		BearerAuth
+//	@Router			/notifications/email [post]
 func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -80,17 +80,17 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 }
 
 // ListNotifications godoc
-// @Summary      List notifications for the user
-// @Description  Retrieves a paginated list of notifications for the authenticated user. Requires authentication.
-// @Tags         Notifications
-// @Produce      json
-// @Param        page      query     int  false  "Page number for pagination (default: 1)" minimum(1)
-// @Param        pageSize  query     int  false  "Number of items per page (default: 10, max: 100)" minimum(1) maximum(100)
-// @Success      200 {object} models.PaginatedResponse{Data=[]models.Notification} "Successfully retrieved list of notifications"
-// @Failure      401 {object} response.ErrorResponse "Authentication required"
-// @Failure      500 {object} response.ErrorResponse "Internal server error"
-// @Security     BearerAuth
-// @Router       /notifications [get]
+//	@Summary		List notifications for the user
+//	@Description	Retrieves a paginated list of notifications for the authenticated user. Requires authentication.
+//	@Tags			Notifications
+//	@Produce		json
+//	@Param			page		query		int														false	"Page number for pagination (default: 1)"			minimum(1)
+//	@Param			pageSize	query		int														false	"Number of items per page (default: 10, max: 100)"	minimum(1)	maximum(100)
+//	@Success		200			{object}	models.PaginatedResponse{Data=[]models.Notification}	"Successfully retrieved list of notifications"
+//	@Failure		401			{object}	response.ErrorResponse									"Authentication required"
+//	@Failure		500			{object}	response.ErrorResponse									"Internal server error"
+//	@Security		BearerAuth
+//	@Router			/notifications [get]
 func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
