@@ -1,12 +1,45 @@
 run:
-  timeout: 5m
+  timeout: 10m
+  go: "1.22"
+  skip-dirs:
+    - vendor
+    - node_modules
+  fast: true
 
 linters:
-  enable:
-    - govet
-    - errcheck
-    - staticcheck
-    - gosimple
-    - unused
+  enable-all: true
+  disable:
     - structcheck
     - deadcode
+    - maligned
+    - scopelint
+    - interfacer
+    - varcheck
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  staticcheck:
+    checks: ["all", "-SA1019"]
+  gocyclo:
+    min-complexity: 15 
+  revive:
+    rules:
+      - name: var-naming
+        severity: warning
+      - name: empty-block
+        severity: error
+
+issues:
+  exclude-patterns:
+    - ".*_generated\\.go"
+    - ".*_test\\.go"
+  exclude-rules:
+    - path: "vendor/.*"
+      linters:
+        - all
+
+output:
+  format: github-actions
+  sort-results: true
