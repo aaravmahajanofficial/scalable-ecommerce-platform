@@ -5,11 +5,10 @@ import (
 	"fmt"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
+	"github.com/microcosm-cc/bluemonday"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
-	"github.com/microcosm-cc/bluemonday"
 )
-
 
 type EmailService interface {
 	Send(ctx context.Context, req *models.EmailNotificationRequest) error
@@ -69,4 +68,18 @@ func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRe
 // GetSendGridClient provides access to the internal sendgrid.Client.
 func (e *emailService) GetSendGridClient() *sendgrid.Client {
 	return e.client
+}
+
+// sanitizeContent sanitizes plain text content to remove any potential malicious content.
+func sanitizeContent(content string) string {
+	// Use bluemonday's strict policy to strip all HTML tags for plain text
+	p := bluemonday.StrictPolicy()
+	return p.Sanitize(content)
+}
+
+// sanitizeHTMLContent sanitizes HTML content to allow only safe HTML tags and attributes.
+func sanitizeHTMLContent(htmlContent string) string {
+	// Use bluemonday's UGCPolicy for HTML content, which allows common safe tags and attributes
+	p := bluemonday.UGCPolicy()
+	return p.Sanitize(htmlContent)
 }
