@@ -480,7 +480,7 @@ definitions:
       message:
         type: string
     type: object
-host: 0.0.0.0:8085
+host: localhost:8085
 info:
   contact:
     email: aaravmahajan2003@gmail.com
