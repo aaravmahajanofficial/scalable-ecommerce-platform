@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Creates a temporary YAML config file in a temporary directory
+// Creates a temporary YAML config file in a temporary directory.
 func createTempConfigFile(t *testing.T, content string) (string, func()) {
 	t.Helper()
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "test_config.yaml")
 
-	err := os.WriteFile(configPath, []byte(content), 0600)
+	err := os.WriteFile(configPath, []byte(content), 0o600)
 	require.NoError(t, err, "Failed to write temporary config file")
 
 	return configPath, func() {}
@@ -24,14 +24,16 @@ func createTempConfigFile(t *testing.T, content string) (string, func()) {
 
 func createTempDefaultConfigFile(t *testing.T, content string) func() {
 	t.Helper()
+
 	configDir := "./config"
-	err := os.MkdirAll(configDir, 0755)
+
+	err := os.MkdirAll(configDir, 0o755)
 	if err != nil && !os.IsExist(err) {
 		require.NoError(t, err, "Failed to create ./config directory")
 	}
 
 	defaultConfigPath := filepath.Join(configDir, "local.yaml")
-	err = os.WriteFile(defaultConfigPath, []byte(content), 0600)
+	err = os.WriteFile(defaultConfigPath, []byte(content), 0o600)
 	require.NoError(t, err, "Failed to write temporary default config file")
 
 	return func() {
@@ -87,6 +89,7 @@ cache:
 `
 	resetEnvAndArgs := func() {
 		originalArgs := os.Args
+
 		t.Cleanup(func() { os.Args = originalArgs })
 		os.Unsetenv("CONFIG_PATH")
 		os.Unsetenv("ENV")
@@ -97,6 +100,7 @@ cache:
 	// Verifies values from YAML are loaded correctly
 	t.Run("Load from CONFIG_PATH env var", func(t *testing.T) {
 		resetEnvAndArgs()
+
 		configPath, _ := createTempConfigFile(t, validYAML)
 		t.Setenv("CONFIG_PATH", configPath)
 
@@ -114,6 +118,7 @@ cache:
 	// Simulates passing CLI argument -config path/to/config
 	t.Run("Load from -config flag", func(t *testing.T) {
 		resetEnvAndArgs()
+
 		configPath, _ := createTempConfigFile(t, validYAML)
 
 		os.Args = []string{"cmd", "-config", configPath}
@@ -144,6 +149,7 @@ cache:
 	// Verifies envs override the YAML values
 	t.Run("Environment variable override", func(t *testing.T) {
 		resetEnvAndArgs()
+
 		configPath, _ := createTempConfigFile(t, validYAML)
 		t.Setenv("CONFIG_PATH", configPath)
 
@@ -167,7 +173,6 @@ cache:
 		assert.Equal(t, "prodredispass", cfg.RedisConnect.Password)
 		assert.Equal(t, "prodjwtkey", cfg.Security.JWTKey)
 	})
-
 }
 
 func TestDatabaseGetDSN(t *testing.T) {
@@ -183,7 +188,6 @@ func TestDatabaseGetDSN(t *testing.T) {
 	expectedBaseDSN := "postgresql://user:password@localhost:5432/dbname?sslmode=disable"
 
 	t.Run("DSN from struct values", func(t *testing.T) {
-
 		// clear any related environment variables to prevent interference
 		os.Unsetenv("PG_HOST")
 		os.Unsetenv("PG_PORT")
@@ -198,6 +202,7 @@ func TestDatabaseGetDSN(t *testing.T) {
 
 	createMinimalValidConfig := func(t *testing.T, _, _ map[string]string) (string, func()) {
 		t.Helper()
+
 		content := `
 env: "test-dsn"
 http_server: {address: ":9999"}
@@ -229,7 +234,7 @@ security: {JWT_KEY: "filekey"} # Required field
 		t.Setenv("PG_PASSWORD", "envpass")
 		t.Setenv("PG_DBNAME", "envdb")
 		t.Setenv("PG_SSLMODE", "require")
-		
+
 		t.Cleanup(func() {
 			os.Unsetenv("PG_HOST")
 			os.Unsetenv("PG_PORT")
@@ -289,6 +294,7 @@ func TestRedisConnectGetDSN(t *testing.T) {
 
 	createMinimalValidConfig := func(t *testing.T) (string, func()) {
 		t.Helper()
+
 		content := `
 env: "test-dsn-redis"
 http_server: {address: ":9998"}
@@ -303,6 +309,7 @@ redis:
   REDIS_PASSWORD: "fileredispassword"
 security: {JWT_KEY: "filekey"} # Required field
 `
+
 		return createTempConfigFile(t, content)
 	}
 
@@ -408,7 +415,7 @@ security: {JWT_KEY: "filekey"} # Required field
 func TestMustLoad_SpecificFieldCheck(t *testing.T) {
 	resetEnvAndArgs := func() {
 		originalArgs := os.Args
-		
+
 		t.Cleanup(func() { os.Args = originalArgs })
 		os.Unsetenv("CONFIG_PATH")
 		os.Unsetenv("CACHE_DEFAULT_TTL")
@@ -423,6 +430,7 @@ func TestMustLoad_SpecificFieldCheck(t *testing.T) {
 
 	t.Run("Cache TTL from file", func(t *testing.T) {
 		resetEnvAndArgs()
+
 		yamlContent := `
 env: "test-cache"
 cache:
@@ -443,6 +451,7 @@ security: {JWT_KEY: k}
 
 	t.Run("Cache TTL overridden by environment", func(t *testing.T) {
 		resetEnvAndArgs()
+
 		yamlContent := `
 env: "test-cache-env"
 cache:
@@ -465,6 +474,7 @@ security: {JWT_KEY: k}
 
 	t.Run("Cache TTL default value", func(t *testing.T) {
 		resetEnvAndArgs()
+
 		yamlContent := `
 env: "test-cache-default"
 # Cache section omitted to test default

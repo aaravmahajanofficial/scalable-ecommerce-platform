@@ -23,6 +23,7 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 }
 
 // Register godoc
+//
 //	@Summary		Register a new user
 //	@Description	Creates a new user account with the provided details.
 //	@Tags			Users
@@ -36,7 +37,6 @@ func NewUserHandler(userService service.UserService) *UserHandler {
 //	@Router			/users/register [post]
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		var req models.RegisterRequest
@@ -51,6 +51,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		if err != nil {
 			logger.Error("User registration failed", slog.String("email", req.Email), slog.String("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -60,6 +61,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 }
 
 // Login godoc
+//
 //	@Summary		Log in a user
 //	@Description	Authenticates a user and returns a JWT token upon successful login.
 //	@Tags			Users
@@ -74,7 +76,6 @@ func (h *UserHandler) Register() http.HandlerFunc {
 //	@Router			/users/login [post]
 func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		// Decode the request body
@@ -90,6 +91,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		if err != nil {
 			logger.Warn("Login attempt failed", slog.String("email", req.Email), slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -97,10 +99,13 @@ func (h *UserHandler) Login() http.HandlerFunc {
 			if resp.RetryAfter > 0 {
 				logger.Warn("Too many login attempts", slog.String("email", req.Email))
 				response.Error(w, errors.TooManyRequestsError("Too many login attempts").WithDetail("Please try again later"))
+
 				return
 			}
+
 			logger.Warn("Invalid credentials provided", slog.String("email", req.Email))
 			response.Error(w, errors.UnauthorizedError("Invalid email or password"))
+
 			return
 		}
 
@@ -110,6 +115,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 }
 
 // Profile godoc
+//
 //	@Summary		Get user profile
 //	@Description	Retrieves the profile information for the currently authenticated user.
 //	@Tags			Users
@@ -122,7 +128,6 @@ func (h *UserHandler) Login() http.HandlerFunc {
 //	@Router			/users/profile [get]
 func (h *UserHandler) Profile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		// Get user claims from context (set by middleware)
@@ -130,6 +135,7 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 		if !ok {
 			logger.Warn("Unauthorized access attempt: missing user claims in context")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -140,6 +146,7 @@ func (h *UserHandler) Profile() http.HandlerFunc {
 		if err != nil {
 			logger.Warn("User not found", slog.String("userID", claims.UserID.String()))
 			response.Error(w, err)
+
 			return
 		}
 

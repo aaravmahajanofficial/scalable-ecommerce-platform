@@ -25,6 +25,7 @@ func NewPaymentHandler(paymentService service.PaymentService) *PaymentHandler {
 }
 
 // CreatePayment godoc
+//
 //	@Summary		Initiate a payment for an order
 //	@Description	Creates a payment intent (e.g., with Stripe) for a specified order and returns the client secret needed for frontend processing. Requires authentication.
 //	@Tags			Payments
@@ -41,13 +42,13 @@ func NewPaymentHandler(paymentService service.PaymentService) *PaymentHandler {
 //	@Router			/payments [post]
 func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized payment creation attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -57,6 +58,7 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 		var req models.PaymentRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid create payment input")
+
 			return
 		}
 
@@ -67,6 +69,7 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 				slog.String("requesterId", claims.UserID.String()),
 				slog.String("requestedCustomerID", req.CustomerID))
 			response.Error(w, errors.ForbiddenError("You can only make payments for your own orders"))
+
 			return
 		}
 
@@ -75,6 +78,7 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to initiate payment", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -86,6 +90,7 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 }
 
 // GetPayment godoc
+//
 //	@Summary		Get payment details by ID
 //	@Description	Retrieves details for a specific payment record. Requires authentication. (Authorization might be needed to restrict access).
 //	@Tags			Payments
@@ -101,13 +106,13 @@ func (h *PaymentHandler) CreatePayment() http.HandlerFunc {
 //	@Router			/payments/{id} [get]
 func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized payment get attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -117,6 +122,7 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 		if idStr == "" {
 			logger.Warn("Missing payment ID in path")
 			response.Error(w, errors.BadRequestError("Payment ID is required"))
+
 			return
 		}
 
@@ -127,6 +133,7 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to get payment details", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -136,6 +143,7 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 }
 
 // ListPayments godoc
+//
 //	@Summary		List user's payments with pagination
 //	@Description	Retrieves a paginated list of payment records for the authenticated user. Requires authentication.
 //	@Tags			Payments
@@ -149,13 +157,13 @@ func (h *PaymentHandler) GetPayment() http.HandlerFunc {
 //	@Router			/payments [get]
 func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized payment list attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -165,6 +173,7 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 		if err != nil || page < 1 {
 			page = 1
 		}
+
 		pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
 		if err != nil || pageSize < 1 || pageSize > 100 {
 			pageSize = 10
@@ -177,6 +186,7 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to list user payments", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -191,6 +201,7 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 }
 
 // HandleStripeWebhook godoc
+//
 //	@Summary		Handle incoming Stripe webhooks
 //	@Description	Receives and processes webhook events from Stripe (e.g., payment success, failure) to update internal payment and order statuses. This endpoint should not require application-level authentication but relies on Stripe's signature verification.
 //	@Tags			Payments (Internal)
@@ -205,7 +216,6 @@ func (h *PaymentHandler) ListPayments() http.HandlerFunc {
 //	@Router			/payments/webhook [post]
 func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		// read the payload/body
@@ -214,6 +224,7 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Error reading webhook body", slog.Any("error", err))
 			response.Error(w, errors.BadRequestError("Failed to read request body"))
+
 			return
 		}
 
@@ -221,6 +232,7 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		if signature == "" {
 			logger.Error("Missing Stripe signature in webhook request")
 			response.Error(w, errors.BadRequestError("Stripe Signature is required"))
+
 			return
 		}
 
@@ -229,6 +241,7 @@ func (h *PaymentHandler) HandleStripeWebhook() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to process payment webhook", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 

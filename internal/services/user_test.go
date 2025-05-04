@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -18,7 +17,6 @@ import (
 )
 
 func TestUserService_Register(t *testing.T) {
-
 	// Arrange
 	mockUserRepo := mocks.NewMockUserRepository(t)
 	mockRedisRepo := mocks.NewMockRateLimitRepository(t)
@@ -27,8 +25,7 @@ func TestUserService_Register(t *testing.T) {
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
 
 	t.Run("Success - User Registration", func(t *testing.T) {
-
-		ctx := context.Background()
+		ctx := t.Context()
 		req := &models.RegisterRequest{
 			Name:     "Test User",
 			Email:    "test@example.com",
@@ -58,8 +55,7 @@ func TestUserService_Register(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 	})
 	t.Run("Failure - Duplicate Email", func(t *testing.T) {
-
-		ctx := context.Background()
+		ctx := t.Context()
 		req := &models.RegisterRequest{
 			Name:     "Test User",
 			Email:    "test@example.com",
@@ -83,15 +79,15 @@ func TestUserService_Register(t *testing.T) {
 
 		// Check if the error is of type appError
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeDuplicateEntry, appErr.Code)
 
 		mockUserRepo.AssertExpectations(t)
 	})
 
 	t.Run("Failure - Database Error", func(t *testing.T) {
-
-		ctx := context.Background()
+		ctx := t.Context()
 		req := &models.RegisterRequest{
 			Name:     "Test User",
 			Email:    "test@example.com",
@@ -114,12 +110,12 @@ func TestUserService_Register(t *testing.T) {
 
 		// Check if the error is of type appError
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 
 		mockUserRepo.AssertExpectations(t)
 	})
-
 }
 
 func TestUserService_Login(t *testing.T) {
@@ -130,9 +126,8 @@ func TestUserService_Login(t *testing.T) {
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
 
 	t.Run("Success - Valid Credentials", func(t *testing.T) {
-
 		// Arrange
-		ctx := context.Background()
+		ctx := t.Context()
 		password := "P@ssword123!"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 
@@ -183,9 +178,8 @@ func TestUserService_Login(t *testing.T) {
 		mockRedisRepo.AssertExpectations(t)
 	})
 	t.Run("Failure - Invalid Password", func(t *testing.T) {
-
 		// Arrange
-		ctx := context.Background()
+		ctx := t.Context()
 		password := "P@ssword123!"
 		wrongPassword := "WrongP@ssword123!"
 		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
@@ -222,9 +216,8 @@ func TestUserService_Login(t *testing.T) {
 		mockRedisRepo.AssertExpectations(t)
 	})
 	t.Run("Failure - Rate Limited", func(t *testing.T) {
-
 		// Arrange
-		ctx := context.Background()
+		ctx := t.Context()
 		req := &models.LoginRequest{
 			Email:    "test@example.com",
 			Password: "P@ssword123!",
@@ -249,9 +242,8 @@ func TestUserService_Login(t *testing.T) {
 	})
 
 	t.Run("Failure - User Not found", func(t *testing.T) {
-
 		// Arrange
-		ctx := context.Background()
+		ctx := t.Context()
 
 		req := &models.LoginRequest{
 			Email:    "test@example.com",
@@ -277,7 +269,6 @@ func TestUserService_Login(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 		mockRedisRepo.AssertExpectations(t)
 	})
-
 }
 
 func TestUserService_GetUserByID(t *testing.T) {
@@ -286,10 +277,10 @@ func TestUserService_GetUserByID(t *testing.T) {
 	jwtKey := []byte("test-key")
 
 	userService := service.NewUserService(mockUserRepo, mockRedisRepo, jwtKey)
-	t.Run("Success - User Found", func(t *testing.T) {
 
+	t.Run("Success - User Found", func(t *testing.T) {
 		// Arrange
-		ctx := context.Background()
+		ctx := t.Context()
 		userID := uuid.New()
 
 		exisitingUser := &models.User{
@@ -316,9 +307,8 @@ func TestUserService_GetUserByID(t *testing.T) {
 		mockUserRepo.AssertExpectations(t)
 	})
 	t.Run("Failure - User not Found", func(t *testing.T) {
-
 		// Arrange
-		ctx := context.Background()
+		ctx := t.Context()
 		userID := uuid.New()
 
 		// Mock Behavior -> user not fresh!
@@ -333,10 +323,10 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 		// Check if the error is of type appError
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
 
 		mockUserRepo.AssertExpectations(t)
 	})
-
 }

@@ -9,28 +9,28 @@ import (
 
 type User struct {
 	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name" validate:"required"`
-	Username  string    `json:"username" validate:"required"`
-	Email     string    `json:"email" validate:"required"`
+	Name      string    `json:"name"       validate:"required"`
+	Username  string    `json:"username"   validate:"required"`
+	Email     string    `json:"email"      validate:"required"`
 	Password  string    `json:"-"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// for registration
+// for registration.
 type RegisterRequest struct {
-	Email    string `json:"email" validate:"required,email"`
+	Email    string `json:"email"    validate:"required,email"`
 	Password string `json:"password" validate:"required,min=6"`
-	Name     string `json:"name" validate:"required"`
+	Name     string `json:"name"     validate:"required"`
 }
 
-// for login
+// for login.
 type LoginRequest struct {
-	Email    string `json:"email" validate:"required,email"`
+	Email    string `json:"email"    validate:"required,email"`
 	Password string `json:"password" validate:"required"`
 }
 
-// for login response
+// for login response.
 type LoginResponse struct {
 	Success        bool   `json:"success"`
 	Token          string `json:"token,omitempty"`
@@ -44,7 +44,7 @@ type LoginResponse struct {
 
 type Claims struct {
 	UserID uuid.UUID `json:"user_id"`
-	Email  string `json:"email"`
+	Email  string    `json:"email"`
 	jwt.RegisteredClaims
 }
 

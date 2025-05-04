@@ -27,12 +27,10 @@ func NewCartRepo(db *sql.DB) CartRepository {
 }
 
 func (r *cartRepository) CreateCart(ctx context.Context, cart *models.Cart) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	itemsJSON, err := json.Marshal(cart.Items)
-
 	if err != nil {
 		return fmt.Errorf("failed to marshal cart items: %w", err)
 	}
@@ -47,7 +45,6 @@ func (r *cartRepository) CreateCart(ctx context.Context, cart *models.Cart) erro
 }
 
 func (r *cartRepository) GetCartByCustomerID(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -58,10 +55,10 @@ func (r *cartRepository) GetCartByCustomerID(ctx context.Context, customerID uui
 	`
 
 	cart := &models.Cart{}
+
 	var itemsJSON []byte
 
 	err := r.DB.QueryRowContext(dbCtx, query, customerID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
-
 	if err != nil {
 		return nil, err
 	}
@@ -71,16 +68,13 @@ func (r *cartRepository) GetCartByCustomerID(ctx context.Context, customerID uui
 	}
 
 	return cart, nil
-
 }
 
 func (r *cartRepository) UpdateCart(ctx context.Context, cart *models.Cart) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	itemsJSON, err := json.Marshal(cart.Items)
-
 	if err != nil {
 		return fmt.Errorf("failed to marshal cart items: %w", err)
 	}

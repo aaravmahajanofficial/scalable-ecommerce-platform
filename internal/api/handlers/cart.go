@@ -26,6 +26,7 @@ func NewCartHandler(service service.CartService) *CartHandler {
 }
 
 // GetCart godoc
+//
 //	@Summary		Get the user's shopping cart
 //	@Description	Retrieves the current shopping cart contents for the authenticated user. Creates a cart if one doesn't exist.
 //	@Tags			Cart
@@ -37,13 +38,13 @@ func NewCartHandler(service service.CartService) *CartHandler {
 //	@Router			/carts [get]
 func (h *CartHandler) GetCart() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized cart access attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -54,6 +55,7 @@ func (h *CartHandler) GetCart() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to get cart", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -63,6 +65,7 @@ func (h *CartHandler) GetCart() http.HandlerFunc {
 }
 
 // AddItem godoc
+//
 //	@Summary		Add an item to the cart
 //	@Description	Adds a specified quantity of a product to the authenticated user's shopping cart. Creates cart if needed.
 //	@Tags			Cart
@@ -78,13 +81,13 @@ func (h *CartHandler) GetCart() http.HandlerFunc {
 //	@Router			/carts/items [post]
 func (h *CartHandler) AddItem() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized cart add item attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -100,12 +103,15 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 				if err != nil {
 					logger.Error("Failed to create cart automatically", slog.Any("error", err))
 					response.Error(w, err)
+
 					return
 				}
+
 				logger.Info("Cart created successfully")
 			} else {
 				logger.Error("Failed to check cart existence before adding item", slog.Any("error", err))
 				response.Error(w, err)
+
 				return
 			}
 		}
@@ -114,6 +120,7 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 		var req models.AddItemRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid add item input")
+
 			return
 		}
 
@@ -124,6 +131,7 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to add item to cart", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -133,6 +141,7 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 }
 
 // UpdateQuantity godoc
+//
 //	@Summary		Update item quantity in the cart
 //	@Description	Updates the quantity of a specific item in the authenticated user's shopping cart.
 //	@Tags			Cart
@@ -148,13 +157,13 @@ func (h *CartHandler) AddItem() http.HandlerFunc {
 //	@Router			/carts/items [put]
 func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized cart update quantity attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -163,6 +172,7 @@ func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 		var req models.UpdateQuantityRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid update quantity input")
+
 			return
 		}
 
@@ -175,6 +185,7 @@ func (h *CartHandler) UpdateQuantity() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to update cart item quantity", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 

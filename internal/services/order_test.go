@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -20,13 +19,14 @@ func setupOrderServiceTest(t *testing.T) (service.OrderService, *mocks.MockOrder
 	mockCartRepo := mocks.NewMockCartRepository(t)
 	mockProductRepo := mocks.NewMockProductRepository(t)
 	orderService := service.NewOrderService(mockOrderRepo, mockCartRepo, mockProductRepo)
+
 	return orderService, mockOrderRepo, mockCartRepo, mockProductRepo
 }
 
 func TestCreateOrder_Success(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, mockCartRepo, mockProductRepo := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New()
 	productID2 := uuid.New()
@@ -44,6 +44,7 @@ func TestCreateOrder_Success(t *testing.T) {
 	// Mock Call Product Repository
 	mockProduct1 := &models.Product{ID: productID1, StockQuantity: 10, Price: 50.0}
 	mockProduct2 := &models.Product{ID: productID2, StockQuantity: 5, Price: 100.0}
+
 	mockProductRepo.On("GetProductByID", ctx, productID1).Return(mockProduct1, nil).Once()
 	mockProductRepo.On("GetProductByID", ctx, productID2).Return(mockProduct2, nil).Once()
 
@@ -94,7 +95,7 @@ func TestCreateOrder_Success(t *testing.T) {
 func TestCreateOrder_CartNotFound(t *testing.T) {
 	// Arrange
 	orderService, _, mockCartRepo, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 
 	// Mock Call Cart Repository
@@ -109,6 +110,7 @@ func TestCreateOrder_CartNotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -121,7 +123,7 @@ func TestCreateOrder_CartNotFound(t *testing.T) {
 func TestCreateOrder_EmptyCart(t *testing.T) {
 	// Arrange
 	orderService, _, mockCartRepo, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 
 	// Mock Call Cart Repository
@@ -136,6 +138,7 @@ func TestCreateOrder_EmptyCart(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeBadRequest, appErr.Code)
@@ -147,7 +150,7 @@ func TestCreateOrder_EmptyCart(t *testing.T) {
 func TestCreateOrder_ProductNotFound(t *testing.T) {
 	// Arrange
 	orderService, _, mockCartRepo, mockProductRepo := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New() // Product that exists
 	productID2 := uuid.New() // Product that doesn't exist
@@ -177,6 +180,7 @@ func TestCreateOrder_ProductNotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -190,7 +194,7 @@ func TestCreateOrder_ProductNotFound(t *testing.T) {
 func TestCreateOrder_InsufficientStock(t *testing.T) {
 	// Arrange
 	orderService, _, mockCartRepo, mockProductRepo := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New()
 
@@ -214,6 +218,7 @@ func TestCreateOrder_InsufficientStock(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeBadRequest, appErr.Code)
@@ -226,7 +231,7 @@ func TestCreateOrder_InsufficientStock(t *testing.T) {
 func TestCreateOrder_CreateOrderRepoError(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, mockCartRepo, mockProductRepo := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New()
 
@@ -260,6 +265,7 @@ func TestCreateOrder_CreateOrderRepoError(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -274,7 +280,7 @@ func TestCreateOrder_CreateOrderRepoError(t *testing.T) {
 func TestCreateOrder_UpdateInventoryRepoError(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, mockCartRepo, mockProductRepo := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New()
 
@@ -310,6 +316,7 @@ func TestCreateOrder_UpdateInventoryRepoError(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -324,7 +331,7 @@ func TestCreateOrder_UpdateInventoryRepoError(t *testing.T) {
 func TestGetOrderById_Success(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	orderID := uuid.New()
 	expectedOrder := &models.Order{ID: orderID, CustomerID: uuid.New(), Status: models.OrderStatusDelivered}
 
@@ -345,7 +352,7 @@ func TestGetOrderById_Success(t *testing.T) {
 func TestGetOrderById_NotFound(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	orderID := uuid.New()
 
 	// Mock Call Order Repository
@@ -358,6 +365,7 @@ func TestGetOrderById_NotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -370,7 +378,7 @@ func TestGetOrderById_NotFound(t *testing.T) {
 func TestListOrdersByCustomer_Success(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	page, size := 1, 5
 	expectedOrders := []models.Order{
@@ -395,7 +403,7 @@ func TestListOrdersByCustomer_Success(t *testing.T) {
 
 func TestListOrdersByCustomer_PaginationDefaults(t *testing.T) {
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	defaultPage, defaultSize := 1, 10
 
@@ -416,7 +424,7 @@ func TestListOrdersByCustomer_PaginationDefaults(t *testing.T) {
 func TestListOrdersByCustomer_RepoError(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	page, size := 1, 10
 
@@ -431,6 +439,7 @@ func TestListOrdersByCustomer_RepoError(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, orders)
 	assert.Equal(t, 0, total)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -443,7 +452,7 @@ func TestListOrdersByCustomer_RepoError(t *testing.T) {
 func TestUpdateOrderStatus_Success(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	orderID := uuid.New()
 	newStatus := models.OrderStatusShipping
 	originalOrder := &models.Order{ID: orderID, Status: models.OrderStatusPending, UpdatedAt: time.Now().Add(-time.Hour)}
@@ -470,7 +479,7 @@ func TestUpdateOrderStatus_Success(t *testing.T) {
 func TestUpdateOrderStatus_OrderNotFound(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	orderID := uuid.New()
 	newStatus := models.OrderStatusShipping
 
@@ -484,6 +493,7 @@ func TestUpdateOrderStatus_OrderNotFound(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -496,7 +506,7 @@ func TestUpdateOrderStatus_OrderNotFound(t *testing.T) {
 func TestUpdateOrderStatus_UpdateRepoError(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	orderID := uuid.New()
 	newStatus := models.OrderStatusDelivered
 	originalOrder := &models.Order{ID: orderID, Status: models.OrderStatusShipping}
@@ -514,6 +524,7 @@ func TestUpdateOrderStatus_UpdateRepoError(t *testing.T) {
 	// Assert
 	assert.Error(t, err)
 	assert.Nil(t, order)
+
 	appErr, ok := err.(*appErrors.AppError)
 	assert.True(t, ok)
 	assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)

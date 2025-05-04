@@ -1,7 +1,6 @@
 package repository_test
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"regexp"
@@ -17,6 +16,7 @@ import (
 
 func setupPaymentRepoTest(t *testing.T) (repository.PaymentRepository, sqlmock.Sqlmock) {
 	t.Helper()
+
 	db, mock, err := sqlmock.New()
 	require.NoError(t, err, "Failed to create sqlmock")
 
@@ -26,6 +26,7 @@ func setupPaymentRepoTest(t *testing.T) (repository.PaymentRepository, sqlmock.S
 
 	repo := repository.NewPaymentRepository(db)
 	require.NotNil(t, repo, "NewPaymentRepository should not return nil")
+
 	return repo, mock
 }
 
@@ -40,7 +41,7 @@ func TestNewPaymentRepository(t *testing.T) {
 
 func TestCreatePayment(t *testing.T) {
 	repo, mock := setupPaymentRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	payment := &models.Payment{
 		ID:            "pi_123",
@@ -92,7 +93,7 @@ func TestCreatePayment(t *testing.T) {
 
 func TestGetPaymentByID(t *testing.T) {
 	repo, mock := setupPaymentRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	testID := "pi_xyz789"
 
 	// Define the expected SQL query
@@ -189,7 +190,7 @@ func TestGetPaymentByID(t *testing.T) {
 
 func TestPaymentRepository_UpdatePaymentStatus(t *testing.T) {
 	repo, mock := setupPaymentRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	testID := "pi_update123"
 	newStatus := models.PaymentStatusFailed
 
@@ -261,7 +262,7 @@ func TestPaymentRepository_UpdatePaymentStatus(t *testing.T) {
 
 func TestListPaymentsOfCustomer(t *testing.T) {
 	repo, mock := setupPaymentRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := "cus_list123"
 	page, size := 1, 2
 
@@ -323,7 +324,7 @@ func TestListPaymentsOfCustomer(t *testing.T) {
 		// Assert
 		assert.NoError(t, err, "ListPaymentsOfCustomer should succeed")
 		assert.Equal(t, expectedTotal, total, "Total count should be 0")
-		assert.Len(t, payments, 0, "Expected 0 payments in the result")
+		assert.Empty(t, payments, "Expected 0 payments in the result")
 		assert.Empty(t, payments, "Payments slice should be empty")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})

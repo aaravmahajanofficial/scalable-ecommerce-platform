@@ -1,7 +1,6 @@
 package repository_test
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"regexp"
@@ -31,7 +30,7 @@ func TestProductRepository(t *testing.T) {
 	defer db.Close()
 
 	repo := repository.NewProductRepo(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("CreateProduct", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -366,6 +365,7 @@ func TestProductRepository(t *testing.T) {
 			// Arrange
 			total := 5
 			dbError := errors.New("list query failed")
+
 			mock.ExpectQuery(expectedCountSQL).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(total))
 			mock.ExpectQuery(expectedListSQL).WithArgs(size, offset).WillReturnError(dbError)
 
@@ -384,6 +384,7 @@ func TestProductRepository(t *testing.T) {
 			// Arrange
 			total := 1
 			scanError := errors.New("scan error")
+
 			mock.ExpectQuery(expectedCountSQL).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(total))
 			// Return rows with incorrect column types to trigger a scan error
 			rows := sqlmock.NewRows(productCols).AddRow("invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid", "invalid").RowError(0, scanError)
@@ -404,6 +405,7 @@ func TestProductRepository(t *testing.T) {
 			// Arrange
 			total := 1
 			rowsError := errors.New("rows iteration error")
+
 			mock.ExpectQuery(expectedCountSQL).WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(total))
 			rows := sqlmock.NewRows(productCols).
 				AddRow(uuid.New(), uuid.New(), "Prod 1", "", 10.0, 1, "SKU1", "active", time.Now(), time.Now(), uuid.New(), "Cat 1", "").

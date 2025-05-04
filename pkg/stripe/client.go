@@ -1,6 +1,7 @@
 package stripe
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -13,7 +14,7 @@ import (
 
 type Event = stripe.Event
 
-// defines the methods that any of payment client must implement
+// defines the methods that any of payment client must implement.
 type Client interface {
 	CreatePaymentIntent(amount int64, currency string, description string, customerID string) (*stripe.PaymentIntent, error)
 	CreatePaymentMethod(cardNumber, cardExpMonth, cardExpYear, cardCVC string) (*stripe.PaymentMethod, error)
@@ -24,7 +25,7 @@ type Client interface {
 	VerifyWebhookSignature(payload []byte, signature string) (Event, error)
 }
 
-// stripeClient is the implementation of the Client interface
+// stripeClient is the implementation of the Client interface.
 type stripeClient struct {
 	webhookSecret string
 }
@@ -38,10 +39,8 @@ func NewStripeClient(apiKey string, webhookSecret string) Client {
 	return &stripeClient{webhookSecret: webhookSecret}
 }
 
-// CreatePaymentIntent implements Client.
-// PaymentIntent == "planned payment" or order waiting for payment
+// PaymentIntent == "planned payment" or order waiting for payment.
 func (s *stripeClient) CreatePaymentIntent(amount int64, currency string, description string, customerID string) (*stripe.PaymentIntent, error) {
-
 	params := &stripe.PaymentIntentParams{
 		Amount:      stripe.Int64(amount),
 		Currency:    stripe.String(currency),
@@ -53,20 +52,16 @@ func (s *stripeClient) CreatePaymentIntent(amount int64, currency string, descri
 	}
 
 	return paymentintent.New(params)
-
 }
 
 // CreatePaymentMethod implements Client.
 func (s *stripeClient) CreatePaymentMethod(cardNumber string, cardExpMonth string, cardExpYear string, cardCVC string) (*stripe.PaymentMethod, error) {
-
 	expMonth, err := strconv.ParseInt(cardExpMonth, 10, 64)
-
 	if err != nil {
 		return nil, fmt.Errorf("invalid card expiration month: %w", err)
 	}
 
 	expYear, err := strconv.ParseInt(cardExpYear, 10, 64)
-
 	if err != nil {
 		return nil, fmt.Errorf("invalid card expiration year: %w", err)
 	}
@@ -82,19 +77,15 @@ func (s *stripeClient) CreatePaymentMethod(cardNumber string, cardExpMonth strin
 	}
 
 	return paymentmethod.New(params)
-
 }
 
 // CreatePaymentMethod implements Client.
 func (s *stripeClient) CreatePaymentMethodFromToken(paymentMethodId string) (*stripe.PaymentMethod, error) {
-
 	return paymentmethod.Get(paymentMethodId, nil)
-
 }
 
 // AttachPaymentMethodToIntent implements Client.
 func (s *stripeClient) AttachPaymentMethodToIntent(paymentMethodID string, paymentIntentID string) error {
-
 	params := &stripe.PaymentIntentParams{
 		PaymentMethod: stripe.String(paymentMethodID),
 	}
@@ -102,41 +93,34 @@ func (s *stripeClient) AttachPaymentMethodToIntent(paymentMethodID string, payme
 	_, err := paymentintent.Update(paymentIntentID, params)
 
 	return err
-
 }
 
 // ConfirmPaymentIntent implements Client.
 func (s *stripeClient) ConfirmPaymentIntent(paymentIntentID string) (*stripe.PaymentIntent, error) {
-
 	params := &stripe.PaymentIntentConfirmParams{
 		PaymentMethod: stripe.String(paymentIntentID),
 	}
 
 	return paymentintent.Confirm(paymentIntentID, params)
-
 }
 
 // RefundPayment implements Client.
 func (s *stripeClient) RefundPayment(paymentIntentID string, amount int64) (*stripe.Refund, error) {
-
 	params := &stripe.RefundParams{
 		PaymentIntent: stripe.String(paymentIntentID),
 		Amount:        stripe.Int64(amount),
 	}
 
 	return refund.New(params)
-
 }
 
 // VerifyWebhookSignature implements Client.
 func (s *stripeClient) VerifyWebhookSignature(payload []byte, signature string) (Event, error) {
-
 	if s.webhookSecret == "" {
-		return Event{}, fmt.Errorf("webhook secret not configured")
+		return Event{}, errors.New("webhook secret not configured")
 	}
 
 	return webhook.ConstructEvent(payload, signature, s.webhookSecret)
-
 }
 
 // 1️⃣ Create a Payment Intent

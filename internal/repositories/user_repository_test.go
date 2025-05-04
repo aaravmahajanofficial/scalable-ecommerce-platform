@@ -1,7 +1,6 @@
 package repository_test
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"regexp"
@@ -31,7 +30,7 @@ func TestUserRepository(t *testing.T) {
 	defer db.Close()
 
 	repo := repository.NewUserRepo(db)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("CreateUser_Success", func(t *testing.T) {
 		// Arrange

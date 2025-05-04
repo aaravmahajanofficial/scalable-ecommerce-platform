@@ -30,7 +30,6 @@ func NewNotificationService(repo repository.NotificationRepository, userRepo rep
 
 // SendEmail implements NotificationService.
 func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNotificationRequest) (*models.NotificationResponse, error) {
-
 	_, err := s.userRepo.GetUserByEmail(ctx, req.To)
 	if err != nil {
 		return nil, errors.NotFoundError("User not found").WithError(err)
@@ -45,7 +44,6 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 		}
 
 		metadataJSON = metadataBytes
-
 	}
 
 	notification := &models.Notification{
@@ -67,14 +65,12 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 
 	err = s.emailService.Send(ctx, req)
 	if err != nil {
-
 		notification.Status = models.StatusFailed
 		notification.ErrorMessage = err.Error()
 
 		_ = s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusFailed, notification.ErrorMessage)
 
 		return nil, errors.ThirdPartyError("Failed to send notification").WithError(err)
-
 	}
 
 	// Update the notification status if sent successfully
@@ -95,7 +91,6 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 
 // GetNotification implements NotificationService.
 func (s *notificationService) GetNotification(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
-
 	notification, err := s.repo.GetNotificationById(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("Notification not found").WithError(err)
@@ -106,7 +101,6 @@ func (s *notificationService) GetNotification(ctx context.Context, id uuid.UUID)
 
 // ListNotifications implements NotificationService.
 func (s *notificationService) ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error) {
-
 	if page < 1 {
 		page = 1
 	}

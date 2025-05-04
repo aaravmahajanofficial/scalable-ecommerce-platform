@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -47,9 +48,8 @@ import (
 //	@name						Authorization
 //	@description				Type "Bearer" followed by a space and JWT token. Example: "Bearer {token}"
 
-// Creates and Register the Jaeger exporter and OTel TracerProvider
+// Creates and Register the Jaeger exporter and OTel TracerProvider.
 func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
-
 	ctx := context.Background()
 
 	exporter, err := otlptracehttp.New(ctx, otlptracehttp.WithEndpoint(cfg.OTel.ExporterEndpoint), otlptracehttp.WithURLPath("/v1/traces"), otlptracehttp.WithInsecure())
@@ -95,7 +95,6 @@ func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
 }
 
 func main() {
-
 	// Logger setup
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 	slog.SetDefault(logger)
@@ -108,8 +107,10 @@ func main() {
 		slog.Error("❌ Failed to initialize OpenTelemetry Tracer", "error", err.Error())
 		os.Exit(1)
 	}
+
 	defer func() {
 		slog.Info("Shutting down tracer...")
+
 		if err := tracerShutdown(context.Background()); err != nil {
 			slog.Error("⚠️ Error shutting down tracer", "error", err)
 		} else {
@@ -133,6 +134,7 @@ func main() {
 	// Defer closing the Redis client connection
 	defer func() {
 		slog.Info("Closing Redis connection...")
+
 		if err := redisClient.Close(); err != nil {
 			slog.Error("⚠️ Error closing Redis connection", slog.String("error", err.Error()))
 		} else {
@@ -146,6 +148,7 @@ func main() {
 
 	// --- Rate Limiter Initialization ---
 	rateLimiter := repository.NewRateLimitRepo(redisClient, cfg)
+
 	slog.Info("Rate Limiter Initialized", slog.String("type", "redis"))
 
 	// --- Database and Repositories Initialization ---
@@ -157,6 +160,7 @@ func main() {
 	// Defer closing the DB connection
 	defer func() {
 		slog.Info("Closing repository connections (DB, Redis)...")
+
 		if err := repos.Close(); err != nil {
 			slog.Error("⚠️ Error closing repository connections", slog.String("error", err.Error()))
 		} else {
@@ -249,7 +253,7 @@ func main() {
 
 	var apiHandler http.Handler = apiMux // raw router as base handler
 
-	// Middleware chaining -> Reverse order of execution, 
+	// Middleware chaining -> Reverse order of execution,
 	apiHandler = middleware.Logging(apiHandler) // Log all info
 	apiHandler = metrics.Middleware(apiHandler)
 	apiHandler = otelhttp.NewHandler(apiHandler, cfg.OTel.ServiceName) //  Wraps actual business logic
@@ -272,8 +276,7 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() { // Starts the HTTP server in a new goroutine so it doesn't block the main thread.
-
-		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("❌ Server failed to start", "error", err.Error())
 			close(done)
 		}
@@ -293,5 +296,4 @@ func main() {
 	} else {
 		slog.Info("✅ Server shutdown complete")
 	}
-
 }

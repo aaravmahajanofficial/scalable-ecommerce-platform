@@ -19,12 +19,12 @@ type ErrorResponse struct {
 	Details []string `json:"details,omitempty"`
 }
 
-// interface {} == any
+// interface {} == any.
 func WriteJson(w http.ResponseWriter, statusCode int, data any) error {
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	return json.NewEncoder(w).Encode(data) //struct to json
+
+	return json.NewEncoder(w).Encode(data) // struct to json
 }
 
 func Success(w http.ResponseWriter, statusCode int, data any) {
@@ -37,8 +37,8 @@ func Success(w http.ResponseWriter, statusCode int, data any) {
 }
 
 func Error(w http.ResponseWriter, err error) {
-
 	var statusCode int
+
 	var errorResponse *ErrorResponse
 
 	if appErr, ok := errors.IsAppError(err); ok {
@@ -51,15 +51,12 @@ func Error(w http.ResponseWriter, err error) {
 		if appErr.Detail != "" {
 			errorResponse.Details = []string{appErr.Detail}
 		}
-
 	} else {
-
 		statusCode = http.StatusInternalServerError
 		errorResponse = &ErrorResponse{
 			Code:    errors.ErrCodeInternal,
-			Message: "An unexpected error occured",
+			Message: "An unexpected error occurred",
 		}
-
 	}
 
 	response := APIResponse{

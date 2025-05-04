@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -30,16 +31,13 @@ func NewRedisCache(client *redis.Client, cfg *config.CacheConfig) Cache {
 }
 
 func (r *redisCache) Get(ctx context.Context, key string, value any) (bool, error) {
-
 	data, err := r.client.Get(ctx, key).Bytes()
 	if err != nil {
-
-		if err == redis.Nil {
+		if errors.Is(err, redis.Nil) {
 			return false, nil
 		}
 
 		return false, fmt.Errorf("failed to get key %s from redis: %w", key, err)
-
 	}
 
 	if err := json.Unmarshal(data, value); err != nil {
@@ -50,7 +48,6 @@ func (r *redisCache) Get(ctx context.Context, key string, value any) (bool, erro
 }
 
 func (r *redisCache) Set(ctx context.Context, key string, value interface{}, ttl time.Duration) error {
-
 	data, err := json.Marshal(value)
 	if err != nil {
 		return fmt.Errorf("failed to marshal value for key %s: %w", key, err)
@@ -66,18 +63,15 @@ func (r *redisCache) Set(ctx context.Context, key string, value interface{}, ttl
 	}
 
 	return nil
-
 }
 
 func (r *redisCache) Delete(ctx context.Context, key string) error {
-
 	err := r.client.Del(ctx, key).Err()
 	if err != nil {
 		return fmt.Errorf("failed to delete key %s from redis: %w", key, err)
 	}
 
 	return nil
-
 }
 
 func (r *redisCache) Close() error {

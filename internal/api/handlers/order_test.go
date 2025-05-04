@@ -20,7 +20,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// TestCreateOrder tests the CreateOrder handler
+// TestCreateOrder tests the CreateOrder handler.
 func TestCreateOrder(t *testing.T) {
 	mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
@@ -79,6 +79,7 @@ func TestCreateOrder(t *testing.T) {
 		}
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -128,6 +129,7 @@ func TestCreateOrder(t *testing.T) {
 		bodyBytes, _ := json.Marshal(createReq)
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -144,6 +146,7 @@ func TestCreateOrder(t *testing.T) {
 		// Arrange
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader([]byte("{invalid json")), userID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -181,6 +184,7 @@ func TestCreateOrder(t *testing.T) {
 		bodyBytes, _ := json.Marshal(createReq)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -195,7 +199,7 @@ func TestCreateOrder(t *testing.T) {
 }
 
 func TestGetOrder(t *testing.T) {
-		mockOrderService := mocks.NewMockOrderService(t)
+	mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	userID := uuid.New()
 	orderID := uuid.New()
@@ -322,7 +326,6 @@ func TestGetOrder(t *testing.T) {
 
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
-
 		// Mock Call
 		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(nil, appErrors.DatabaseError("DB Connection Failed")).Once()
 		pathParams := map[string]string{
@@ -343,7 +346,7 @@ func TestGetOrder(t *testing.T) {
 }
 
 func TestListOrders(t *testing.T) {
-		mockOrderService := mocks.NewMockOrderService(t)
+	mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	userID := uuid.New()
 
@@ -454,7 +457,6 @@ func TestListOrders(t *testing.T) {
 	})
 
 	t.Run("Success - Invalid Pagination Params (Uses Defaults)", func(t *testing.T) {
-
 		testCases := []struct {
 			name       string
 			query      string
@@ -544,7 +546,7 @@ func TestListOrders(t *testing.T) {
 }
 
 func TestUpdateOrderStatus(t *testing.T) {
-		mockOrderService := mocks.NewMockOrderService(t)
+	mockOrderService := mocks.NewMockOrderService(t)
 	orderHandler := handlers.NewOrderHandler(mockOrderService)
 	adminUserID := uuid.New() // Assuming an admin/updater user ID
 	orderID := uuid.New()
@@ -571,6 +573,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		}
 		req := testutils.CreateTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -608,6 +611,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		}
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), pathParams)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -626,6 +630,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		bodyBytes, _ := json.Marshal(updateReq)
 		req := testutils.CreateTestRequestWithContext(http.MethodPatch, "/orders/invalid-uuid/status", bytes.NewReader(bodyBytes), adminUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -646,6 +651,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		}
 		req := testutils.CreateTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader([]byte(invalidBody)), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -670,6 +676,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		}
 		req := testutils.CreateTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -695,6 +702,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		}
 		req := testutils.CreateTestRequestWithContext(http.MethodPatch, fmt.Sprintf("/orders/%s/status", orderID), bytes.NewReader(bodyBytes), adminUserID, pathParams)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act

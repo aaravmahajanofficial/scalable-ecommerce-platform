@@ -17,13 +17,12 @@ import (
 )
 
 func DecodeJSONBody(r *http.Request, dest any) error {
-
 	logger := middleware.LoggerFromContext(r.Context())
 
 	body, err := io.ReadAll(r.Body)
-
 	if err != nil {
 		logger.Error("Failed to read request body", slog.Any("error", err))
+
 		return errors.BadRequestError("Failed to read request body").WithError(err)
 	}
 
@@ -31,11 +30,13 @@ func DecodeJSONBody(r *http.Request, dest any) error {
 
 	if len(body) == 0 {
 		logger.Warn("Empty request body received")
+
 		return errors.BadRequestError("Request body cannot be empty").WithError(err)
 	}
 
 	if err := json.Unmarshal(body, dest); err != nil {
 		logger.Error("Failed to parse request JSON", slog.Any("error", err))
+
 		return errors.BadRequestError("Invalid JSON format").WithError(err)
 	}
 
@@ -43,12 +44,10 @@ func DecodeJSONBody(r *http.Request, dest any) error {
 }
 
 func ValidateStruct(ctx context.Context, validate *validator.Validate, data any) error {
-
 	logger := middleware.LoggerFromContext(ctx)
 
 	if err := validate.Struct(data); err != nil {
 		if validationErrs, ok := err.(validator.ValidationErrors); ok {
-
 			logger.Warn("User input validation failed", slog.String("error", validationErrs.Error()))
 
 			var details []string
@@ -57,25 +56,26 @@ func ValidateStruct(ctx context.Context, validate *validator.Validate, data any)
 			}
 
 			return errors.ValidationError("Validation Failed").WithDetail(fmt.Sprintf("%v", details))
-
 		} else {
 			logger.Error("Unexpected validation error", slog.String("error", err.Error()))
+
 			return errors.InternalError("Unexpected validation error").WithError(err)
 		}
-
 	}
+
 	return nil
 }
 
 func ParseAndValidate(r *http.Request, w http.ResponseWriter, dest any, validate *validator.Validate) bool {
-
 	if err := DecodeJSONBody(r, dest); err != nil {
 		response.Error(w, err)
+
 		return false
 	}
 
 	if err := ValidateStruct(r.Context(), validate, dest); err != nil {
 		response.Error(w, err)
+
 		return false
 	}
 
@@ -83,7 +83,6 @@ func ParseAndValidate(r *http.Request, w http.ResponseWriter, dest any, validate
 }
 
 func formatValidationError(err validator.FieldError) string {
-
 	switch err.Tag() {
 	case "required":
 		return fmt.Sprintf("Field %s is required", err.Field())
@@ -104,8 +103,8 @@ func formatValidationError(err validator.FieldError) string {
 
 func ParseInt(r *http.Request, paramName string) (int64, error) {
 	idStr := r.PathValue(paramName)
-	id, err := strconv.ParseInt(idStr, 10, 64)
 
+	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
 		return 0, errors.BadRequestError(fmt.Sprintf("Invalid %s ID", paramName))
 	}
@@ -114,13 +113,12 @@ func ParseInt(r *http.Request, paramName string) (int64, error) {
 }
 
 func ParseID(r *http.Request, paramName string) (uuid.UUID, error) {
-
 	idStr := r.PathValue(paramName)
 
 	if idStr == "" {
-		return uuid.Nil, errors.BadRequestError(fmt.Sprintf("Missing path parameter: %s", paramName))
+		return uuid.Nil, errors.BadRequestError("Missing path parameter: " + paramName)
 	}
-	
+
 	id, err := uuid.Parse(idStr)
 	if err != nil {
 		return uuid.Nil, errors.BadRequestError(fmt.Sprintf("Invalid %s ID format: must be a UUID", paramName)).WithError(err)

@@ -49,7 +49,7 @@ func init() {
 	}
 }
 
-// wrapper around http.ResponseWriter to capture the status code
+// wrapper around http.ResponseWriter to capture the status code.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -66,41 +66,33 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 func Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		start := time.Now()
+
 		httpRequestsInFlight.Inc()
 
 		rw := newResponseWriter(w)
 
 		pathPattern := r.URL.Path
 		if p := r.PathValue("..."); p != "" {
-
 			pathPattern = r.URL.Path[:len(r.URL.Path)-len(p)] + "{...}"
-
 		} else if id := r.PathValue("id"); id != "" {
-
 			pathPattern = r.URL.Path[:len(r.URL.Path)-len(id)] + "{id}"
-
 		}
 
 		defer func() {
-
 			duration := time.Since(start)
 			statusCodeStr := strconv.Itoa(rw.statusCode)
 
 			httpRequestsTotal.WithLabelValues(statusCodeStr, r.Method, pathPattern).Inc()
 			httpRequestsDuration.WithLabelValues(r.Method, pathPattern).Observe(duration.Seconds())
 			httpRequestsInFlight.Dec()
-
 		}()
 
 		next.ServeHTTP(rw, r)
-
 	})
 }
 
-// http.Handler for the Prometheus /metrics endpoint
+// http.Handler for the Prometheus /metrics endpoint.
 func Handler() http.Handler {
-
 	return promhttp.Handler()
 }

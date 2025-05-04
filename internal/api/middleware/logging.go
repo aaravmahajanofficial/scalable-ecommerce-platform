@@ -13,7 +13,7 @@ type logContextKey string
 
 const LoggerKey = logContextKey("logger")
 
-// wrapper around http.ResponseWriter to capture the status code
+// wrapper around http.ResponseWriter to capture the status code.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -28,10 +28,9 @@ func (rw *responseWriter) WriteHeader(code int) {
 	rw.ResponseWriter.WriteHeader(code)
 }
 
-// main middleware
+// main middleware.
 func Logging(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		start := time.Now()
 
 		// Correlation ID
@@ -62,7 +61,6 @@ func Logging(next http.Handler) http.Handler {
 
 		// log the completed request
 		requestLogger.Info("Request Completed", slog.Int("http_status", rw.statusCode), slog.Duration("duration", time.Since(start)))
-
 	})
 }
 

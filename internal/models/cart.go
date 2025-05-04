@@ -24,11 +24,11 @@ type Cart struct {
 
 type AddItemRequest struct {
 	ProductID uuid.UUID `json:"product_id" validate:"required"`
-	Quantity  int       `json:"quantity" validate:"required,min=1"`
+	Quantity  int       `json:"quantity"   validate:"required,min=1"`
 	UnitPrice float64   `json:"unit_price" validate:"required,min=0"`
 }
 
 type UpdateQuantityRequest struct {
 	ProductID uuid.UUID `json:"product_id" validate:"required"`
-	Quantity  int       `json:"quantity" validate:"required,min=0"`
+	Quantity  int       `json:"quantity"   validate:"required,min=0"`
 }

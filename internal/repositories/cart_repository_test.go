@@ -1,7 +1,6 @@
 package repository_test
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -20,6 +19,7 @@ import (
 
 func setupCartRepoTest(t *testing.T) (repository.CartRepository, sqlmock.Sqlmock) {
 	t.Helper()
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
 	require.NoError(t, err, "Failed to create sqlmock")
 
@@ -44,7 +44,7 @@ func TestNewCartRepo(t *testing.T) {
 
 func TestCartRepository(t *testing.T) {
 	repo, mock := setupCartRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("Create Cart", func(t *testing.T) {
 		userID := uuid.New()
@@ -208,7 +208,9 @@ func TestCartRepository(t *testing.T) {
 			// Assert
 			require.Error(t, err, "GetCartByCustomerID should return an error on unmarshal failure")
 			assert.ErrorContains(t, err, "failed to unmarshal cart items", "Error message should indicate unmarshal failure")
+
 			var syntaxError *json.SyntaxError
+
 			assert.ErrorAs(t, err, &syntaxError, "Error should be a json.SyntaxError")
 			assert.Nil(t, cart, "Returned cart should be nil")
 			require.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")

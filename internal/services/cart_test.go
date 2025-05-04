@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 	"testing"
@@ -19,7 +18,7 @@ import (
 func TestCreateCart(t *testing.T) {
 	mockRepo := mocks.NewMockCartRepository(t)
 	cartService := service.NewCartService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	userID := uuid.New()
 
 	t.Run("Success", func(t *testing.T) {
@@ -52,6 +51,7 @@ func TestCreateCart(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -64,7 +64,7 @@ func TestCreateCart(t *testing.T) {
 func TestGetCart(t *testing.T) {
 	mockRepo := mocks.NewMockCartRepository(t)
 	cartService := service.NewCartService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	existingCart := &models.Cart{
 		ID:        uuid.New(),
@@ -100,8 +100,10 @@ func TestGetCart(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
 		mockRepo.AssertExpectations(t)
 	})
@@ -117,6 +119,7 @@ func TestGetCart(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeInternal, appErr.Code)
@@ -129,7 +132,7 @@ func TestGetCart(t *testing.T) {
 func TestAddItem(t *testing.T) {
 	mockRepo := mocks.NewMockCartRepository(t)
 	cartService := service.NewCartService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New()
 	productID2 := uuid.New()
@@ -154,6 +157,7 @@ func TestAddItem(t *testing.T) {
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(existingCart, nil).Once()
 		mockRepo.On("UpdateCart", ctx, mock.MatchedBy(func(cart *models.Cart) bool {
 			item, exists := cart.Items[productID1.String()]
+
 			return exists &&
 				item.ProductID == productID1 &&
 				item.Quantity == 2 &&
@@ -195,6 +199,7 @@ func TestAddItem(t *testing.T) {
 			item1, exists1 := cart.Items[productID1.String()]
 			item2, exists2 := cart.Items[productID2.String()]
 			expectedTotal := 5.0 + (3 * 2.0) // Old item total + new item total
+
 			return exists1 && exists2 &&
 				item1.Quantity == 1 && item1.TotalPrice == 5.0 &&
 				item2.ProductID == productID2 && item2.Quantity == 3 && item2.UnitPrice == 2.0 && item2.TotalPrice == 6.0 &&
@@ -226,8 +231,10 @@ func TestAddItem(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
 		mockRepo.AssertExpectations(t)
 		mockRepo.AssertNotCalled(t, "UpdateCart")
@@ -238,6 +245,7 @@ func TestAddItem(t *testing.T) {
 		// 1. GetCart succeeds
 		// 2. UpdateCart fails
 		dbError := errors.New("failed to write to db")
+
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(existingCart, nil).Once()
 		mockRepo.On("UpdateCart", ctx, mock.AnythingOfType("*models.Cart")).Return(dbError).Once()
 
@@ -247,6 +255,7 @@ func TestAddItem(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -262,7 +271,7 @@ func TestAddItem(t *testing.T) {
 func TestCartService_UpdateQuantity(t *testing.T) {
 	mockRepo := mocks.NewMockCartRepository(t)
 	cartService := service.NewCartService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	customerID := uuid.New()
 	productID1 := uuid.New()
 	productID2 := uuid.New() // Non-existent product ID
@@ -298,9 +307,11 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		resetState()
 		// Arrange
 		updateReq := &models.UpdateQuantityRequest{ProductID: productID1, Quantity: 5}
+
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(initialCart, nil).Once()
 		mockRepo.On("UpdateCart", ctx, mock.MatchedBy(func(cart *models.Cart) bool {
 			item, exists := cart.Items[productID1.String()]
+
 			return exists &&
 				item.Quantity == 5 &&
 				item.TotalPrice == 50.0 && // 5 * 10.0
@@ -326,9 +337,11 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		resetState()
 		// Arrange:
 		updateReq := &models.UpdateQuantityRequest{ProductID: productID1, Quantity: 0}
+
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(initialCart, nil).Once()
 		mockRepo.On("UpdateCart", ctx, mock.MatchedBy(func(cart *models.Cart) bool {
 			_, exists := cart.Items[productID1.String()]
+
 			return !exists && // Item should be removed
 				cart.Total == 0.0 && // Total should be recalculated
 				len(cart.Items) == 0
@@ -350,6 +363,7 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		resetState()
 		// Arrange
 		updateReq := &models.UpdateQuantityRequest{ProductID: productID1, Quantity: 3}
+
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(nil, sql.ErrNoRows).Once()
 
 		// Act
@@ -358,6 +372,7 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -370,6 +385,7 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		resetState()
 		// Arrange
 		updateReq := &models.UpdateQuantityRequest{ProductID: productID2, Quantity: 1}
+
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(initialCart, nil).Once() // Get succeeds
 
 		// Act
@@ -378,6 +394,7 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart) // Cart should not be returned on error
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeBadRequest, appErr.Code)
@@ -391,6 +408,7 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Arrange
 		updateReq := &models.UpdateQuantityRequest{ProductID: productID1, Quantity: 4}
 		dbError := errors.New("db write constraint failed")
+
 		mockRepo.On("GetCartByCustomerID", ctx, customerID).Return(initialCart, nil).Once()
 		mockRepo.On("UpdateCart", ctx, mock.AnythingOfType("*models.Cart")).Return(dbError).Once()
 
@@ -400,6 +418,7 @@ func TestCartService_UpdateQuantity(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, cart)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)

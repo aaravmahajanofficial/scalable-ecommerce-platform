@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"errors"
 	"testing"
 	"time"
@@ -25,7 +24,7 @@ func TestNewPaymentService(t *testing.T) {
 }
 
 func TestCreatePayment(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	testUserID := uuid.New().String()
 	testPaymentIntentID := "pi_123"
@@ -156,6 +155,7 @@ func TestCreatePayment(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -172,6 +172,7 @@ func TestCreatePayment(t *testing.T) {
 		paymentService := service.NewPaymentService(mockRepo, mockStripeClient)
 
 		stripeErr := errors.New("stripe token error")
+
 		mockStripeClient.On("CreatePaymentIntent", reqCard.Amount, reqCard.Currency, reqCard.Description, reqCard.CustomerID).Return(mockPaymentIntent, nil).Once()
 		mockStripeClient.On("CreatePaymentMethodFromToken", reqCard.Token).Return(nil, stripeErr).Once()
 
@@ -181,6 +182,7 @@ func TestCreatePayment(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -198,6 +200,7 @@ func TestCreatePayment(t *testing.T) {
 		paymentService := service.NewPaymentService(mockRepo, mockStripeClient)
 
 		stripeErr := errors.New("stripe attach error")
+
 		mockStripeClient.On("CreatePaymentIntent", reqCard.Amount, reqCard.Currency, reqCard.Description, reqCard.CustomerID).Return(mockPaymentIntent, nil).Once()
 		mockStripeClient.On("CreatePaymentMethodFromToken", reqCard.Token).Return(mockPaymentMethod, nil).Once()
 		mockStripeClient.On("AttachPaymentMethodToIntent", mockPaymentMethod.ID, mockPaymentIntent.ID).Return(stripeErr).Once()
@@ -208,6 +211,7 @@ func TestCreatePayment(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -224,6 +228,7 @@ func TestCreatePayment(t *testing.T) {
 		paymentService := service.NewPaymentService(mockRepo, mockStripeClient)
 
 		dbErr := errors.New("database insert error")
+
 		mockStripeClient.On("CreatePaymentIntent", reqCard.Amount, reqCard.Currency, reqCard.Description, reqCard.CustomerID).Return(mockPaymentIntent, nil).Once()
 		mockStripeClient.On("CreatePaymentMethodFromToken", reqCard.Token).Return(mockPaymentMethod, nil).Once()
 		mockStripeClient.On("AttachPaymentMethodToIntent", mockPaymentMethod.ID, mockPaymentIntent.ID).Return(nil).Once()
@@ -235,6 +240,7 @@ func TestCreatePayment(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -246,7 +252,7 @@ func TestCreatePayment(t *testing.T) {
 }
 
 func TestGetPaymentByID(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mockStripeClient := stripeMocks.NewMockClient(t)
 
 	testPaymentID := uuid.New().String()
@@ -292,6 +298,7 @@ func TestGetPaymentByID(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, payment)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code) // Service wraps it
@@ -302,7 +309,7 @@ func TestGetPaymentByID(t *testing.T) {
 }
 
 func TestListPaymentsByCustomer(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mockStripeClient := stripeMocks.NewMockClient(t)
 
 	testCustomerID := uuid.New().String()
@@ -347,6 +354,7 @@ func TestListPaymentsByCustomer(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, payments)
 		assert.Equal(t, 0, total)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code) // Service wraps it
@@ -357,7 +365,7 @@ func TestListPaymentsByCustomer(t *testing.T) {
 }
 
 func TestProcessWebhook(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	payload := []byte(`{"id": "evt_123", "type": "payment_intent.succeeded", "data": {"object": {"id": "pi_abc"}}}`)
 	signature := "whsec_sig"
@@ -506,6 +514,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, stripe.Event{}, event)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -530,6 +539,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, eventMissingID.ID, event.ID)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -546,6 +556,7 @@ func TestProcessWebhook(t *testing.T) {
 		paymentService := service.NewPaymentService(mockRepo, mockStripeClient)
 
 		dbErr := errors.New("db update failed")
+
 		mockStripeClient.On("VerifyWebhookSignature", payload, signature).Return(eventSucceeded, nil).Once()
 		mockRepo.On("UpdatePaymentStatus", ctx, stripePaymentIntentID, models.PaymentStatusSucceeded).Return(dbErr).Once()
 
@@ -555,6 +566,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, eventSucceeded.ID, event.ID)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -584,6 +596,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, eventMissingIDFailed.ID, event.ID)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -610,6 +623,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, eventFailed.ID, event.ID)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -639,6 +653,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, eventMissingIDRefunded.ID, event.ID)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -665,6 +680,7 @@ func TestProcessWebhook(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, eventRefunded.ID, event.ID)
+
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)

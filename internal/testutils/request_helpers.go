@@ -24,6 +24,7 @@ func CreateTestRequestWithContext(method, target string, body io.Reader, userID 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx := context.WithValue(req.Context(), middleware.UserContextKey, claims)
 	ctx = context.WithValue(ctx, middleware.LoggerKey, logger)
+
 	return req.WithContext(ctx)
 }
 
@@ -36,5 +37,6 @@ func CreateTestRequestWithoutContext(method, target string, body io.Reader, path
 
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	ctx := context.WithValue(req.Context(), middleware.LoggerKey, logger)
+
 	return req.WithContext(ctx)
 }

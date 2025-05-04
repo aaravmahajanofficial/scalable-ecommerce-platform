@@ -1,9 +1,7 @@
 package service_test
 
 import (
-	"context"
 	"database/sql"
-	"errors"
 	"testing"
 
 	appErrors "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
@@ -19,7 +17,7 @@ func TestCreateProduct(t *testing.T) {
 	// Arrange
 	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	req := &models.CreateProductRequest{
 		CategoryID:    uuid.New(),
@@ -68,8 +66,10 @@ func TestCreateProduct(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, product)
+
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 
 		mockRepo.AssertExpectations(t)
@@ -80,7 +80,7 @@ func TestGetProductByID(t *testing.T) {
 	// Arrange
 	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	testID := uuid.New()
 
 	t.Run("Success - Get Product", func(t *testing.T) {
@@ -115,7 +115,8 @@ func TestGetProductByID(t *testing.T) {
 		assert.Nil(t, product)
 
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
 
 		mockRepo.AssertExpectations(t)
@@ -133,7 +134,8 @@ func TestGetProductByID(t *testing.T) {
 		assert.Nil(t, product)
 
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 
 		mockRepo.AssertExpectations(t)
@@ -144,7 +146,7 @@ func TestUpdateProduct(t *testing.T) {
 	// Arrange
 	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	testID := uuid.New()
 
 	existingProduct := &models.Product{
@@ -217,7 +219,8 @@ func TestUpdateProduct(t *testing.T) {
 		assert.Nil(t, updatedProduct)
 
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
 
 		mockRepo.AssertNotCalled(t, "UpdateProduct")
@@ -237,7 +240,8 @@ func TestUpdateProduct(t *testing.T) {
 		assert.Nil(t, updatedProduct)
 
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 
 		mockRepo.AssertExpectations(t)
@@ -248,7 +252,7 @@ func TestListProducts(t *testing.T) {
 	// Arrange
 	mockRepo := mocks.NewMockProductRepository(t)
 	productService := service.NewProductService(mockRepo)
-	ctx := context.Background()
+	ctx := t.Context()
 	page := 1
 	pageSize := 10
 
@@ -287,7 +291,8 @@ func TestListProducts(t *testing.T) {
 		assert.Zero(t, total)
 
 		var appErr *appErrors.AppError
-		assert.True(t, errors.As(err, &appErr))
+
+		assert.ErrorAs(t, err, &appErr)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
 
 		mockRepo.AssertExpectations(t)
@@ -296,6 +301,7 @@ func TestListProducts(t *testing.T) {
 	t.Run("Success - Products List Empty", func(t *testing.T) {
 		// Arrange
 		var expectedProducts []*models.Product
+
 		expectedTotal := 0
 		mockRepo.On("ListProducts", mock.Anything, page, pageSize).Return(expectedProducts, expectedTotal, nil).Once()
 
@@ -305,7 +311,7 @@ func TestListProducts(t *testing.T) {
 		// Assert
 		assert.NoError(t, err)
 		assert.NotNil(t, products)
-		assert.Len(t, products, 0)
+		assert.Empty(t, products)
 		assert.Equal(t, expectedTotal, total)
 		mockRepo.AssertExpectations(t)
 	})

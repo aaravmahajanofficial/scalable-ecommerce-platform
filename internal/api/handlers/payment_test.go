@@ -55,6 +55,7 @@ func TestCreatePayment(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -99,6 +100,7 @@ func TestCreatePayment(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -115,6 +117,7 @@ func TestCreatePayment(t *testing.T) {
 		// Arrange
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader([]byte("{invalid json")), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -142,6 +145,7 @@ func TestCreatePayment(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -171,6 +175,7 @@ func TestCreatePayment(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -200,6 +205,7 @@ func TestCreatePayment(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -236,7 +242,7 @@ func TestGetPayment(t *testing.T) {
 		pathParams := map[string]string{
 			"id": paymentID,
 		}
-		req := testutils.CreateTestRequestWithContext(http.MethodGet, fmt.Sprintf("/payments/%s", paymentID), nil, testUserID, pathParams)
+		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/payments/"+paymentID, nil, testUserID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -268,7 +274,7 @@ func TestGetPayment(t *testing.T) {
 
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
-		req := testutils.CreateTestRequestWithoutContext(http.MethodGet, fmt.Sprintf("/payments/%s", paymentID), nil, nil)
+		req := testutils.CreateTestRequestWithoutContext(http.MethodGet, "/payments/"+paymentID, nil, nil)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -302,7 +308,7 @@ func TestGetPayment(t *testing.T) {
 		pathParams := map[string]string{
 			"id": paymentID,
 		}
-		req := testutils.CreateTestRequestWithContext(http.MethodGet, fmt.Sprintf("/payments/%s", paymentID), nil, testUserID, pathParams)
+		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/payments/"+paymentID, nil, testUserID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -322,7 +328,7 @@ func TestGetPayment(t *testing.T) {
 		pathParams := map[string]string{
 			"id": paymentID,
 		}
-		req := testutils.CreateTestRequestWithContext(http.MethodGet, fmt.Sprintf("/payments/%s", paymentID), nil, testUserID, pathParams)
+		req := testutils.CreateTestRequestWithContext(http.MethodGet, "/payments/"+paymentID, nil, testUserID, pathParams)
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -547,6 +553,7 @@ func TestHandleStripeWebhook(t *testing.T) {
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments/webhook", bytes.NewReader(payload), nil)
 		req.Header.Set("Stripe-Signature", signature)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -571,6 +578,7 @@ func TestHandleStripeWebhook(t *testing.T) {
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments/webhook", bytes.NewReader(payload), nil)
 		// No Stripe-Signature header
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -593,6 +601,7 @@ func TestHandleStripeWebhook(t *testing.T) {
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments/webhook", bytes.NewReader(payload), nil)
 		req.Header.Set("Stripe-Signature", signature)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -619,6 +628,7 @@ func TestHandleStripeWebhook(t *testing.T) {
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments/webhook", bytes.NewReader(payload), nil)
 		req.Header.Set("Stripe-Signature", signature)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act

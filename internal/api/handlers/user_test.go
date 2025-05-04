@@ -20,12 +20,10 @@ import (
 )
 
 func TestUserHandler_Register(t *testing.T) {
-
 	mockUserService := mocks.NewMockUserService(t)
 	userHandler := handlers.NewUserHandler(mockUserService)
 
 	t.Run("Success - User Registration", func(t *testing.T) {
-
 		// Arrange
 		registerReq := &models.RegisterRequest{
 			Name:     "Test User",
@@ -90,7 +88,6 @@ func TestUserHandler_Register(t *testing.T) {
 		mockUserService.AssertExpectations(t)
 	})
 	t.Run("Failure - Invalid Input", func(t *testing.T) {
-
 		// Arrange
 		invalidReq := struct {
 			Email string `json:"email"`
@@ -121,7 +118,6 @@ func TestUserHandler_Register(t *testing.T) {
 		mockUserService.AssertNotCalled(t, "Register")
 	})
 	t.Run("Failure - Service Error", func(t *testing.T) {
-
 		// Arrange
 		registerReq := &models.RegisterRequest{
 			Name:     "Test User",
@@ -159,12 +155,10 @@ func TestUserHandler_Register(t *testing.T) {
 }
 
 func TestUserHandler_Login(t *testing.T) {
-
 	mockUserService := mocks.NewMockUserService(t)
 	userHandler := handlers.NewUserHandler(mockUserService)
 
 	t.Run("Success - Valid Login", func(t *testing.T) {
-
 		// Arrange
 		loginReq := &models.LoginRequest{
 			Email:    "test@example.com",
@@ -215,7 +209,6 @@ func TestUserHandler_Login(t *testing.T) {
 		mockUserService.AssertExpectations(t)
 	})
 	t.Run("Failure - Invalid Credentials", func(t *testing.T) {
-
 		// Arrange
 		loginReq := &models.LoginRequest{
 			Email:    "test@example.com",
@@ -256,7 +249,6 @@ func TestUserHandler_Login(t *testing.T) {
 		mockUserService.AssertExpectations(t)
 	})
 	t.Run("Failure - Rate Limited", func(t *testing.T) {
-
 		// Arrange
 		loginReq := &models.RegisterRequest{
 			Email:    "test@example.com",
@@ -299,12 +291,10 @@ func TestUserHandler_Login(t *testing.T) {
 }
 
 func TestUserHandler_Profile(t *testing.T) {
-
 	mockUserService := mocks.NewMockUserService(t)
 	userHandler := handlers.NewUserHandler(mockUserService)
 
 	t.Run("Success - Get Profile", func(t *testing.T) {
-
 		// Arrange
 		user := &models.User{
 			ID:    uuid.New(),
@@ -341,9 +331,7 @@ func TestUserHandler_Profile(t *testing.T) {
 		mockUserService.AssertExpectations(t)
 	})
 	t.Run("Failure - No Auth Context", func(t *testing.T) {
-
 		// Arrange - request without auth context
-
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
 		w := httptest.NewRecorder()
 
@@ -364,7 +352,6 @@ func TestUserHandler_Profile(t *testing.T) {
 		mockUserService.AssertNotCalled(t, "GetUserByID")
 	})
 	t.Run("Failure - User Not Found", func(t *testing.T) {
-
 		// Arrange
 		userID := uuid.New()
 		email := "test@example.com"

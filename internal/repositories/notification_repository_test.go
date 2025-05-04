@@ -1,7 +1,6 @@
 package repository_test
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -20,6 +19,7 @@ import (
 
 func setupNotificationRepoTest(t *testing.T) (repository.NotificationRepository, sqlmock.Sqlmock) {
 	t.Helper()
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
 	require.NoError(t, err, "Failed to create sqlmock")
 
@@ -43,7 +43,7 @@ func TestNewNotificationRepo(t *testing.T) {
 }
 
 func TestNotificationRepository(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("CreateNotification", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
@@ -348,10 +348,12 @@ func TestNotificationRepository(t *testing.T) {
                 ORDER BY created_at DESC
                 LIMIT $1 OFFSET $2
             `)
+
 			rows := sqlmock.NewRows([]string{"id", "type", "recipient", "subject", "content", "status", "metadata", "error_message", "created_at", "updated_at"})
 			for _, n := range expectedNotifications {
 				rows.AddRow(n.ID, n.Type, n.Recipient, n.Subject, n.Content, n.Status, []byte(n.Metadata), n.ErrorMessage, n.CreatedAt, n.UpdatedAt)
 			}
+
 			mock.ExpectQuery(listQuerySQL).
 				WithArgs(size, offset).
 				WillReturnRows(rows)

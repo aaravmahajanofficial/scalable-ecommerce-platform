@@ -1,7 +1,6 @@
 package repository_test
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -19,6 +18,7 @@ import (
 
 func setupOrderRepoTest(t *testing.T) (repository.OrderRepository, sqlmock.Sqlmock) {
 	t.Helper()
+
 	db, mock, err := sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
 	require.NoError(t, err, "Failed to create sqlmock")
 
@@ -44,7 +44,7 @@ func TestNewOrderRepository(t *testing.T) {
 func TestCreateOrder(t *testing.T) {
 	// Arrange
 	repo, mock := setupOrderRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	orderID := uuid.New()
 	customerID := uuid.New()
@@ -125,7 +125,6 @@ func TestCreateOrder(t *testing.T) {
 		require.Error(t, err, "CreateOrder should fail when order insert fails")
 		assert.ErrorContains(t, err, "failed to insert order", "Error message should indicate order insert failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
-
 	})
 
 	t.Run("Failure - Item Insert Error", func(t *testing.T) {
@@ -152,7 +151,7 @@ func TestCreateOrder(t *testing.T) {
 
 func TestGetOrderById(t *testing.T) {
 	repo, mock := setupOrderRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	orderID := uuid.New()
 	customerID := uuid.New()
@@ -263,7 +262,6 @@ func TestGetOrderById(t *testing.T) {
 		require.Error(t, err, "GetOrderById should fail on address unmarshal error")
 		assert.ErrorContains(t, err, "failed to unmarshal shipping address", "Error message should indicate unmarshal failure")
 		assert.Nil(t, order, "Returned order should be nil")
-
 	})
 
 	t.Run("Failure - Items Query Error", func(t *testing.T) {
@@ -309,7 +307,7 @@ func TestGetOrderById(t *testing.T) {
 
 func TestListOrdersByCustomer(t *testing.T) {
 	repo, mock := setupOrderRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	customerID := uuid.New()
 	orderID1, orderID2 := uuid.New(), uuid.New()
@@ -545,7 +543,7 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 func TestUpdateOrderStatus(t *testing.T) {
 	repo, mock := setupOrderRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	orderID := uuid.New()
 	newStatus := models.OrderStatusShipping
@@ -569,6 +567,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		fetchedRows := sqlmock.NewRows([]string{"customer_id", "status", "total_amount", "payment_status", "payment_intent_id", "shipping_address", "created_at", "updated_at"}).
 			AddRow(uuid.New(), newStatus, 100.0, models.PaymentStatusPending, "pi_fetch", expectedAddrJSON, now.Add(-time.Hour), now)
 		mock.ExpectQuery(expectedFetchSQL).WithArgs(orderID).WillReturnRows(fetchedRows)
+
 		expectedItemsQuerySQL := regexp.QuoteMeta(`SELECT id, product_id, quantity, unit_price, created_at FROM order_items WHERE order_id = $1`)
 		mock.ExpectQuery(expectedItemsQuerySQL).WithArgs(orderID).WillReturnRows(sqlmock.NewRows([]string{"id", "product_id", "quantity", "unit_price", "created_at"})) // Assuming no items for simplicity or mock them
 
@@ -631,7 +630,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 
 func TestUpdatePaymentStatus(t *testing.T) {
 	repo, mock := setupOrderRepoTest(t)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	orderID := uuid.New()
 	newStatus := models.PaymentStatusSucceeded

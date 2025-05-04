@@ -24,6 +24,7 @@ func NewOrderHandler(orderService service.OrderService) *OrderHandler {
 }
 
 // CreateOrder godoc
+//
 //	@Summary		Create a new order
 //	@Description	Creates a new order from the user's current cart items and provided shipping details. Requires authentication.
 //	@Tags			Orders
@@ -39,21 +40,23 @@ func NewOrderHandler(orderService service.OrderService) *OrderHandler {
 //	@Router			/orders [post]
 func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized order creation attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
+
 		logger = logger.With(slog.String("userID", claims.UserID.String()))
 
 		// Decode the request body, validate
 		var req models.CreateOrderRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid create order input")
+
 			return
 		}
 
@@ -61,6 +64,7 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to create order", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -70,6 +74,7 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 }
 
 // GetOrder godoc
+//
 //	@Summary		Get an order by ID
 //	@Description	Retrieves details for a specific order placed by the authenticated user. Requires authentication.
 //	@Tags			Orders
@@ -85,13 +90,13 @@ func (h *OrderHandler) CreateOrder() http.HandlerFunc {
 //	@Router			/orders/{id} [get]
 func (h *OrderHandler) GetOrder() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized order access attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -101,6 +106,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 		if err != nil {
 			logger.Warn("Invalid order id", slog.String("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -113,6 +119,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 				slog.String("orderId", id.String()),
 				slog.String("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -121,6 +128,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 				slog.String("requesterId", claims.UserID.String()),
 				slog.String("ownerId", order.CustomerID.String()))
 			response.Error(w, errors.ForbiddenError("You don't have permission to access this order"))
+
 			return
 		}
 
@@ -130,6 +138,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 }
 
 // ListOrders godoc
+//
 //	@Summary		List user's orders with pagination
 //	@Description	Retrieves a paginated list of orders placed by the authenticated user. Requires authentication.
 //	@Tags			Orders
@@ -143,13 +152,13 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 //	@Router			/orders [get]
 func (h *OrderHandler) ListOrders() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized order list attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -159,6 +168,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 		if err != nil || page < 1 {
 			page = 1
 		}
+
 		pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
 		if err != nil || pageSize < 1 || pageSize > 100 {
 			pageSize = 10
@@ -171,6 +181,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to list orders", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -185,6 +196,7 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 }
 
 // UpdateOrderStatus godoc
+//
 //	@Summary		Update order status (Admin/Internal)
 //	@Description	Updates the status of a specific order. Requires authentication (potentially admin-level).
 //	@Tags			Orders
@@ -202,13 +214,13 @@ func (h *OrderHandler) ListOrders() http.HandlerFunc {
 //	@Router			/orders/{id}/status [patch]
 func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized order status update attempt: missing user claims")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -218,6 +230,7 @@ func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 		if err != nil {
 			logger.Warn("Invalid order id", slog.String("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -227,6 +240,7 @@ func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 		var req models.UpdateOrderStatusRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid update order status input")
+
 			return
 		}
 
@@ -236,6 +250,7 @@ func (h *OrderHandler) UpdateOrderStatus() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to update order status", slog.Any("error", err))
 			response.Error(w, err)
+
 			return
 		}
 

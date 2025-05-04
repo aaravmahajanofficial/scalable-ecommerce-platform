@@ -27,6 +27,7 @@ func NewNotificationHandler(notificationService service.NotificationService) *No
 }
 
 // SendEmail godoc
+//
 //	@Summary		Send an email notification (Admin/Internal)
 //	@Description	Creates and sends an email notification record. This might be an admin-triggered action or for specific internal purposes. Requires authentication.
 //	@Tags			Notifications
@@ -43,13 +44,13 @@ func NewNotificationHandler(notificationService service.NotificationService) *No
 //	@Router			/notifications/email [post]
 func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized notification creation attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -59,6 +60,7 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 		var req models.EmailNotificationRequest
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid notification input")
+
 			return
 		}
 
@@ -70,6 +72,7 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 				slog.String("type", "Email"),
 				slog.Any("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -80,6 +83,7 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 }
 
 // ListNotifications godoc
+//
 //	@Summary		List notifications for the user
 //	@Description	Retrieves a paginated list of notifications for the authenticated user. Requires authentication.
 //	@Tags			Notifications
@@ -93,13 +97,13 @@ func (h *NotificationHandler) SendEmail() http.HandlerFunc {
 //	@Router			/notifications [get]
 func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		claims, ok := r.Context().Value(middleware.UserContextKey).(*models.Claims)
 		if !ok {
 			logger.Warn("Unauthorized order access attempt")
 			response.Error(w, errors.UnauthorizedError("Authentication required"))
+
 			return
 		}
 
@@ -109,6 +113,7 @@ func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 		if err != nil || page < 1 {
 			page = 1
 		}
+
 		pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
 		if err != nil || pageSize < 1 || pageSize > 100 {
 			pageSize = 10
@@ -122,6 +127,7 @@ func (h *NotificationHandler) ListNotifications() http.HandlerFunc {
 			logger.Error("Failed to get user notifications",
 				slog.Any("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 

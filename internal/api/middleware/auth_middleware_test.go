@@ -30,6 +30,7 @@ func createTestToken(userID uuid.UUID, email string, duration time.Duration, key
 		},
 	}
 	token := jwt.NewWithClaims(method, claims)
+
 	return token.SignedString(key)
 }
 
@@ -69,6 +70,7 @@ func TestAuthMiddleware(t *testing.T) {
 			authHeader: func() string {
 				token, err := createTestToken(userID, userEmail, time.Hour, testJwtKey, jwt.SigningMethodHS256)
 				require.NoError(t, err)
+
 				return "Bearer " + token
 			}(),
 			expectedStatus: http.StatusOK,
@@ -109,6 +111,7 @@ func TestAuthMiddleware(t *testing.T) {
 				wrongKey := []byte("different-secret-key-0987654321")
 				token, err := createTestToken(userID, userEmail, time.Hour, wrongKey, jwt.SigningMethodHS256)
 				require.NoError(t, err)
+
 				return "Bearer " + token
 			}(),
 			expectedStatus: http.StatusUnauthorized,
@@ -120,6 +123,7 @@ func TestAuthMiddleware(t *testing.T) {
 			authHeader: func() string {
 				token, err := createTestToken(userID, userEmail, time.Hour, testJwtKey, jwt.SigningMethodHS512)
 				require.NoError(t, err)
+
 				return "Bearer " + token
 			}(),
 			// This specific scenario (unexpected signing method) returns BadRequest in the code
@@ -132,6 +136,7 @@ func TestAuthMiddleware(t *testing.T) {
 			authHeader: func() string {
 				token, err := createTestToken(userID, userEmail, -time.Hour, testJwtKey, jwt.SigningMethodHS256) // Expired 1 hour ago
 				require.NoError(t, err)
+
 				return "Bearer " + token
 			}(),
 			expectedStatus: http.StatusUnauthorized,
@@ -167,10 +172,10 @@ func TestAuthMiddleware(t *testing.T) {
 
 			// Assert
 			assert.Equal(t, tc.expectedStatus, rr.Code, "Unexpected status code")
+
 			if tc.expectedBody != "" {
 				assert.JSONEq(t, tc.expectedBody, rr.Body.String(), "Unexpected response body")
 			}
-
 			// Check if mockNextHandler was called (or not called) as expected
 			// This is implicitly checked by the StatusOK and "OK" body in the success case,
 			// and by the error status/body in failure cases. If mockNextHandler wasn't called

@@ -31,19 +31,19 @@ type Notification struct {
 	Content      string             `json:"content"`
 	Status       NotificationStatus `json:"status"`
 	ErrorMessage string             `json:"error_message,omitempty"`
-	Metadata     json.RawMessage    `json:"metadata,omitempty" swaggertype:"object"` //highly dynamic
+	Metadata     json.RawMessage    `json:"metadata,omitempty"      swaggertype:"object"` // highly dynamic
 	CreatedAt    time.Time          `json:"created_at"`
 	UpdatedAt    time.Time          `json:"updated_at"`
 	SentAt       *time.Time         `json:"sent_at,omitempty"`
 }
 
 type EmailNotificationRequest struct {
-	To          string            `json:"to" validate:"required,email"`
-	Subject     string            `json:"subject" validate:"required"`
-	Content     string            `json:"content" validate:"required"`
+	To          string            `json:"to"                     validate:"required,email"`
+	Subject     string            `json:"subject"                validate:"required"`
+	Content     string            `json:"content"                validate:"required"`
 	HTMLContent string            `json:"html_content,omitempty"`
-	CC          []string          `json:"cc,omitempty" validate:"omitempty,dive,email"`
-	BCC         []string          `json:"bcc,omitempty" validate:"omitempty,dive,email"`
+	CC          []string          `json:"cc,omitempty"           validate:"omitempty,dive,email"`
+	BCC         []string          `json:"bcc,omitempty"          validate:"omitempty,dive,email"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 

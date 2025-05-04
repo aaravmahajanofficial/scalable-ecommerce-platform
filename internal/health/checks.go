@@ -3,6 +3,7 @@ package health
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -24,7 +25,6 @@ type HealthEndpoint struct {
 }
 
 func NewReadinessHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (http.Handler, error) {
-
 	h, err := health.New(
 
 		health.WithComponent(health.Component{
@@ -57,7 +57,7 @@ func NewReadinessHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (ht
 				SkipOnErr: false,
 				Check: func(ctx context.Context) error {
 					if healthEndpoint.StripeClient == nil {
-						return fmt.Errorf("stripe client is not initialized")
+						return errors.New("stripe client is not initialized")
 					}
 
 					reqCtx, cancel := context.WithTimeout(ctx, 4*time.Second)
@@ -70,17 +70,18 @@ func NewReadinessHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (ht
 					}
 					_, err := balance.Get(params)
 					if err != nil {
-						if ctxErr := reqCtx.Err(); ctxErr == context.DeadlineExceeded {
+						if ctxErr := reqCtx.Err(); errors.Is(ctxErr, context.DeadlineExceeded) {
 							return fmt.Errorf("stripe API call timed out: %w", ctxErr)
 						}
+
 						return fmt.Errorf("failed to connect to stripe: %w", err)
 					}
+
 					return nil
 				},
 			},
 		),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create readiness health instance: %w", err)
 	}

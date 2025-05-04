@@ -23,6 +23,7 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 }
 
 // CreateProduct godoc
+//
 //	@Summary		Create a new product
 //	@Description	Adds a new product to the catalog. Requires authentication.
 //	@Tags			Products
@@ -37,7 +38,6 @@ func NewProductHandler(productService service.ProductService) *ProductHandler {
 //	@Router			/products [post]
 func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		// Decode the request body
@@ -52,10 +52,10 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 
 		// Call the register service
 		product, err := h.productService.CreateProduct(r.Context(), &req)
-
 		if err != nil {
 			logger.Error("Error during product creation", slog.String("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -65,6 +65,7 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 }
 
 // GetProduct godoc
+//
 //	@Summary		Get a product by ID
 //	@Description	Retrieves details for a specific product using its ID. Requires authentication.
 //	@Tags			Products
@@ -79,13 +80,13 @@ func (h *ProductHandler) CreateProduct() http.HandlerFunc {
 //	@Router			/products/{id} [get]
 func (h *ProductHandler) GetProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		id, err := utils.ParseID(r, "id")
 		if err != nil {
 			logger.Warn("Invalid product ID in path", slog.Any("error", err), slog.String("pathValue", r.PathValue("id")))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -96,6 +97,7 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 		if err != nil {
 			logger.Warn("Failed to get product", slog.Any("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -105,6 +107,7 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 }
 
 // UpdateProduct godoc
+//
 //	@Summary		Update a product by ID
 //	@Description	Updates details for an existing product using its ID. Requires authentication.
 //	@Tags			Products
@@ -121,13 +124,13 @@ func (h *ProductHandler) GetProduct() http.HandlerFunc {
 //	@Router			/products/{id} [put]
 func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		id, err := utils.ParseID(r, "id")
 		if err != nil {
 			slog.Warn("Invalid product id", slog.String("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -139,16 +142,17 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 		// Validate Input
 		if !utils.ParseAndValidate(r, w, &req, h.validator) {
 			logger.Warn("Invalid product update input")
+
 			return
 		}
 
 		logger.Info("Attempting to update product")
 		// Call the service
 		product, err := h.productService.UpdateProduct(r.Context(), id, &req)
-
 		if err != nil {
 			logger.Error("Error during product update", slog.Any("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 
@@ -158,6 +162,7 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 }
 
 // ListProducts godoc
+//
 //	@Summary		List products with pagination
 //	@Description	Retrieves a paginated list of available products. Requires authentication.
 //	@Tags			Products
@@ -171,7 +176,6 @@ func (h *ProductHandler) UpdateProduct() http.HandlerFunc {
 //	@Router			/products [get]
 func (h *ProductHandler) ListProducts() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := middleware.LoggerFromContext(r.Context())
 
 		page, err := strconv.Atoi(r.URL.Query().Get("page"))
@@ -190,6 +194,7 @@ func (h *ProductHandler) ListProducts() http.HandlerFunc {
 		if err != nil {
 			logger.Error("Failed to fetch products", slog.Any("error", err.Error()))
 			response.Error(w, err)
+
 			return
 		}
 

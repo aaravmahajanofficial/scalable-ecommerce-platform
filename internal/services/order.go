@@ -28,7 +28,6 @@ func NewOrderService(orderRepo repository.OrderRepository, cartRepo repository.C
 }
 
 func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error) {
-
 	// Check if the cart exists or not
 	cart, err := s.cartRepo.GetCartByCustomerID(ctx, req.CustomerID)
 	if err != nil {
@@ -45,10 +44,10 @@ func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 		if err != nil {
 			return nil, errors.NotFoundError("Product not found: " + item.ProductID.String()).WithError(err)
 		}
+
 		if product.StockQuantity < item.Quantity {
 			return nil, errors.BadRequestError("Insufficient stock for product: " + item.ProductID.String())
 		}
-
 	}
 
 	// calculate the order total
@@ -75,7 +74,6 @@ func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 	var items []models.OrderItem
 
 	for _, item := range req.Items {
-
 		orderItem := models.OrderItem{
 			ID:        uuid.New(),
 			OrderID:   order.ID,
@@ -86,8 +84,8 @@ func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 		}
 
 		items = append(items, orderItem)
-
 	}
+
 	order.Items = items
 
 	err = s.orderRepo.CreateOrder(ctx, order)
@@ -109,7 +107,6 @@ func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 }
 
 func (s *orderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
-
 	order, err := s.orderRepo.GetOrderById(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("Order not found").WithError(err)
@@ -119,7 +116,6 @@ func (s *orderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.
 }
 
 func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
-
 	if page < 1 {
 		page = 1
 	}
@@ -137,7 +133,6 @@ func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerId uuid
 }
 
 func (s *orderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
-
 	// check if order exists or not
 	_, err := s.orderRepo.GetOrderById(ctx, id)
 	if err != nil {

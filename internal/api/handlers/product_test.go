@@ -22,12 +22,13 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// newTestRequest -> creates a request with context containing a logger
+// newTestRequest -> creates a request with context containing a logger.
 func newTestRequest(method, target string, body []byte) *http.Request {
 	req := httptest.NewRequest(method, target, bytes.NewReader(body))
 
 	logger := slog.Default()
 	ctx := context.WithValue(req.Context(), middleware.LoggerKey, logger)
+
 	return req.WithContext(ctx)
 }
 
@@ -159,7 +160,7 @@ func TestCreateProduct(t *testing.T) {
 }
 
 func TestGetProduct(t *testing.T) {
-		mockProductService := mocks.NewMockProductService(t)
+	mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Get Product", func(t *testing.T) {
@@ -263,7 +264,7 @@ func TestGetProduct(t *testing.T) {
 }
 
 func TestUpdateProduct(t *testing.T) {
-		mockProductService := mocks.NewMockProductService(t)
+	mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Update Product", func(t *testing.T) {
@@ -428,7 +429,7 @@ func TestUpdateProduct(t *testing.T) {
 }
 
 func TestListProducts(t *testing.T) {
-		mockProductService := mocks.NewMockProductService(t)
+	mockProductService := mocks.NewMockProductService(t)
 	productHandler := handlers.NewProductHandler(mockProductService)
 
 	t.Run("Success - Default Pagination", func(t *testing.T) {
@@ -552,7 +553,7 @@ func TestListProducts(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-					mockProductService := mocks.NewMockProductService(t)
+				mockProductService := mocks.NewMockProductService(t)
 				productHandler := handlers.NewProductHandler(mockProductService)
 				rr := httptest.NewRecorder()
 				req := newTestRequest(http.MethodGet, tc.query, nil)
@@ -594,7 +595,7 @@ func TestListProducts(t *testing.T) {
 	})
 }
 
-// Helper functions for pointer types used in UpdateProductRequest
+// Helper functions for pointer types used in UpdateProductRequest.
 func stringPtr(s string) *string {
 	return &s
 }

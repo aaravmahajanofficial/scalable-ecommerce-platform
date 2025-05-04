@@ -26,7 +26,6 @@ func NewPaymentRepository(db *sql.DB) PaymentRepository {
 }
 
 func (r *paymentRepository) CreatePayment(ctx context.Context, payment *models.Payment) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -36,7 +35,6 @@ func (r *paymentRepository) CreatePayment(ctx context.Context, payment *models.P
 	`
 
 	_, err := r.DB.ExecContext(dbCtx, query, &payment.ID, &payment.Amount, &payment.Currency, &payment.CustomerID, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID)
-
 	if err != nil {
 		return fmt.Errorf("failed to insert payment: %w", err)
 	}
@@ -45,7 +43,6 @@ func (r *paymentRepository) CreatePayment(ctx context.Context, payment *models.P
 }
 
 func (r *paymentRepository) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -58,17 +55,14 @@ func (r *paymentRepository) GetPaymentByID(ctx context.Context, id string) (*mod
 	`
 
 	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&payment.ID, &payment.Amount, &payment.Currency, &payment.CustomerID, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID, &payment.CreatedAt, &payment.UpdatedAt)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to get the payment: %w", err)
 	}
 
 	return payment, nil
-
 }
 
 func (r *paymentRepository) UpdatePaymentStatus(ctx context.Context, id string, status models.PaymentStatus) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -95,12 +89,13 @@ func (r *paymentRepository) UpdatePaymentStatus(ctx context.Context, id string, 
 }
 
 func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	var total int
+
 	countQuery := `SELECT COUNT(*) FROM payments`
+
 	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
@@ -118,7 +113,6 @@ func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 	`
 
 	rows, err := r.DB.QueryContext(dbCtx, query, customerID, size, offset)
-
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to list the payments: %w", err)
 	}
@@ -128,17 +122,14 @@ func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 	var payments []*models.Payment
 
 	for rows.Next() {
-
 		payment := &models.Payment{}
 
 		err := rows.Scan(&payment.ID, &payment.CustomerID, &payment.Amount, &payment.Currency, &payment.Description, &payment.Status, &payment.PaymentMethod, &payment.StripeID, &payment.CreatedAt, &payment.UpdatedAt)
-
 		if err != nil {
 			return nil, 0, fmt.Errorf("failed to scan the payments: %w", err)
 		}
 
 		payments = append(payments, payment)
-
 	}
 
 	if err := rows.Err(); err != nil {
@@ -146,5 +137,4 @@ func (r *paymentRepository) ListPaymentsOfCustomer(ctx context.Context, customer
 	}
 
 	return payments, total, nil
-
 }

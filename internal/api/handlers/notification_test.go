@@ -48,6 +48,7 @@ func TestSendEmail(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -87,6 +88,7 @@ func TestSendEmail(t *testing.T) {
 
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -103,6 +105,7 @@ func TestSendEmail(t *testing.T) {
 		// Arrange
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader([]byte("{invalid json")), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -125,6 +128,7 @@ func TestSendEmail(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act
@@ -151,6 +155,7 @@ func TestSendEmail(t *testing.T) {
 		reqBodyBytes, _ := json.Marshal(reqBody)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
+
 		rr := httptest.NewRecorder()
 
 		// Act

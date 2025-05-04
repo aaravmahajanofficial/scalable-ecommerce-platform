@@ -28,11 +28,9 @@ func NewPaymentService(repo repository.PaymentRepository, stripeClient stripe.Cl
 
 // CreatePayment implements PaymentService.
 func (s *paymentService) CreatePayment(ctx context.Context, req *models.PaymentRequest) (*models.PaymentResponse, error) {
-
 	// new request for payment
 	paymentIntent, err := s.stripeClient.CreatePaymentIntent(
 		req.Amount, req.Currency, req.Description, req.CustomerID)
-
 	if err != nil {
 		return nil, errors.ThirdPartyError("Failed to create payment intent").WithError(err)
 	}
@@ -49,7 +47,6 @@ func (s *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 		if err != nil {
 			return nil, errors.ThirdPartyError("Failed to attach payment method").WithError(err)
 		}
-
 	}
 
 	// store the payment in the database
@@ -80,7 +77,6 @@ func (s *paymentService) CreatePayment(ctx context.Context, req *models.PaymentR
 
 // GetPaymentByID implements PaymentService.
 func (s *paymentService) GetPaymentByID(ctx context.Context, id string) (*models.Payment, error) {
-
 	payment, err := s.repo.GetPaymentByID(ctx, id)
 	if err != nil {
 		return nil, errors.DatabaseError("Payment not found").WithError(err)
@@ -91,7 +87,6 @@ func (s *paymentService) GetPaymentByID(ctx context.Context, id string) (*models
 
 // ListPaymentsByCustomer implements PaymentService.
 func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID string, page, size int) ([]*models.Payment, int, error) {
-
 	payments, total, err := s.repo.ListPaymentsOfCustomer(ctx, customerID, page, size)
 	if err != nil {
 		return nil, 0, errors.DatabaseError("Failed to fetch payments").WithError(err)
@@ -102,9 +97,7 @@ func (s *paymentService) ListPaymentsByCustomer(ctx context.Context, customerID 
 
 // ProcessWebhook implements PaymentService.
 func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, signature string) (stripe.Event, error) {
-
 	event, err := s.stripeClient.VerifyWebhookSignature(payload, signature)
-
 	if err != nil {
 		return stripe.Event{}, errors.ThirdPartyError("Webhook signature verification failed").WithError(err)
 	}
@@ -146,5 +139,6 @@ func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 			return event, errors.DatabaseError("Failed to update payment status").WithError(err)
 		}
 	}
+
 	return event, nil
 }

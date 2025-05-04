@@ -3,7 +3,6 @@ package sendGrid_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -48,10 +47,12 @@ func TestEmailService_Send(t *testing.T) {
 	apiKey := "SG.test-api-key"
 	fromEmail := "from@example.com"
 	fromName := "Test Sender"
-	ctx := context.Background()
+	ctx := t.Context()
 
 	var mockServer *httptest.Server
+
 	var lastRequestPayload sendGridV3Payload
+
 	var handlerFunc http.HandlerFunc
 
 	// startMockServer sets up and starts the httptest server with the current handlerFunc.
@@ -60,12 +61,16 @@ func TestEmailService_Send(t *testing.T) {
 			bodyBytes, err := io.ReadAll(r.Body)
 			if err != nil {
 				http.Error(w, "Failed to read request body", http.StatusInternalServerError)
+
 				return
 			}
+
 			defer r.Body.Close()
+
 			err = json.Unmarshal(bodyBytes, &lastRequestPayload)
 			if err != nil {
 				http.Error(w, "Failed to unmarshal request body", http.StatusBadRequest)
+
 				return
 			}
 
@@ -92,7 +97,7 @@ func TestEmailService_Send(t *testing.T) {
 				// Assert
 				assert.Equal(t, http.MethodPost, r.Method, "Expected POST request")
 				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-				assert.Equal(t, fmt.Sprintf("Bearer %s", apiKey), r.Header.Get("Authorization"))
+				assert.Equal(t, "Bearer "+apiKey, r.Header.Get("Authorization"))
 				w.WriteHeader(http.StatusAccepted) // 202 Accepted is typical for SendGrid v3 mail/send
 			},
 			expectedError: "",
@@ -182,7 +187,8 @@ func TestEmailService_Send(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			lastRequestPayload = sendGridV3Payload{} // Reset payload capture
 			handlerFunc = tc.handler                 // Set the handler for this test
-			startMockServer()                        // Start the server for this test case
+
+			startMockServer() // Start the server for this test case
 
 			serviceImpl := sendGrid.NewEmailService(apiKey, fromEmail, fromName).(sendGrid.EmailService)
 
@@ -212,6 +218,7 @@ func TestEmailService_Send(t *testing.T) {
 	t.Run("Failure - Network Error", func(t *testing.T) {
 		// Arrange
 		startMockServer()
+
 		serviceImpl := sendGrid.NewEmailService(apiKey, fromEmail, fromName).(sendGrid.EmailService)
 		sgClient := serviceImpl.GetSendGridClient()
 		sgClient.Request.BaseURL = mockServer.URL
@@ -246,6 +253,7 @@ func (e *testEmailService) GetSendGridClient() *sendgrid.Client {
 	if e.client == nil {
 		e.client = sendgrid.NewSendClient("dummy-key-for-test-struct")
 	}
+
 	return e.client
 }
 

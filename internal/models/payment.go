@@ -24,10 +24,10 @@ type PaymentIntent struct {
 }
 
 type PaymentRequest struct {
-	CustomerID    string `json:"customer_id" validate:"required"`
-	Amount        int64  `json:"amount" validate:"required,gt=0"`
-	Currency      string `json:"currency" validate:"required,lte=3"`
-	Description   string `json:"description" validate:"required"`
+	CustomerID    string `json:"customer_id"    validate:"required"`
+	Amount        int64  `json:"amount"         validate:"required,gt=0"`
+	Currency      string `json:"currency"       validate:"required,lte=3"`
+	Description   string `json:"description"    validate:"required"`
 	PaymentMethod string `json:"payment_method" validate:"required"`
 	// CardNumber    string `json:"card_number" validate:"required_if=PaymentMethod card,omitempty,credit_card"`
 	// CardExpMonth  int    `json:"card_exp_month" validate:"required_if=PaymentMethod card,omitempty,min=1,max=12"`

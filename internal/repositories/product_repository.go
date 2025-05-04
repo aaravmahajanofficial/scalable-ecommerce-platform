@@ -25,7 +25,6 @@ func NewProductRepo(db *sql.DB) ProductRepository {
 }
 
 func (r *productRepository) CreateProduct(ctx context.Context, product *models.Product) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -35,11 +34,9 @@ func (r *productRepository) CreateProduct(ctx context.Context, product *models.P
 	`
 
 	return r.DB.QueryRowContext(dbCtx, query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.SKU, product.Status).Scan(&product.ID, &product.CreatedAt, &product.UpdatedAt)
-
 }
 
 func (r *productRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*models.Product, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -56,17 +53,16 @@ func (r *productRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*
 	var category models.Category
 
 	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
-
 	if err != nil {
 		return nil, err
 	}
 
 	product.Category = &category
+
 	return product, nil
 }
 
 func (r *productRepository) UpdateProduct(ctx context.Context, product *models.Product) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -77,16 +73,16 @@ func (r *productRepository) UpdateProduct(ctx context.Context, product *models.P
 	`
 
 	return r.DB.QueryRowContext(dbCtx, query, product.CategoryID, product.Name, product.Description, product.Price, product.StockQuantity, product.Status, product.ID).Scan(&product.UpdatedAt)
-
 }
 
 func (r *productRepository) ListProducts(ctx context.Context, page, size int) ([]*models.Product, int, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
 	var total int
+
 	countQuery := `SELECT COUNT(*) FROM products`
+
 	err := r.DB.QueryRowContext(dbCtx, countQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
@@ -106,7 +102,6 @@ func (r *productRepository) ListProducts(ctx context.Context, page, size int) ([
 	`
 
 	rows, err := r.DB.QueryContext(dbCtx, query, size, offset)
-
 	if err != nil {
 		return nil, 0, err
 	}
@@ -116,19 +111,16 @@ func (r *productRepository) ListProducts(ctx context.Context, page, size int) ([
 	var products []*models.Product
 
 	for rows.Next() {
-
 		product := &models.Product{}
 		category := &models.Category{}
 
 		err := rows.Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
-
 		if err != nil {
 			return nil, 0, err
 		}
 
 		product.Category = category
 		products = append(products, product)
-
 	}
 
 	if err := rows.Err(); err != nil {

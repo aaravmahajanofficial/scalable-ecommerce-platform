@@ -28,7 +28,6 @@ func NewCartService(repo repository.CartRepository) CartService {
 }
 
 func (s *cartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
-
 	cart := &models.Cart{
 		ID:        uuid.New(),
 		UserID:    userId,
@@ -47,10 +46,8 @@ func (s *cartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models
 }
 
 func (s *cartService) GetCart(ctx context.Context, customerID uuid.UUID) (*models.Cart, error) {
-
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
-
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, appError.NotFoundError("Cart not found")
 		}
@@ -62,7 +59,6 @@ func (s *cartService) GetCart(ctx context.Context, customerID uuid.UUID) (*model
 }
 
 func (s *cartService) AddItem(ctx context.Context, customerID uuid.UUID, req *models.AddItemRequest) (*models.Cart, error) {
-
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
 		return nil, appError.NotFoundError("Cart not found").WithError(err)
@@ -87,7 +83,6 @@ func (s *cartService) AddItem(ctx context.Context, customerID uuid.UUID, req *mo
 }
 
 func (s *cartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, req *models.UpdateQuantityRequest) (*models.Cart, error) {
-
 	cart, err := s.repo.GetCartByCustomerID(ctx, customerID)
 	if err != nil {
 		return nil, appError.NotFoundError("Cart not found").WithError(err)
@@ -119,7 +114,6 @@ func (s *cartService) UpdateQuantity(ctx context.Context, customerID uuid.UUID, 
 }
 
 func (s *cartService) calculateTotal(items map[string]models.CartItem) float64 {
-
 	var totalPrice float64
 
 	for _, item := range items {

@@ -1,7 +1,6 @@
 package service_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"testing"
@@ -27,7 +26,7 @@ func TestNewNotificationService(t *testing.T) {
 }
 
 func TestSendEmail(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mockRepo := repoMocks.NewMockNotificationRepository(t)
 	mockUserRepo := repoMocks.NewMockUserRepository(t)
 	mockEmailService := emailMocks.NewMockEmailService(t)
@@ -83,6 +82,7 @@ func TestSendEmail(t *testing.T) {
 			Subject: testSubject,
 			Content: testContent,
 		}
+
 		mockUserRepo.EXPECT().GetUserByEmail(ctx, testEmail).Return(user, nil).Once()
 		mockRepo.EXPECT().CreateNotification(ctx, mock.MatchedBy(func(n *models.Notification) bool {
 			return n.Recipient == testEmail && n.Subject == testSubject && n.Status == models.StatusPending && n.Metadata == nil
@@ -112,6 +112,7 @@ func TestSendEmail(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -132,6 +133,7 @@ func TestSendEmail(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -154,6 +156,7 @@ func TestSendEmail(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
@@ -176,6 +179,7 @@ func TestSendEmail(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, resp)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)
@@ -187,9 +191,9 @@ func TestSendEmail(t *testing.T) {
 }
 
 func TestGetNotification(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mockRepo := repoMocks.NewMockNotificationRepository(t)
-	mockUserRepo := repoMocks.NewMockUserRepository(t)    
+	mockUserRepo := repoMocks.NewMockUserRepository(t)
 	mockEmailService := emailMocks.NewMockEmailService(t)
 	service := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
 
@@ -226,6 +230,7 @@ func TestGetNotification(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, notification)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
@@ -243,19 +248,20 @@ func TestGetNotification(t *testing.T) {
 		// Assert
 		assert.Error(t, err)
 		assert.Nil(t, notification)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
-		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code) 
-		assert.ErrorIs(t, err, dbErr)                        
+		assert.Equal(t, appErrors.ErrCodeNotFound, appErr.Code)
+		assert.ErrorIs(t, err, dbErr)
 		mockRepo.AssertExpectations(t)
 	})
 }
 
 func TestListNotifications(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	mockRepo := repoMocks.NewMockNotificationRepository(t)
-	mockUserRepo := repoMocks.NewMockUserRepository(t)    
-	mockEmailService := emailMocks.NewMockEmailService(t) 
+	mockUserRepo := repoMocks.NewMockUserRepository(t)
+	mockEmailService := emailMocks.NewMockEmailService(t)
 	service := service.NewNotificationService(mockRepo, mockUserRepo, mockEmailService)
 
 	expectedNotifications := []*models.Notification{
@@ -340,6 +346,7 @@ func TestListNotifications(t *testing.T) {
 		assert.Error(t, err)
 		assert.Nil(t, notifications)
 		assert.Equal(t, 0, total)
+
 		appErr, ok := err.(*appErrors.AppError)
 		assert.True(t, ok)
 		assert.Equal(t, appErrors.ErrCodeDatabaseError, appErr.Code)

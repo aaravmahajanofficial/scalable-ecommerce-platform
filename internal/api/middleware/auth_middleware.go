@@ -24,14 +24,11 @@ type AuthMiddleware struct {
 }
 
 func NewAuthMiddleware(jwtKey []byte) *AuthMiddleware {
-
 	return &AuthMiddleware{jwtKey: jwtKey}
-
 }
 
 func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
 		logger := LoggerFromContext(r.Context())
 
 		// Get token from Authorization header
@@ -40,6 +37,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		if authHeader == "" {
 			logger.Warn("Missing authorization header")
 			response.Error(w, appErrors.UnauthorizedError("Authorization header is required"))
+
 			return
 		}
 
@@ -49,6 +47,7 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
 			logger.Warn("Invalid authorization header format", slog.String("header", authHeader))
 			response.Error(w, appErrors.UnauthorizedError("Invalid authorization format"))
+
 			return
 		}
 
@@ -60,16 +59,16 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 		token, err := jwt.ParseWithClaims(tokenString, claims, func(t *jwt.Token) (any, error) {
 			// check the signing method
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok || t.Header["alg"] != jwt.SigningMethodHS256.Alg() {
-
 				logger.Error("Unexpected signing method used in JWT", slog.Any("alg", t.Header["alg"]))
-				return nil, appErrors.BadRequestError("unexpected signing method")
 
+				return nil, appErrors.BadRequestError("unexpected signing method")
 			}
+
 			return m.jwtKey, nil
 		})
-
 		if err != nil {
 			logger.Warn("JWT parsing failed", slog.String("error", err.Error()))
+
 			var appErr *appErrors.AppError
 			if errors.As(err, &appErr) && appErr.Code == appErrors.ErrCodeBadRequest {
 				response.Error(w, appErr) // Respond with the specific bad request error
@@ -77,18 +76,21 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.HandlerFunc {
 				// Handle other parsing errors (expired, malformed, invalid signature) as Unauthorized
 				response.Error(w, appErrors.UnauthorizedError("Invalid or expired token"))
 			}
+
 			return
 		}
 
 		if !token.Valid {
 			logger.Warn("Invalid token")
 			response.Error(w, appErrors.UnauthorizedError("Invalid token"))
+
 			return
 		}
 
 		if claims.ExpiresAt != nil && claims.ExpiresAt.Time.Before(time.Now()) {
 			logger.Warn("Expired token", slog.String("userId", claims.UserID.String()))
 			response.Error(w, appErrors.UnauthorizedError("Token expired"))
+
 			return
 		}
 

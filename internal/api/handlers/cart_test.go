@@ -4,11 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"log/slog"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/middleware"
@@ -24,10 +23,11 @@ import (
 func setupCartTest(t *testing.T) (*mocks.MockCartService, *handlers.CartHandler) {
 	mockCartService := mocks.NewMockCartService(t)
 	cartHandler := handlers.NewCartHandler(mockCartService)
+
 	return mockCartService, cartHandler
 }
 
-// createAuthenticatedRequest -> creates a request with authentication context
+// createAuthenticatedRequest -> creates a request with authentication context.
 func createAuthenticatedRequest(method, url string, body []byte) (*http.Request, *models.Claims) {
 	req := httptest.NewRequest(method, url, bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -87,7 +87,7 @@ func TestGetCart(t *testing.T) {
 		_, cartHandler := setupCartTest(t)
 
 		// Request without auth context
-		req := httptest.NewRequest("GET", "/carts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/carts", nil)
 		req.Header.Set("Content-Type", "application/json")
 
 		// Add logger to context
@@ -283,7 +283,7 @@ func TestAddItem(t *testing.T) {
 		}
 		requestBody, _ := json.Marshal(addItemRequest)
 
-		req := httptest.NewRequest("POST", "/carts/items", bytes.NewBuffer(requestBody))
+		req := httptest.NewRequest(http.MethodPost, "/carts/items", bytes.NewBuffer(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 
 		ctx := context.WithValue(req.Context(), middleware.LoggerKey, slog.Default())
@@ -455,7 +455,7 @@ func TestUpdateQuantity(t *testing.T) {
 		}
 		requestBody, _ := json.Marshal(updateRequest)
 
-		req := httptest.NewRequest("PUT", "/carts/items", bytes.NewBuffer(requestBody))
+		req := httptest.NewRequest(http.MethodPut, "/carts/items", bytes.NewBuffer(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 
 		ctx := context.WithValue(req.Context(), middleware.LoggerKey, slog.Default())

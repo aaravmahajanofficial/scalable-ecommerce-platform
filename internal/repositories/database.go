@@ -7,10 +7,9 @@ import (
 	"github.com/XSAM/otelsql"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/cache"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/config"
+	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
 	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
-
-	_ "github.com/lib/pq"
 )
 
 type Repositories struct {
@@ -27,7 +26,6 @@ type Repositories struct {
 }
 
 func New(cfg *config.Config, redisClient *redis.Client, cacheImpl cache.Cache, rateLimiter RateLimitRepository) (*Repositories, error) {
-
 	db, err := otelsql.Open("postgres", cfg.Database.GetDSN(),
 		otelsql.WithAttributes(semconv.DBSystemPostgreSQL),
 		otelsql.WithAttributes(semconv.DBNamespace(cfg.Database.Name)),
@@ -77,8 +75,10 @@ func (r *Repositories) Close() error {
 	if dbErr != nil {
 		return fmt.Errorf("error closing database: %w", dbErr)
 	}
+
 	if redisErr != nil {
 		return fmt.Errorf("error closing redis: %w", redisErr)
 	}
+
 	return nil
 }

@@ -32,11 +32,13 @@ func NewAppError(code, message string, statusCode int) *AppError {
 
 func (e *AppError) WithDetail(detail string) *AppError {
 	e.Detail = detail
+
 	return e
 }
 
 func (e *AppError) WithError(err error) *AppError {
 	e.Err = err
+
 	return e
 }
 
@@ -57,33 +59,43 @@ const (
 func ValidationError(message string) *AppError {
 	return NewAppError(ErrCodeValidation, message, http.StatusBadRequest)
 }
+
 func BadRequestError(message string) *AppError {
 	return NewAppError(ErrCodeBadRequest, message, http.StatusBadRequest)
 }
+
 func NotFoundError(message string) *AppError {
 	return NewAppError(ErrCodeNotFound, message, http.StatusNotFound)
 }
+
 func UnauthorizedError(message string) *AppError {
 	return NewAppError(ErrCodeUnauthorized, message, http.StatusUnauthorized)
 }
+
 func ForbiddenError(message string) *AppError {
 	return NewAppError(ErrCodeForbidden, message, http.StatusForbidden)
 }
+
 func InternalError(message string) *AppError {
 	return NewAppError(ErrCodeInternal, message, http.StatusInternalServerError)
 }
+
 func DatabaseError(message string) *AppError {
 	return NewAppError(ErrCodeDatabaseError, message, http.StatusInternalServerError)
 }
+
 func DuplicateEntryError(message string) *AppError {
 	return NewAppError(ErrCodeDuplicateEntry, message, http.StatusConflict)
 }
+
 func ThirdPartyError(message string) *AppError {
 	return NewAppError(ErrCodeThirdPartyError, message, http.StatusInternalServerError)
 }
+
 func TooManyRequestsError(message string) *AppError {
 	return NewAppError(ErrCodeTooManyRequests, message, http.StatusTooManyRequests)
 }
+
 func ResourceExhaustedError(message string) *AppError {
 	return NewAppError(ErrCodeResourceExhausted, message, http.StatusTooManyRequests)
 }
@@ -98,7 +110,7 @@ func IsAppError(err error) (*AppError, bool) {
 	return nil, false
 }
 
-// field validation error
+// field validation error.
 func AddValidationError(field, reason string) *AppError {
 	return ValidationError(fmt.Sprintf("Invalid field '%s': %s", field, reason))
 }

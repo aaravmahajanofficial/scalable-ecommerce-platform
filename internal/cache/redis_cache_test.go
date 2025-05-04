@@ -1,7 +1,6 @@
 package cache_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -23,11 +22,13 @@ type TestData struct {
 
 func setup(t *testing.T) (cache.Cache, redismock.ClientMock, *config.CacheConfig) {
 	t.Helper()
+
 	client, mock := redismock.NewClientMock()
 	cfg := &config.CacheConfig{
 		DefaultTTL: 10 * time.Minute,
 	}
 	redisCache := cache.NewRedisCache(client, cfg)
+
 	return redisCache, mock, cfg
 }
 
@@ -37,7 +38,7 @@ func TestNewRedisCache(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testKey := "test:get"
 	testValue := TestData{Field1: "value1", Field2: 123}
 	jsonData, _ := json.Marshal(testValue)
@@ -45,6 +46,7 @@ func TestGet(t *testing.T) {
 	t.Run("Success - Key Found", func(t *testing.T) {
 		// Arrange
 		redisCache, mock, _ := setup(t)
+
 		var result TestData
 
 		mock.ExpectGet(testKey).SetVal(string(jsonData))
@@ -62,6 +64,7 @@ func TestGet(t *testing.T) {
 	t.Run("Success - Key Not Found (Cache Miss)", func(t *testing.T) {
 		// Arrange
 		redisCache, mock, _ := setup(t)
+
 		var result TestData
 
 		mock.ExpectGet(testKey).SetErr(redis.Nil)
@@ -79,7 +82,9 @@ func TestGet(t *testing.T) {
 	t.Run("Failure - Redis Error", func(t *testing.T) {
 		// Arrange
 		redisCache, mock, _ := setup(t)
+
 		var result TestData
+
 		expectedErr := errors.New("redis connection error")
 
 		mock.ExpectGet(testKey).SetErr(expectedErr)
@@ -98,7 +103,9 @@ func TestGet(t *testing.T) {
 	t.Run("Failure - Unmarshal Error", func(t *testing.T) {
 		// Arrange
 		redisCache, mock, _ := setup(t)
+
 		var result TestData
+
 		invalidJson := `{"field1": "value1", "field2": "not_an_int"}`
 
 		mock.ExpectGet(testKey).SetVal(invalidJson)
@@ -109,15 +116,17 @@ func TestGet(t *testing.T) {
 		// Assert
 		require.Error(t, err, "Get should return an error on unmarshal failure")
 		assert.False(t, found, "Get should return found=false on unmarshal error")
+
 		var jsonErr *json.UnmarshalTypeError
+
 		assert.ErrorAs(t, err, &jsonErr, "Error should be a json.UnmarshalTypeError")
-		assert.Contains(t, err.Error(), fmt.Sprintf("failed to unmarshal cache data for key %s", testKey), "Error message mismatch")
+		assert.Contains(t, err.Error(), "failed to unmarshal cache data for key "+testKey, "Error message mismatch")
 		assert.NoError(t, mock.ExpectationsWereMet(), "Redis mock expectations not met")
 	})
 }
 
 func TestSet(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testKey := "test:set"
 	testValue := TestData{Field1: "valueSet", Field2: 456}
 	jsonData, _ := json.Marshal(testValue)
@@ -175,8 +184,10 @@ func TestSet(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "Set should return an error for unmarshallable types")
-		assert.Contains(t, err.Error(), fmt.Sprintf("failed to marshal value for key %s", testKey), "Error message mismatch")
+		assert.Contains(t, err.Error(), "failed to marshal value for key "+testKey, "Error message mismatch")
+
 		var jsonErr *json.UnsupportedTypeError
+
 		assert.ErrorAs(t, err, &jsonErr, "Error should be a json.UnsupportedTypeError")
 		assert.NoError(t, mock.ExpectationsWereMet(), "Redis mock expectations not met (no calls expected)")
 	})
@@ -201,7 +212,7 @@ func TestSet(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	testKey := "test:delete"
 
 	t.Run("Success", func(t *testing.T) {

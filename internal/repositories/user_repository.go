@@ -25,7 +25,6 @@ func NewUserRepo(db *sql.DB) UserRepository {
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, user *models.User) error {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -35,11 +34,9 @@ func (r *userRepository) CreateUser(ctx context.Context, user *models.User) erro
 		RETURNING id, created_at, updated_at`
 
 	return r.DB.QueryRowContext(dbCtx, query, user.Email, user.Password, user.Name).Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
-
 }
 
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*models.User, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -49,17 +46,14 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 			  WHERE email = $1`
 
 	err := r.DB.QueryRowContext(dbCtx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.CreatedAt, &user.UpdatedAt)
-
 	if err != nil {
 		return nil, err
 	}
 
 	return user, nil
-
 }
 
 func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
-
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -72,17 +66,13 @@ func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models
 	`
 
 	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&user.ID, &user.Email, &user.Name, &user.CreatedAt, &user.UpdatedAt)
-
 	if err != nil {
-
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, errors.New("user not found")
 		}
 
 		return nil, err
-
 	}
 
 	return user, nil
-
 }

@@ -37,7 +37,6 @@ func NewUserService(repo repository.UserRepository, redisRepo repository.RateLim
 }
 
 func (s *userService) Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
-
 	existingUser, _ := s.repo.GetUserByEmail(ctx, req.Email)
 	if existingUser != nil {
 		return nil, errors.DuplicateEntryError("Email already registered")
@@ -61,12 +60,11 @@ func (s *userService) Register(ctx context.Context, req *models.RegisterRequest)
 	}
 
 	return user, err
-
 }
 
 func (s *userService) Login(ctx context.Context, req *models.LoginRequest) (*models.LoginResponse, error) {
-
 	tracer := otel.Tracer(userTracerName)
+
 	ctx, span := tracer.Start(ctx, "LoginUser")
 	defer span.End()
 
@@ -107,6 +105,7 @@ func (s *userService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 
 	// Generate Token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
 	tokenString, err := token.SignedString(s.jwtKey)
 	if err != nil {
 		return nil, errors.InternalError("Failed to generate authentication token").WithError(err)
@@ -117,11 +116,9 @@ func (s *userService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 		Token:     tokenString,
 		ExpiresIn: int(time.Until(claims.ExpiresAt.Time).Seconds()),
 	}, nil
-
 }
 
 func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-
 	user, err := s.repo.GetUserById(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("User not found").WithError(err)
@@ -129,5 +126,4 @@ func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.Us
 
 	// Note: Password is already included in repository query
 	return user, nil
-
 }
