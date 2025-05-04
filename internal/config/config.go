@@ -156,8 +156,8 @@ func LoadConfigFromPath(configPath string) (*Config, error) {
 }
 
 func (d *Database) GetDSN() string {
-	return fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=%s",
-		d.User, d.Password, d.Host, d.Port, d.Name, d.SSLMode)
+	return fmt.Sprintf("postgresql://%s:%s@%s/%s?sslmode=%s",
+		d.User, d.Password, d.Host, d.Name, d.SSLMode)
 }
 
 func (r *RedisConnect) GetDSN() string {
