@@ -3,7 +3,7 @@ package sendGrid
 import (
 	"context"
 	"fmt"
-
+	"html"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
@@ -47,7 +47,8 @@ func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRe
 	message.AddPersonalizations(personalization)
 
 	message.AddContent(mail.NewContent("text/plain", req.Content))
-	message.AddContent(mail.NewContent("text/html", req.HTMLContent))
+	sanitizedHTMLContent := html.EscapeString(req.HTMLContent)
+	message.AddContent(mail.NewContent("text/html", sanitizedHTMLContent))
 
 	// send the email
 	response, err := e.client.Send(message)
