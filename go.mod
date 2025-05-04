@@ -3,6 +3,7 @@ module github.com/aaravmahajanofficial/scalable-ecommerce-platform
 go 1.24.2
 
 require (
+	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/XSAM/otelsql v0.38.0
 	github.com/go-redis/redismock/v9 v9.2.0
 	github.com/golang-jwt/jwt/v5 v5.2.2

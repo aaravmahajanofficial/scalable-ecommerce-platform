@@ -7,7 +7,9 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/sendgrid/sendgrid-go/helpers/mail"
+	"github.com/microcosm-cc/bluemonday"
 )
+
 
 type EmailService interface {
 	Send(ctx context.Context, req *models.EmailNotificationRequest) error
@@ -46,8 +48,10 @@ func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRe
 	personalization.Subject = req.Subject
 	message.AddPersonalizations(personalization)
 
-	message.AddContent(mail.NewContent("text/plain", req.Content))
-	message.AddContent(mail.NewContent("text/html", req.HTMLContent))
+	sanitizedPlainText := sanitizeContent(req.Content)
+	sanitizedHTMLContent := sanitizeHTMLContent(req.HTMLContent)
+	message.AddContent(mail.NewContent("text/plain", sanitizedPlainText))
+	message.AddContent(mail.NewContent("text/html", sanitizedHTMLContent))
 
 	// send the email
 	response, err := e.client.Send(message)
