@@ -303,7 +303,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - Insufficient permissions\" // If restricted",
+                        "description": "Forbidden - Insufficient permissions\"\t//\tIf\trestricted",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -575,7 +575,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - Insufficient permissions to update status\" // If applicable",
+                        "description": "Forbidden - Insufficient permissions to update status\"\t//\tIf\tapplicable",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
@@ -837,7 +837,7 @@ const docTemplate = `{
                         }
                     },
                     "403": {
-                        "description": "Forbidden - User cannot access this payment\" // Add if authz implemented",
+                        "description": "Forbidden - User cannot access this payment\"\t//\tAdd\tif\tauthz\timplemented",
                         "schema": {
                             "$ref": "#/definitions/response.ErrorResponse"
                         }
