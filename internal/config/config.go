@@ -12,10 +12,12 @@ import (
 )
 
 type HTTPServer struct {
-	Addr         string `yaml:"address"`
-	ReadTimeout  int    `yaml:"read_timeout"`
-	WriteTimeout int    `yaml:"write_timeout"`
-	IdleTimeout  int    `yaml:"idle_timeout"`
+	Addr                    string        `yaml:"ADDRESS"`
+	ReadTimeout             time.Duration `yaml:"READ_TIMEOUT"`
+	WriteTimeout            time.Duration `yaml:"WRITE_TIMEOUT"`
+	IdleTimeout             time.Duration `yaml:"IDLE_TIMEOUT"`
+	ShutdownTimeout         time.Duration `yaml:"SHUTDOWN_TIMEOUT"`
+	GracefulShutdownTimeout time.Duration `yaml:"GRACEFUL_SHUTDOWN_TIMEOUT"`
 }
 
 type Database struct {
@@ -74,8 +76,8 @@ type CacheConfig struct {
 }
 
 type Config struct {
-	Env          string `env:"ENV"          env-required:"true" yaml:"env"`
-	HTTPServer   `yaml:"http_server"`
+	Env          string       `env:"ENV" env-required:"true" yaml:"env"`
+	HTTPServer   HTTPServer   `yaml:"http_server"`
 	Database     Database     `yaml:"database"`
 	RedisConnect RedisConnect `yaml:"redis"`
 	RateConfig   RateConfig   `yaml:"rateConfig"`

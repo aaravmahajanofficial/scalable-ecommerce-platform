@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	_ "github.com/aaravmahajanofficial/scalable-ecommerce-platform/docs"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/api/handlers"
@@ -87,7 +86,7 @@ func initTracer(cfg *config.Config) (func(ctx context.Context) error, error) {
 	)
 
 	return func(ctx context.Context) error {
-		shutdown, cancel := context.WithTimeout(ctx, 5*time.Second)
+		shutdown, cancel := context.WithTimeout(ctx, cfg.HTTPServer.ShutdownTimeout)
 		defer cancel()
 
 		return tp.Shutdown(shutdown)
@@ -119,7 +118,7 @@ func main() {
 	}()
 
 	// Swagger setup
-	swaggerHost := cfg.Addr
+	swaggerHost := cfg.HTTPServer.Addr
 	if swaggerHost == "" {
 		swaggerHost = "local:8085"
 		slog.Warn("Server address not found in config (cfg.Addr), defaulting Swagger host to " + swaggerHost)
@@ -262,14 +261,14 @@ func main() {
 
 	// Setup http server
 	server := http.Server{
-		Addr:         cfg.Addr,
+		Addr:         cfg.HTTPServer.Addr,
 		Handler:      mainMux,
-		ReadTimeout:  time.Duration(cfg.ReadTimeout),
-		WriteTimeout: time.Duration(cfg.WriteTimeout),
-		IdleTimeout:  time.Duration(cfg.IdleTimeout),
+		ReadTimeout:  cfg.HTTPServer.ReadTimeout,
+		WriteTimeout: cfg.HTTPServer.WriteTimeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
 	}
 
-	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))
+	slog.Info("🚀 Server is starting...", slog.String("address", cfg.HTTPServer.Addr))
 	slog.Info("📊 Metrics available", slog.String("path", "/metrics"))
 
 	done := make(chan os.Signal, 1)
@@ -288,7 +287,7 @@ func main() {
 	// Graceful shutdown
 	slog.Info("⏳ Server shutting down...")
 
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), cfg.HTTPServer.GracefulShutdownTimeout)
 	defer cancel()
 
 	if err := server.Shutdown(shutdownCtx); err != nil {
