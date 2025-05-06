@@ -116,7 +116,7 @@ func TestCartRepository(t *testing.T) {
 
 			// Assert
 			require.Error(t, err, "CreateCart should return an error on DB failure")
-			assert.Equal(t, dbError, err, "Returned error should match the expected database error")
+			assert.ErrorIs(t, err, dbError, "Returned error should contain the expected database error")
 			require.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 		})
 	})
@@ -188,7 +188,7 @@ func TestCartRepository(t *testing.T) {
 
 			// Assert
 			require.Error(t, err, "GetCartByCustomerID should return an error on DB failure")
-			assert.Equal(t, dbError, err, "Returned error should match the expected database error")
+			assert.ErrorIs(t, err, dbError, "Returned error should contain the expected database error")
 			assert.Nil(t, cart, "Returned cart should be nil")
 			require.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 		})

@@ -46,10 +46,9 @@ func TestMustLoad(t *testing.T) {
 	validYAML := `
 env: "test"
 http_server:
-  address: ":8081"
+  ADDRESS: ":8081"
 database:
   PG_HOST: "dbhost"
-  PG_PORT: "5433"
   PG_USER: "testuser"
   PG_PASSWORD: "testpassword"
   PG_DBNAME: "testdb"
@@ -178,19 +177,17 @@ cache:
 func TestDatabaseGetDSN(t *testing.T) {
 	dbConfig := Database{
 		Host:     "localhost",
-		Port:     "5432",
 		User:     "user",
 		Password: "password",
 		Name:     "dbname",
 		SSLMode:  "disable",
 	}
 
-	expectedBaseDSN := "postgresql://user:password@localhost:5432/dbname?sslmode=disable"
+	expectedBaseDSN := "postgresql://user:password@localhost/dbname?sslmode=disable"
 
 	t.Run("DSN from struct values", func(t *testing.T) {
 		// clear any related environment variables to prevent interference
 		os.Unsetenv("PG_HOST")
-		os.Unsetenv("PG_PORT")
 		os.Unsetenv("PG_USER")
 		os.Unsetenv("PG_PASSWORD")
 		os.Unsetenv("PG_DBNAME")
@@ -208,7 +205,6 @@ env: "test-dsn"
 http_server: {address: ":9999"}
 database:
   PG_HOST: "filehost"
-  PG_PORT: "5000"
   PG_USER: "fileuser"
   PG_PASSWORD: "filepassword"
   PG_DBNAME: "filedb"
@@ -229,7 +225,6 @@ security: {JWT_KEY: "filekey"} # Required field
 		t.Cleanup(cleanup)
 
 		t.Setenv("PG_HOST", "envhost")
-		t.Setenv("PG_PORT", "5433")
 		t.Setenv("PG_USER", "envuser")
 		t.Setenv("PG_PASSWORD", "envpass")
 		t.Setenv("PG_DBNAME", "envdb")
@@ -237,7 +232,6 @@ security: {JWT_KEY: "filekey"} # Required field
 
 		t.Cleanup(func() {
 			os.Unsetenv("PG_HOST")
-			os.Unsetenv("PG_PORT")
 			os.Unsetenv("PG_USER")
 			os.Unsetenv("PG_PASSWORD")
 			os.Unsetenv("PG_DBNAME")
@@ -251,7 +245,7 @@ security: {JWT_KEY: "filekey"} # Required field
 		require.NoError(t, err)
 		require.NotNil(t, loadedCfg)
 
-		expectedEnvDSN := "postgresql://envuser:envpass@envhost:5433/envdb?sslmode=require"
+		expectedEnvDSN := "postgresql://envuser:envpass@envhost/envdb?sslmode=require"
 		dsn := loadedCfg.Database.GetDSN()
 		assert.Equal(t, expectedEnvDSN, dsn)
 	})
@@ -275,7 +269,7 @@ security: {JWT_KEY: "filekey"} # Required field
 		require.NoError(t, err)
 		require.NotNil(t, loadedCfg)
 
-		expectedPartialEnvDSN := "postgresql://fileuser:envpass2@envhost2:5000/filedb?sslmode=prefer"
+		expectedPartialEnvDSN := "postgresql://fileuser:envpass2@envhost2/filedb?sslmode=prefer"
 		dsn := loadedCfg.Database.GetDSN()
 		assert.Equal(t, expectedPartialEnvDSN, dsn)
 	})

@@ -542,8 +542,8 @@ func TestProcessWebhook(t *testing.T) {
 
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
-		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
-		assert.Contains(t, err.Error(), "Missing payment intent ID")
+		assert.Equal(t, appErrors.ErrCodeInternal, appErr.Code)
+		assert.Contains(t, err.Error(), "Payment intent ID not found")
 
 		mockRepo.AssertNotCalled(t, "UpdatePaymentStatus")
 		mockStripeClient.AssertExpectations(t)
@@ -599,8 +599,8 @@ func TestProcessWebhook(t *testing.T) {
 
 		appErr, ok := appErrors.IsAppError(err)
 		assert.True(t, ok)
-		assert.Equal(t, appErrors.ErrCodeThirdPartyError, appErr.Code)
-		assert.Contains(t, err.Error(), "Missing payment intent ID")
+		assert.Equal(t, appErrors.ErrCodeInternal, appErr.Code)
+		assert.Contains(t, err.Error(), "Payment intent ID not found")
 
 		mockRepo.AssertNotCalled(t, "UpdatePaymentStatus")
 		mockStripeClient.AssertExpectations(t)

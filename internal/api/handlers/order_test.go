@@ -217,7 +217,7 @@ func TestGetOrder(t *testing.T) {
 		}
 
 		// Mock Call
-		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(expectedOrder, nil).Once()
+		mockOrderService.On("GetOrderByID", mock.Anything, orderID).Return(expectedOrder, nil).Once()
 
 		pathParams := map[string]string{
 			"id": orderID.String(),
@@ -283,7 +283,7 @@ func TestGetOrder(t *testing.T) {
 	t.Run("Failure - Order Not Found", func(t *testing.T) {
 		// Arrange
 		// Mock Call
-		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(nil, appErrors.NotFoundError("order not found")).Once()
+		mockOrderService.On("GetOrderByID", mock.Anything, orderID).Return(nil, appErrors.NotFoundError("order not found")).Once()
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
@@ -310,7 +310,7 @@ func TestGetOrder(t *testing.T) {
 		}
 
 		// Mock Call
-		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(orderFromOtherUser, nil).Once()
+		mockOrderService.On("GetOrderByID", mock.Anything, orderID).Return(orderFromOtherUser, nil).Once()
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
@@ -330,7 +330,7 @@ func TestGetOrder(t *testing.T) {
 	t.Run("Failure - Service Error", func(t *testing.T) {
 		// Arrange
 		// Mock Call
-		mockOrderService.On("GetOrderById", mock.Anything, orderID).Return(nil, appErrors.DatabaseError("DB Connection Failed")).Once()
+		mockOrderService.On("GetOrderByID", mock.Anything, orderID).Return(nil, appErrors.DatabaseError("DB Connection Failed")).Once()
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
