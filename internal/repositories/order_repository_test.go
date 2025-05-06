@@ -566,7 +566,10 @@ func TestUpdateOrderStatus(t *testing.T) {
 			WillReturnResult(sqlmock.NewResult(0, 1)) // 0 for LastInsertId (not relevant), 1 for RowsAffected
 
 		expectedAddress := &models.Address{Street: "Fetched St", City: "Fetchedville"}
-		expectedAddrJSON, _ := json.Marshal(expectedAddress)
+		expectedAddrJSON, err := json.Marshal(expectedAddress)
+		if err != nil {
+			t.Fatalf("failed to marshal expectedAddress: %v", err)
+		}
 		fetchedRows := sqlmock.NewRows([]string{"customer_id", "status", "total_amount", "payment_status", "payment_intent_id", "shipping_address", "created_at", "updated_at"}).
 			AddRow(uuid.New(), newStatus, 100.0, models.PaymentStatusPending, "pi_fetch", expectedAddrJSON, now.Add(-time.Hour), now)
 		mock.ExpectQuery(expectedFetchSQL).WithArgs(orderID).WillReturnRows(fetchedRows)

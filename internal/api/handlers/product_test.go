@@ -46,7 +46,8 @@ func TestCreateProduct(t *testing.T) {
 			StockQuantity: 10,
 			SKU:           "TEST-SKU-001",
 		}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPost, "/products", reqBodyBytes)
@@ -72,7 +73,7 @@ func TestCreateProduct(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -114,7 +115,8 @@ func TestCreateProduct(t *testing.T) {
 			StockQuantity: 10,
 			SKU:           "TEST-SKU-001",
 		}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPost, "/products", reqBodyBytes)
@@ -140,7 +142,8 @@ func TestCreateProduct(t *testing.T) {
 			StockQuantity: 10,
 			SKU:           "TEST-SKU-001",
 		}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPost, "/products", reqBodyBytes)
@@ -276,7 +279,8 @@ func TestUpdateProduct(t *testing.T) {
 			Price:         float64Ptr(109.99),
 			StockQuantity: intPtr(15),
 		}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPut, "/products/"+productID.String(), reqBodyBytes)
@@ -303,7 +307,7 @@ func TestUpdateProduct(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -325,7 +329,8 @@ func TestUpdateProduct(t *testing.T) {
 		// Arrange
 		invalidID := "not-a-uuid"
 		reqBody := models.UpdateProductRequest{Name: stringPtr("Update")}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPut, "/products/"+invalidID, reqBodyBytes)
@@ -364,7 +369,8 @@ func TestUpdateProduct(t *testing.T) {
 		productID := uuid.New()
 		// Price is negative, which should fail validation if defined in UpdateProductRequest model
 		reqBody := models.UpdateProductRequest{Price: float64Ptr(-10.0)}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPut, "/products/"+productID.String(), reqBodyBytes)
@@ -385,7 +391,8 @@ func TestUpdateProduct(t *testing.T) {
 		// Arrange
 		productID := uuid.New()
 		reqBody := models.UpdateProductRequest{Name: stringPtr("Update")}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPut, "/products/"+productID.String(), reqBodyBytes)
@@ -408,7 +415,8 @@ func TestUpdateProduct(t *testing.T) {
 		// Arrange
 		productID := uuid.New()
 		reqBody := models.UpdateProductRequest{Name: stringPtr("Update")}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		rr := httptest.NewRecorder()
 		req := newTestRequest(http.MethodPut, "/products/"+productID.String(), reqBodyBytes)

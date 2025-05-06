@@ -52,7 +52,8 @@ func TestCreatePayment(t *testing.T) {
 		mockPaymentService.On("CreatePayment", mock.Anything, mock.Anything).Return(expectedResp, nil).Once()
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -66,7 +67,7 @@ func TestCreatePayment(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 		assert.NotEmpty(t, resp.Data)
@@ -97,7 +98,8 @@ func TestCreatePayment(t *testing.T) {
 		}
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -142,7 +144,8 @@ func TestCreatePayment(t *testing.T) {
 		}
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -172,7 +175,8 @@ func TestCreatePayment(t *testing.T) {
 		}
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -202,7 +206,8 @@ func TestCreatePayment(t *testing.T) {
 		mockPaymentService.On("CreatePayment", mock.Anything, mock.AnythingOfType("*models.PaymentRequest")).Return(nil, appErrors.InternalError("payment provider down")).Once()
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/payments", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 

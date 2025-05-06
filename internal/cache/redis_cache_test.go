@@ -130,7 +130,10 @@ func TestSet(t *testing.T) {
 	ctx := t.Context()
 	testKey := "test:set"
 	testValue := TestData{Field1: "valueSet", Field2: 456}
-	jsonData, _ := json.Marshal(testValue)
+	jsonData, err := json.Marshal(testValue)
+	if err != nil {
+		t.Fatalf("failed to marshal testValue: %v", err)
+	}
 
 	t.Run("Success - With Specific TTL", func(t *testing.T) {
 		// Arrange

@@ -175,7 +175,8 @@ func TestAddItem(t *testing.T) {
 			Quantity:  2,
 			UnitPrice: 10.99,
 		}
-		requestBody, _ := json.Marshal(addItemRequest)
+		requestBody, err := json.Marshal(addItemRequest)
+		assert.NoError(t, err)
 
 		req, claims := createAuthenticatedRequest("POST", "/carts/items", requestBody)
 		recorder := httptest.NewRecorder()
@@ -208,7 +209,7 @@ func TestAddItem(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(recorder.Body.Bytes(), &resp)
+		err = json.Unmarshal(recorder.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -225,7 +226,8 @@ func TestAddItem(t *testing.T) {
 			Quantity:  2,
 			UnitPrice: 10.99,
 		}
-		requestBody, _ := json.Marshal(addItemRequest)
+		requestBody, err := json.Marshal(addItemRequest)
+		assert.NoError(t, err)
 
 		req, claims := createAuthenticatedRequest("POST", "/carts/items", requestBody)
 		recorder := httptest.NewRecorder()
@@ -264,7 +266,7 @@ func TestAddItem(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(recorder.Body.Bytes(), &resp)
+		err = json.Unmarshal(recorder.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -281,7 +283,8 @@ func TestAddItem(t *testing.T) {
 			Quantity:  2,
 			UnitPrice: 10.99,
 		}
-		requestBody, _ := json.Marshal(addItemRequest)
+		requestBody, err := json.Marshal(addItemRequest)
+		assert.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPost, "/carts/items", bytes.NewBuffer(requestBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -339,7 +342,8 @@ func TestAddItem(t *testing.T) {
 			Quantity:  2,
 			UnitPrice: 10.99,
 		}
-		requestBody, _ := json.Marshal(addItemRequest)
+		requestBody, err := json.Marshal(addItemRequest)
+		assert.NoError(t, err)
 
 		req, claims := createAuthenticatedRequest("POST", "/carts/items", requestBody)
 		recorder := httptest.NewRecorder()
@@ -372,7 +376,8 @@ func TestAddItem(t *testing.T) {
 			Quantity:  2,
 			UnitPrice: 10.99,
 		}
-		requestBody, _ := json.Marshal(addItemRequest)
+		requestBody, err := json.Marshal(addItemRequest)
+		assert.NoError(t, err)
 
 		req, claims := createAuthenticatedRequest("POST", "/carts/items", requestBody)
 		recorder := httptest.NewRecorder()
@@ -405,7 +410,8 @@ func TestUpdateQuantity(t *testing.T) {
 			ProductID: uuid.New(),
 			Quantity:  5,
 		}
-		requestBody, _ := json.Marshal(updateRequest)
+		requestBody, err := json.Marshal(updateRequest)
+		assert.NoError(t, err)
 
 		req, claims := createAuthenticatedRequest("PUT", "/carts/items", requestBody)
 		recorder := httptest.NewRecorder()
@@ -437,7 +443,7 @@ func TestUpdateQuantity(t *testing.T) {
 		assert.Equal(t, http.StatusOK, recorder.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(recorder.Body.Bytes(), &resp)
+		err = json.Unmarshal(recorder.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -453,7 +459,8 @@ func TestUpdateQuantity(t *testing.T) {
 			ProductID: uuid.New(),
 			Quantity:  5,
 		}
-		requestBody, _ := json.Marshal(updateRequest)
+		requestBody, err := json.Marshal(updateRequest)
+		assert.NoError(t, err)
 
 		req := httptest.NewRequest(http.MethodPut, "/carts/items", bytes.NewBuffer(requestBody))
 		req.Header.Set("Content-Type", "application/json")
@@ -498,7 +505,8 @@ func TestUpdateQuantity(t *testing.T) {
 			ProductID: uuid.New(),
 			Quantity:  5,
 		}
-		requestBody, _ := json.Marshal(updateRequest)
+		requestBody, err := json.Marshal(updateRequest)
+		assert.NoError(t, err)
 
 		req, claims := createAuthenticatedRequest("PUT", "/carts/items", requestBody)
 		recorder := httptest.NewRecorder()

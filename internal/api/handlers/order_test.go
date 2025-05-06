@@ -73,7 +73,8 @@ func TestCreateOrder(t *testing.T) {
 		mockOrderService.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.CreateOrderRequest")).Return(expectedOrder, nil).Once()
 
 		// Create request body
-		bodyBytes, _ := json.Marshal(createReq)
+		bodyBytes, err := json.Marshal(createReq)
+		assert.NoError(t, err)
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
@@ -90,7 +91,7 @@ func TestCreateOrder(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -126,7 +127,8 @@ func TestCreateOrder(t *testing.T) {
 				},
 			},
 		}
-		bodyBytes, _ := json.Marshal(createReq)
+		bodyBytes, err := json.Marshal(createReq)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -181,7 +183,8 @@ func TestCreateOrder(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("CreateOrder", mock.Anything, mock.AnythingOfType("*models.CreateOrderRequest")).Return(nil, appErrors.DatabaseError("DB Connection Failed")).Once()
 
-		bodyBytes, _ := json.Marshal(createReq)
+		bodyBytes, err := json.Marshal(createReq)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/orders", bytes.NewReader(bodyBytes), userID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -567,7 +570,8 @@ func TestUpdateOrderStatus(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("UpdateOrderStatus", mock.Anything, orderID, updateReq.Status).Return(expectedOrder, nil).Once()
 
-		bodyBytes, _ := json.Marshal(updateReq)
+		bodyBytes, err := json.Marshal(updateReq)
+		assert.NoError(t, err)
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
@@ -584,7 +588,7 @@ func TestUpdateOrderStatus(t *testing.T) {
 		assert.Equal(t, http.StatusOK, rr.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -605,7 +609,8 @@ func TestUpdateOrderStatus(t *testing.T) {
 	t.Run("Failure - Unauthorized", func(t *testing.T) {
 		// Arrange
 		updateReq := models.UpdateOrderStatusRequest{Status: models.OrderStatusShipping}
-		bodyBytes, _ := json.Marshal(updateReq)
+		bodyBytes, err := json.Marshal(updateReq)
+		assert.NoError(t, err)
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
@@ -627,7 +632,8 @@ func TestUpdateOrderStatus(t *testing.T) {
 	t.Run("Failure - Invalid Order ID", func(t *testing.T) {
 		// Arrange
 		updateReq := models.UpdateOrderStatusRequest{Status: models.OrderStatusShipping}
-		bodyBytes, _ := json.Marshal(updateReq)
+		bodyBytes, err := json.Marshal(updateReq)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPatch, "/orders/invalid-uuid/status", bytes.NewReader(bodyBytes), adminUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -670,7 +676,8 @@ func TestUpdateOrderStatus(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("UpdateOrderStatus", mock.Anything, orderID, updateReq.Status).Return(nil, appErrors.NotFoundError("order not found")).Once()
 
-		bodyBytes, _ := json.Marshal(updateReq)
+		bodyBytes, err := json.Marshal(updateReq)
+		assert.NoError(t, err)
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}
@@ -696,7 +703,8 @@ func TestUpdateOrderStatus(t *testing.T) {
 		// Mock Call
 		mockOrderService.On("UpdateOrderStatus", mock.Anything, orderID, updateReq.Status).Return(nil, appErrors.DatabaseError("DB Update Failed")).Once()
 
-		bodyBytes, _ := json.Marshal(updateReq)
+		bodyBytes, err := json.Marshal(updateReq)
+		assert.NoError(t, err)
 		pathParams := map[string]string{
 			"id": orderID.String(),
 		}

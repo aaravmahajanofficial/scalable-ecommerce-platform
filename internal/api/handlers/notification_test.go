@@ -45,7 +45,8 @@ func TestSendEmail(t *testing.T) {
 		mockNotificationService.On("SendEmail", mock.Anything, &reqBody).Return(expectedNotification, nil).Once()
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -59,7 +60,7 @@ func TestSendEmail(t *testing.T) {
 		assert.Equal(t, http.StatusCreated, rr.Code)
 
 		var resp *response.APIResponse
-		err := json.Unmarshal(rr.Body.Bytes(), &resp)
+		err = json.Unmarshal(rr.Body.Bytes(), &resp)
 		assert.NoError(t, err)
 		assert.True(t, resp.Success)
 
@@ -84,7 +85,8 @@ func TestSendEmail(t *testing.T) {
 			Subject: "Test Subject",
 			Content: "Test Body",
 		}
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 
 		req := testutils.CreateTestRequestWithoutContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), nil)
 		req.Header.Set("Content-Type", "application/json")
@@ -125,7 +127,8 @@ func TestSendEmail(t *testing.T) {
 		}
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 
@@ -152,7 +155,8 @@ func TestSendEmail(t *testing.T) {
 		mockNotificationService.On("SendEmail", mock.Anything, &reqBody).Return(nil, appErrors.InternalError("Failed to send email")).Once()
 
 		// Create request body
-		reqBodyBytes, _ := json.Marshal(reqBody)
+		reqBodyBytes, err := json.Marshal(reqBody)
+		assert.NoError(t, err)
 		req := testutils.CreateTestRequestWithContext(http.MethodPost, "/notifications/email", bytes.NewReader(reqBodyBytes), testUserID, nil)
 		req.Header.Set("Content-Type", "application/json")
 

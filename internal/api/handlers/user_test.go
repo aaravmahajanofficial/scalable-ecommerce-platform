@@ -31,7 +31,8 @@ func TestUserHandler_Register(t *testing.T) {
 			Password: "P@ssword123!",
 		}
 
-		reqBody, _ := json.Marshal(registerReq)
+		reqBody, err := json.Marshal(registerReq)
+		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/register", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content/Type", "application/json")
 
@@ -58,7 +59,7 @@ func TestUserHandler_Register(t *testing.T) {
 		// Put the JSON response into APIResponse, and treat the Data field as an any (i.e., interface{})
 
 		var respBody response.APIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &respBody)
+		err = json.Unmarshal(w.Body.Bytes(), &respBody)
 		assert.NoError(t, err)
 		assert.True(t, respBody.Success)
 
@@ -95,7 +96,8 @@ func TestUserHandler_Register(t *testing.T) {
 			Email: "test@example.com",
 		}
 
-		reqBody, _ := json.Marshal(invalidReq)
+		reqBody, err := json.Marshal(invalidReq)
+		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/register", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content/Type", "application/json")
 
@@ -109,7 +111,7 @@ func TestUserHandler_Register(t *testing.T) {
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 
 		var respBody response.APIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &respBody)
+		err = json.Unmarshal(w.Body.Bytes(), &respBody)
 		assert.NoError(t, err)
 		assert.False(t, respBody.Success)
 		assert.NotNil(t, respBody.Error)
@@ -125,7 +127,8 @@ func TestUserHandler_Register(t *testing.T) {
 			Password: "P@ssword123!",
 		}
 
-		reqBody, _ := json.Marshal(registerReq)
+		reqBody, err := json.Marshal(registerReq)
+		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/register", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content/Type", "application/json")
 
@@ -144,7 +147,7 @@ func TestUserHandler_Register(t *testing.T) {
 		assert.Equal(t, http.StatusConflict, w.Code)
 
 		var respBody response.APIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &respBody)
+		err = json.Unmarshal(w.Body.Bytes(), &respBody)
 		assert.NoError(t, err)
 		assert.False(t, respBody.Success)
 		assert.NotNil(t, respBody.Error)
@@ -165,7 +168,8 @@ func TestUserHandler_Login(t *testing.T) {
 			Password: "P@ssword123!",
 		}
 
-		reqBody, _ := json.Marshal(loginReq)
+		reqBody, err := json.Marshal(loginReq)
+		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/login", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content/Type", "application/json")
 
@@ -190,7 +194,7 @@ func TestUserHandler_Login(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 
 		var respBody response.APIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &respBody)
+		err = json.Unmarshal(w.Body.Bytes(), &respBody)
 		assert.NoError(t, err)
 		assert.True(t, respBody.Success)
 
@@ -215,7 +219,8 @@ func TestUserHandler_Login(t *testing.T) {
 			Password: "WrongP@ssword123!",
 		}
 
-		reqBody, _ := json.Marshal(loginReq)
+		reqBody, err := json.Marshal(loginReq)
+		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/login", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content/Type", "application/json")
 
@@ -240,7 +245,7 @@ func TestUserHandler_Login(t *testing.T) {
 		assert.Equal(t, http.StatusUnauthorized, w.Code)
 
 		var respBody response.APIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &respBody)
+		err = json.Unmarshal(w.Body.Bytes(), &respBody)
 		assert.NoError(t, err)
 		assert.False(t, respBody.Success)
 		assert.NotNil(t, respBody.Error)
@@ -255,7 +260,8 @@ func TestUserHandler_Login(t *testing.T) {
 			Password: "P@ssword123!",
 		}
 
-		reqBody, _ := json.Marshal(loginReq)
+		reqBody, err := json.Marshal(loginReq)
+		assert.NoError(t, err)
 		req := httptest.NewRequest(http.MethodPost, "/api/v1/users/login", bytes.NewBuffer(reqBody))
 		req.Header.Set("Content/Type", "application/json")
 
@@ -280,7 +286,7 @@ func TestUserHandler_Login(t *testing.T) {
 		assert.Equal(t, http.StatusTooManyRequests, w.Code)
 
 		var respBody response.APIResponse
-		err := json.Unmarshal(w.Body.Bytes(), &respBody)
+		err = json.Unmarshal(w.Body.Bytes(), &respBody)
 		assert.NoError(t, err)
 		assert.False(t, respBody.Success)
 		assert.NotNil(t, respBody.Error)

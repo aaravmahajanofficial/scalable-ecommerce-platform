@@ -154,8 +154,8 @@ func (_c *MockOrderService_GetOrderByID_Call) RunAndReturn(run func(ctx context.
 }
 
 // ListOrdersByCustomer provides a mock function for the type MockOrderService
-func (_mock *MockOrderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
-	ret := _mock.Called(ctx, customerId, page, size)
+func (_mock *MockOrderService) ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
+	ret := _mock.Called(ctx, customerID, page, size)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListOrdersByCustomer")
@@ -165,22 +165,22 @@ func (_mock *MockOrderService) ListOrdersByCustomer(ctx context.Context, custome
 	var r1 int
 	var r2 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, int) ([]models.Order, int, error)); ok {
-		return returnFunc(ctx, customerId, page, size)
+		return returnFunc(ctx, customerID, page, size)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int, int) []models.Order); ok {
-		r0 = returnFunc(ctx, customerId, page, size)
+		r0 = returnFunc(ctx, customerID, page, size)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]models.Order)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int, int) int); ok {
-		r1 = returnFunc(ctx, customerId, page, size)
+		r1 = returnFunc(ctx, customerID, page, size)
 	} else {
 		r1 = ret.Get(1).(int)
 	}
 	if returnFunc, ok := ret.Get(2).(func(context.Context, uuid.UUID, int, int) error); ok {
-		r2 = returnFunc(ctx, customerId, page, size)
+		r2 = returnFunc(ctx, customerID, page, size)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -194,14 +194,14 @@ type MockOrderService_ListOrdersByCustomer_Call struct {
 
 // ListOrdersByCustomer is a helper method to define mock.On call
 //   - ctx
-//   - customerId
+//   - customerID
 //   - page
 //   - size
-func (_e *MockOrderService_Expecter) ListOrdersByCustomer(ctx interface{}, customerId interface{}, page interface{}, size interface{}) *MockOrderService_ListOrdersByCustomer_Call {
-	return &MockOrderService_ListOrdersByCustomer_Call{Call: _e.mock.On("ListOrdersByCustomer", ctx, customerId, page, size)}
+func (_e *MockOrderService_Expecter) ListOrdersByCustomer(ctx interface{}, customerID interface{}, page interface{}, size interface{}) *MockOrderService_ListOrdersByCustomer_Call {
+	return &MockOrderService_ListOrdersByCustomer_Call{Call: _e.mock.On("ListOrdersByCustomer", ctx, customerID, page, size)}
 }
 
-func (_c *MockOrderService_ListOrdersByCustomer_Call) Run(run func(ctx context.Context, customerId uuid.UUID, page int, size int)) *MockOrderService_ListOrdersByCustomer_Call {
+func (_c *MockOrderService_ListOrdersByCustomer_Call) Run(run func(ctx context.Context, customerID uuid.UUID, page int, size int)) *MockOrderService_ListOrdersByCustomer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(int), args[3].(int))
 	})
@@ -213,7 +213,7 @@ func (_c *MockOrderService_ListOrdersByCustomer_Call) Return(orders []models.Ord
 	return _c
 }
 
-func (_c *MockOrderService_ListOrdersByCustomer_Call) RunAndReturn(run func(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error)) *MockOrderService_ListOrdersByCustomer_Call {
+func (_c *MockOrderService_ListOrdersByCustomer_Call) RunAndReturn(run func(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error)) *MockOrderService_ListOrdersByCustomer_Call {
 	_c.Call.Return(run)
 	return _c
 }

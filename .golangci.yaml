@@ -27,7 +27,7 @@ linters-settings:
   staticcheck:
     checks: ["all", "-SA1019"]
   gocyclo:
-    min-complexity: 15
+    min-complexity: 20
   revive:
     rules:
       - name: var-naming

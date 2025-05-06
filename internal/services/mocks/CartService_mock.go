@@ -98,8 +98,8 @@ func (_c *MockCartService_AddItem_Call) RunAndReturn(run func(ctx context.Contex
 }
 
 // CreateCart provides a mock function for the type MockCartService
-func (_mock *MockCartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
-	ret := _mock.Called(ctx, userId)
+func (_mock *MockCartService) CreateCart(ctx context.Context, userID uuid.UUID) (*models.Cart, error) {
+	ret := _mock.Called(ctx, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateCart")
@@ -108,17 +108,17 @@ func (_mock *MockCartService) CreateCart(ctx context.Context, userId uuid.UUID) 
 	var r0 *models.Cart
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*models.Cart, error)); ok {
-		return returnFunc(ctx, userId)
+		return returnFunc(ctx, userID)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *models.Cart); ok {
-		r0 = returnFunc(ctx, userId)
+		r0 = returnFunc(ctx, userID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*models.Cart)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, userId)
+		r1 = returnFunc(ctx, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -132,12 +132,12 @@ type MockCartService_CreateCart_Call struct {
 
 // CreateCart is a helper method to define mock.On call
 //   - ctx
-//   - userId
-func (_e *MockCartService_Expecter) CreateCart(ctx interface{}, userId interface{}) *MockCartService_CreateCart_Call {
-	return &MockCartService_CreateCart_Call{Call: _e.mock.On("CreateCart", ctx, userId)}
+//   - userID
+func (_e *MockCartService_Expecter) CreateCart(ctx interface{}, userID interface{}) *MockCartService_CreateCart_Call {
+	return &MockCartService_CreateCart_Call{Call: _e.mock.On("CreateCart", ctx, userID)}
 }
 
-func (_c *MockCartService_CreateCart_Call) Run(run func(ctx context.Context, userId uuid.UUID)) *MockCartService_CreateCart_Call {
+func (_c *MockCartService_CreateCart_Call) Run(run func(ctx context.Context, userID uuid.UUID)) *MockCartService_CreateCart_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(uuid.UUID))
 	})
@@ -149,7 +149,7 @@ func (_c *MockCartService_CreateCart_Call) Return(cart *models.Cart, err error) 
 	return _c
 }
 
-func (_c *MockCartService_CreateCart_Call) RunAndReturn(run func(ctx context.Context, userId uuid.UUID) (*models.Cart, error)) *MockCartService_CreateCart_Call {
+func (_c *MockCartService_CreateCart_Call) RunAndReturn(run func(ctx context.Context, userID uuid.UUID) (*models.Cart, error)) *MockCartService_CreateCart_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -36,7 +36,10 @@ func TestSendEmail(t *testing.T) {
 	testSubject := "Test Subject"
 	testContent := "Test Content"
 	testMetadata := map[string]string{"key": "value"}
-	metadataBytes, _ := json.Marshal(testMetadata)
+	metadataBytes, err := json.Marshal(testMetadata)
+	if err != nil {
+		t.Fatalf("failed to marshal testMetadata: %v", err)
+	}
 
 	req := &models.EmailNotificationRequest{
 		To:       testEmail,
