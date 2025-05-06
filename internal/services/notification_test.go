@@ -10,7 +10,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	repoMocks "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories/mocks"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
-	emailMocks "github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid/mocks"
+	emailMocks "github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendgrid/mocks"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

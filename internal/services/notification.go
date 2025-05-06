@@ -8,7 +8,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendgrid"
 	"github.com/google/uuid"
 )
 
@@ -21,10 +21,10 @@ type NotificationService interface {
 type notificationService struct {
 	repo         repository.NotificationRepository
 	userRepo     repository.UserRepository
-	emailService sendGrid.EmailService
+	emailService sendgrid.EmailService
 }
 
-func NewNotificationService(repo repository.NotificationRepository, userRepo repository.UserRepository, emailService sendGrid.EmailService) NotificationService {
+func NewNotificationService(repo repository.NotificationRepository, userRepo repository.UserRepository, emailService sendgrid.EmailService) NotificationService {
 	return &notificationService{repo: repo, userRepo: userRepo, emailService: emailService}
 }
 

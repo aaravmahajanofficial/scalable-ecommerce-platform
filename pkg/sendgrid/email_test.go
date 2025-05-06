@@ -1,4 +1,4 @@
-package sendGrid_test
+package sendgrid_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
+	sendgrid_client "github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendgrid"
 	"github.com/sendgrid/sendgrid-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,13 +23,13 @@ func TestNewEmailService(t *testing.T) {
 	fromName := "Test Sender"
 
 	// Act
-	service := sendGrid.NewEmailService(apiKey, fromEmail, fromName)
+	service := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName)
 
 	// Assert
 	assert.NotNil(t, service)
 }
 
-type sendGridV3Payload struct {
+type sendgridV3Payload struct {
 	Personalizations []struct {
 		To      []map[string]string `json:"to"`
 		Cc      []map[string]string `json:"cc,omitempty"`
@@ -51,7 +51,7 @@ func TestEmailService_Send(t *testing.T) {
 
 	var mockServer *httptest.Server
 
-	var lastRequestPayload sendGridV3Payload
+	var lastRequestPayload sendgridV3Payload
 
 	var handlerFunc http.HandlerFunc
 
@@ -83,7 +83,7 @@ func TestEmailService_Send(t *testing.T) {
 		req           *models.EmailNotificationRequest
 		handler       http.HandlerFunc                              // Mock server handler for this specific test
 		expectedError string                                        // Substring expected in the error message, empty for no error
-		checkPayload  func(t *testing.T, payload sendGridV3Payload) // Optional payload validation
+		checkPayload  func(t *testing.T, payload sendgridV3Payload) // Optional payload validation
 	}{
 		{
 			name: "Success - Simple Email",
@@ -101,7 +101,7 @@ func TestEmailService_Send(t *testing.T) {
 				w.WriteHeader(http.StatusAccepted) // 202 Accepted is typical for SendGrid v3 mail/send
 			},
 			expectedError: "",
-			checkPayload: func(t *testing.T, p sendGridV3Payload) {
+			checkPayload: func(t *testing.T, p sendgridV3Payload) {
 				require.Len(t, p.Personalizations, 1, "Expected one personalization block")
 				pers := p.Personalizations[0]
 				require.Len(t, pers.To, 1, "Expected one TO recipient")
@@ -134,7 +134,7 @@ func TestEmailService_Send(t *testing.T) {
 				w.WriteHeader(http.StatusAccepted)
 			},
 			expectedError: "",
-			checkPayload: func(t *testing.T, p sendGridV3Payload) {
+			checkPayload: func(t *testing.T, p sendgridV3Payload) {
 				require.Len(t, p.Personalizations, 1)
 				pers := p.Personalizations[0]
 				require.Len(t, pers.To, 1)
@@ -164,7 +164,7 @@ func TestEmailService_Send(t *testing.T) {
 				_, _ = w.Write([]byte(`{"errors": [{"message": "Invalid email"}]}`))
 			},
 			expectedError: "failed to send email, status code: 400",
-			checkPayload: func(t *testing.T, p sendGridV3Payload) {
+			checkPayload: func(t *testing.T, p sendgridV3Payload) {
 				require.Len(t, p.Personalizations, 1)
 				assert.Equal(t, "bad@example.com", p.Personalizations[0].To[0]["email"])
 			},
@@ -185,12 +185,12 @@ func TestEmailService_Send(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			lastRequestPayload = sendGridV3Payload{} // Reset payload capture
+			lastRequestPayload = sendgridV3Payload{} // Reset payload capture
 			handlerFunc = tc.handler                 // Set the handler for this test
 
 			startMockServer() // Start the server for this test case
 
-			serviceImpl := sendGrid.NewEmailService(apiKey, fromEmail, fromName).(sendGrid.EmailService)
+			serviceImpl := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName).(sendgrid_client.EmailService)
 
 			sgClient := serviceImpl.GetSendGridClient()
 
@@ -219,7 +219,7 @@ func TestEmailService_Send(t *testing.T) {
 		// Arrange
 		startMockServer()
 
-		serviceImpl := sendGrid.NewEmailService(apiKey, fromEmail, fromName).(sendGrid.EmailService)
+		serviceImpl := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName).(sendgrid_client.EmailService)
 		sgClient := serviceImpl.GetSendGridClient()
 		sgClient.Request.BaseURL = mockServer.URL
 		mockServer.Close()
@@ -239,7 +239,7 @@ func TestEmailService_Send(t *testing.T) {
 	})
 }
 
-type emailService = sendGrid.EmailService
+type emailService = sendgrid_client.EmailService
 
 type testEmailService struct {
 	client *sendgrid.Client
@@ -258,6 +258,6 @@ func (e *testEmailService) GetSendGridClient() *sendgrid.Client {
 }
 
 var _ interface {
-	sendGrid.EmailService
+	sendgrid_client.EmailService
 	GetSendGridClient() *sendgrid.Client
 } = &testEmailService{}

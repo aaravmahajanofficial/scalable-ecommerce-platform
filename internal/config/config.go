@@ -76,7 +76,7 @@ type CacheConfig struct {
 }
 
 type Config struct {
-	Env          string       `env:"ENV" env-required:"true" yaml:"env"`
+	Env          string       `env:"ENV"          env-required:"true" yaml:"env"`
 	HTTPServer   HTTPServer   `yaml:"http_server"`
 	Database     Database     `yaml:"database"`
 	RedisConnect RedisConnect `yaml:"redis"`

@@ -19,7 +19,7 @@ import (
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/metrics"
 	repository "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/repositories"
 	service "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/services"
-	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendGrid"
+	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/sendgrid"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/pkg/stripe"
 	httpSwagger "github.com/swaggo/http-swagger"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
@@ -169,7 +169,7 @@ func main() {
 
 	jwtKey := []byte(cfg.Security.JWTKey)
 	stripeClient := stripe.NewStripeClient(cfg.Stripe.APIKey, cfg.Stripe.WebhookSecret)
-	sendGridClient := sendGrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
+	sendGridClient := sendgrid.NewEmailService(cfg.SendGrid.APIKey, cfg.SendGrid.FromEmail, cfg.SendGrid.FromName)
 
 	// Service Init
 	userService := service.NewUserService(repos.User, repos.RateLimiter, jwtKey)
