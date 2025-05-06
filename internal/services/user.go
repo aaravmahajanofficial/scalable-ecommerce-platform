@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
@@ -37,7 +38,11 @@ func NewUserService(repo repository.UserRepository, redisRepo repository.RateLim
 }
 
 func (s *userService) Register(ctx context.Context, req *models.RegisterRequest) (*models.User, error) {
-	existingUser, _ := s.repo.GetUserByEmail(ctx, req.Email)
+	existingUser, err := s.repo.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("error checking existing user: %w", err)
+	}
+
 	if existingUser != nil {
 		return nil, errors.DuplicateEntryError("Email already registered")
 	}

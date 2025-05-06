@@ -50,7 +50,10 @@ func TestCreateOrder_Success(t *testing.T) {
 
 	// Mock Call Order Repository
 	mockOrderRepo.On("CreateOrder", ctx, mock.AnythingOfType("*models.Order")).Return(nil).Run(func(args mock.Arguments) {
-		orderArg := args.Get(1).(*models.Order)
+		orderArg, ok := args.Get(1).(*models.Order)
+		if !ok {
+			t.Fatalf("Expected args.Get(1) to be *models.Order, got %T", args.Get(1))
+		}
 		assert.Equal(t, customerID, orderArg.CustomerID)
 		assert.Equal(t, models.OrderStatusPending, orderArg.Status)
 		assert.Equal(t, models.PaymentStatusPending, orderArg.PaymentStatus)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
@@ -68,7 +69,9 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 		notification.Status = models.StatusFailed
 		notification.ErrorMessage = err.Error()
 
-		_ = s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusFailed, notification.ErrorMessage)
+		if updateErr := s.repo.UpdateNotificationStatus(ctx, notification.ID, models.StatusFailed, notification.ErrorMessage); updateErr != nil {
+			return nil, fmt.Errorf("Failed to update notification status after send failure: %w", updateErr)
+		}
 
 		return nil, errors.ThirdPartyError("Failed to send notification").WithError(err)
 	}

@@ -94,10 +94,13 @@ func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 	}
 
 	for _, item := range cart.Items {
-		product, _ := s.productRepo.GetProductByID(ctx, item.ProductID)
+		product, err := s.productRepo.GetProductByID(ctx, item.ProductID)
+		if err != nil {
+			return nil, errors.DatabaseError("Failed to get product").WithError(err)
+		}
 		product.StockQuantity -= item.Quantity
 
-		err := s.productRepo.UpdateProduct(ctx, product)
+		err = s.productRepo.UpdateProduct(ctx, product)
 		if err != nil {
 			return nil, errors.DatabaseError("Failed to update inventory").WithError(err)
 		}

@@ -191,14 +191,12 @@ func TestEmailService_Send(t *testing.T) {
 
 			startMockServer() // Start the server for this test case
 
-			serviceImpl := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName).(sendgrid_client.EmailService)
-
-			sgClient := serviceImpl.GetSendGridClient()
-
+			service := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName)
+			sgClient := service.GetSendGridClient()
 			sgClient.Request.BaseURL = mockServer.URL
 
 			// Act
-			err := serviceImpl.Send(ctx, tc.req)
+			err := service.Send(ctx, tc.req)
 
 			// Assert
 			if tc.expectedError == "" {
@@ -220,8 +218,8 @@ func TestEmailService_Send(t *testing.T) {
 		// Arrange
 		startMockServer()
 
-		serviceImpl := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName).(sendgrid_client.EmailService)
-		sgClient := serviceImpl.GetSendGridClient()
+		service := sendgrid_client.NewEmailService(apiKey, fromEmail, fromName)
+		sgClient := service.GetSendGridClient()
 		sgClient.Request.BaseURL = mockServer.URL
 		mockServer.Close()
 
@@ -232,7 +230,7 @@ func TestEmailService_Send(t *testing.T) {
 		}
 
 		// Act
-		err := serviceImpl.Send(ctx, req)
+		err := service.Send(ctx, req)
 
 		// Assert
 		assert.Error(t, err, "Expected a network error")

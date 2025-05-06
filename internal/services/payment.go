@@ -105,7 +105,16 @@ func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 	switch event.Type {
 	case "payment_intent.succeeded":
 		paymentIntent := event.Data.Object
-		stripeID, _ := paymentIntent["id"].(string)
+
+		stripeIDInterface, ok := paymentIntent["id"]
+		if !ok {
+
+			return event, errors.InternalError("Payment intent ID not found in Stripe response")
+		}
+		stripeID, ok := stripeIDInterface.(string)
+		if !ok {
+			return event, errors.InternalError("Payment intent ID is not a string in Stripe response")
+		}
 
 		if stripeID == "" {
 			return event, errors.ThirdPartyError("Missing payment intent ID in webhook")
@@ -117,7 +126,16 @@ func (s *paymentService) ProcessWebhook(ctx context.Context, payload []byte, sig
 
 	case "payment_intent.payment_failed":
 		paymentIntent := event.Data.Object
-		stripeID, _ := paymentIntent["id"].(string)
+
+		stripeIDInterface, ok := paymentIntent["id"]
+		if !ok {
+			return event, errors.InternalError("Payment intent ID not found in Stripe response")
+		}
+
+		stripeID, ok := stripeIDInterface.(string)
+		if !ok {
+			return event, errors.InternalError("Payment intent ID is not a string in Stripe response")
+		}
 
 		if stripeID == "" {
 			return event, errors.ThirdPartyError("Missing payment intent ID in webhook")
