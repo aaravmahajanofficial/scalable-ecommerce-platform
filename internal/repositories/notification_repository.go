@@ -14,7 +14,7 @@ import (
 
 type NotificationRepository interface {
 	CreateNotification(ctx context.Context, notification *models.Notification) error
-	GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error)
+	GetNotificationByID(ctx context.Context, id uuid.UUID) (*models.Notification, error)
 	UpdateNotificationStatus(ctx context.Context, id uuid.UUID, status models.NotificationStatus, errorMsg string) error
 	ListNotifications(ctx context.Context, page int, size int) ([]*models.Notification, int, error)
 }
@@ -44,7 +44,7 @@ func (r *notificationRepository) CreateNotification(ctx context.Context, notific
 	return nil
 }
 
-func (r *notificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
+func (r *notificationRepository) GetNotificationByID(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 

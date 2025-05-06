@@ -54,7 +54,8 @@ func TestAuthMiddleware(t *testing.T) {
 		require.NotNil(t, logger)
 
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"success": true}`))
+		_, err := w.Write([]byte(`{"success": true}`))
+		require.NoError(t, err)
 	})
 
 	tests := []struct {

@@ -13,7 +13,7 @@ import (
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error)
 	GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error)
-	ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error)
+	ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error)
 	UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error)
 }
 
@@ -115,7 +115,7 @@ func (s *orderService) GetOrderByID(ctx context.Context, id uuid.UUID) (*models.
 	return order, nil
 }
 
-func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error) {
+func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error) {
 	if page < 1 {
 		page = 1
 	}
@@ -124,7 +124,7 @@ func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerId uuid
 		size = 10
 	}
 
-	orders, total, err := s.orderRepo.ListOrdersByCustomer(ctx, customerId, page, size)
+	orders, total, err := s.orderRepo.ListOrdersByCustomer(ctx, customerID, page, size)
 	if err != nil {
 		return nil, 0, errors.DatabaseError("Failed to fetch orders").WithError(err)
 	}

@@ -111,7 +111,7 @@ func TestNotificationRepository(t *testing.T) {
 		})
 	})
 
-	t.Run("GetNotificationById", func(t *testing.T) {
+	t.Run("GetNotificationByID", func(t *testing.T) {
 		t.Run("Success", func(t *testing.T) {
 			// Arrange
 			repo, mock := setupNotificationRepoTest(t)
@@ -144,10 +144,10 @@ func TestNotificationRepository(t *testing.T) {
 				WillReturnRows(rows)
 
 			// Act
-			result, err := repo.GetNotificationById(ctx, notificationID)
+			result, err := repo.GetNotificationByID(ctx, notificationID)
 
 			// Assert
-			require.NoError(t, err, "GetNotificationById should succeed")
+			require.NoError(t, err, "GetNotificationByID should succeed")
 			assert.Equal(t, expectedNotification, result, "Returned notification should match the expected one")
 			assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 		})
@@ -169,10 +169,10 @@ func TestNotificationRepository(t *testing.T) {
 				WillReturnError(sql.ErrNoRows)
 
 			// Act
-			result, err := repo.GetNotificationById(ctx, notificationID)
+			result, err := repo.GetNotificationByID(ctx, notificationID)
 
 			// Assert
-			require.Error(t, err, "GetNotificationById should return an error when not found")
+			require.Error(t, err, "GetNotificationByID should return an error when not found")
 			assert.ErrorIs(t, err, sql.ErrNoRows, "Returned error should wrap sql.ErrNoRows")
 			assert.Contains(t, err.Error(), "failed to create notification", "Error message should indicate failure (check implementation for accuracy)")
 			assert.NotNil(t, result, "Returned notification should be non-nil (current behavior)")
@@ -198,11 +198,11 @@ func TestNotificationRepository(t *testing.T) {
 				WillReturnRows(rows)
 
 			// Act
-			result, err := repo.GetNotificationById(ctx, notificationID)
+			result, err := repo.GetNotificationByID(ctx, notificationID)
 
 			// Assert
 			// Similar to NotFound, this tests the current behavior of returning an empty struct and error.
-			require.Error(t, err, "GetNotificationById should return an error on scan error")
+			require.Error(t, err, "GetNotificationByID should return an error on scan error")
 			assert.NotErrorIs(t, err, sql.ErrNoRows, "Error should not be ErrNoRows")
 			// Check the error message based on current implementation.
 			assert.Contains(t, err.Error(), "failed to create notification", "Error message should indicate failure (check implementation for accuracy)")

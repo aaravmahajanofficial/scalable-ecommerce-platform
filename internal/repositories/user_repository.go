@@ -14,7 +14,7 @@ import (
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *models.User) error
 	GetUserByEmail(ctx context.Context, email string) (*models.User, error)
-	GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error)
+	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 }
 
 type userRepository struct {
@@ -54,7 +54,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 	return user, nil
 }
 
-func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models.User, error) {
+func (r *userRepository) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 

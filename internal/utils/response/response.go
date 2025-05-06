@@ -2,6 +2,7 @@ package response
 
 import (
 	"encoding/json"
+	"log/slog"
 	"net/http"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/errors"
@@ -20,7 +21,7 @@ type ErrorResponse struct {
 }
 
 // interface {} == any.
-func WriteJson(w http.ResponseWriter, statusCode int, data any) error {
+func WriteJSON(w http.ResponseWriter, statusCode int, data any) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
@@ -33,7 +34,9 @@ func Success(w http.ResponseWriter, statusCode int, data any) {
 		Data:    data,
 	}
 
-	WriteJson(w, statusCode, response)
+	if err := WriteJSON(w, statusCode, response); err != nil {
+		slog.Error("failed to write success response", "error", err)
+	}
 }
 
 func Error(w http.ResponseWriter, err error) {
@@ -64,5 +67,7 @@ func Error(w http.ResponseWriter, err error) {
 		Error:   errorResponse,
 	}
 
-	WriteJson(w, statusCode, response)
+	if writeErr := WriteJSON(w, statusCode, response); writeErr != nil {
+		slog.Error("failed to write error response", "error", writeErr, "original_error", err)
+	}
 }

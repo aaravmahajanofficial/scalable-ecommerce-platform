@@ -41,7 +41,8 @@ func TestGet(t *testing.T) {
 	ctx := t.Context()
 	testKey := "test:get"
 	testValue := TestData{Field1: "value1", Field2: 123}
-	jsonData, _ := json.Marshal(testValue)
+	jsonData, err := json.Marshal(testValue)
+	require.NoError(t, err)
 
 	t.Run("Success - Key Found", func(t *testing.T) {
 		// Arrange
@@ -106,9 +107,9 @@ func TestGet(t *testing.T) {
 
 		var result TestData
 
-		invalidJson := `{"field1": "value1", "field2": "not_an_int"}`
+		invalidJSON := `{"field1": "value1", "field2": "not_an_int"}`
 
-		mock.ExpectGet(testKey).SetVal(invalidJson)
+		mock.ExpectGet(testKey).SetVal(invalidJSON)
 
 		// Act
 		found, err := redisCache.Get(ctx, testKey, &result)

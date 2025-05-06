@@ -85,12 +85,12 @@ func (_c *MockNotificationRepository_CreateNotification_Call) RunAndReturn(run f
 	return _c
 }
 
-// GetNotificationById provides a mock function for the type MockNotificationRepository
-func (_mock *MockNotificationRepository) GetNotificationById(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
+// GetNotificationByID provides a mock function for the type MockNotificationRepository
+func (_mock *MockNotificationRepository) GetNotificationByID(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetNotificationById")
+		panic("no return value specified for GetNotificationByID")
 	}
 
 	var r0 *models.Notification
@@ -113,31 +113,31 @@ func (_mock *MockNotificationRepository) GetNotificationById(ctx context.Context
 	return r0, r1
 }
 
-// MockNotificationRepository_GetNotificationById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNotificationById'
-type MockNotificationRepository_GetNotificationById_Call struct {
+// MockNotificationRepository_GetNotificationByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNotificationByID'
+type MockNotificationRepository_GetNotificationByID_Call struct {
 	*mock.Call
 }
 
-// GetNotificationById is a helper method to define mock.On call
+// GetNotificationByID is a helper method to define mock.On call
 //   - ctx
 //   - id
-func (_e *MockNotificationRepository_Expecter) GetNotificationById(ctx interface{}, id interface{}) *MockNotificationRepository_GetNotificationById_Call {
-	return &MockNotificationRepository_GetNotificationById_Call{Call: _e.mock.On("GetNotificationById", ctx, id)}
+func (_e *MockNotificationRepository_Expecter) GetNotificationByID(ctx interface{}, id interface{}) *MockNotificationRepository_GetNotificationByID_Call {
+	return &MockNotificationRepository_GetNotificationByID_Call{Call: _e.mock.On("GetNotificationByID", ctx, id)}
 }
 
-func (_c *MockNotificationRepository_GetNotificationById_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockNotificationRepository_GetNotificationById_Call {
+func (_c *MockNotificationRepository_GetNotificationByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockNotificationRepository_GetNotificationByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(uuid.UUID))
 	})
 	return _c
 }
 
-func (_c *MockNotificationRepository_GetNotificationById_Call) Return(notification *models.Notification, err error) *MockNotificationRepository_GetNotificationById_Call {
+func (_c *MockNotificationRepository_GetNotificationByID_Call) Return(notification *models.Notification, err error) *MockNotificationRepository_GetNotificationByID_Call {
 	_c.Call.Return(notification, err)
 	return _c
 }
 
-func (_c *MockNotificationRepository_GetNotificationById_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*models.Notification, error)) *MockNotificationRepository_GetNotificationById_Call {
+func (_c *MockNotificationRepository_GetNotificationByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*models.Notification, error)) *MockNotificationRepository_GetNotificationByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

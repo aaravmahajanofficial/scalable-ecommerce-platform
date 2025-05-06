@@ -33,7 +33,7 @@ func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) 
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
-	shipping_address, err := json.Marshal(order.ShippingAddress)
+	shippingAddress, err := json.Marshal(order.ShippingAddress)
 	if err != nil {
 		return fmt.Errorf("failed to marshal shipping address: %w", err)
 	}
@@ -44,7 +44,7 @@ func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) 
 		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
 	`
 
-	_, err = r.DB.ExecContext(dbCtx, query, order.ID, order.CustomerID, order.Status, order.TotalAmount, order.PaymentStatus, order.PaymentIntentID, shipping_address)
+	_, err = r.DB.ExecContext(dbCtx, query, order.ID, order.CustomerID, order.Status, order.TotalAmount, order.PaymentStatus, order.PaymentIntentID, shippingAddress)
 	if err != nil {
 		return fmt.Errorf("failed to insert order: %w", err)
 	}

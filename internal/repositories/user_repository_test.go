@@ -171,7 +171,7 @@ func TestUserRepository(t *testing.T) {
 		require.NoError(t, mock.ExpectationsWereMet())
 	})
 
-	t.Run("GetUserById_Success", func(t *testing.T) {
+	t.Run("GetUserByID_Success", func(t *testing.T) {
 		// Arrange
 		userID := uuid.New()
 		expectedUser := &models.User{
@@ -196,20 +196,20 @@ func TestUserRepository(t *testing.T) {
 			WillReturnRows(rows)
 
 		// Act
-		user, err := repo.GetUserById(ctx, userID)
+		user, err := repo.GetUserByID(ctx, userID)
 
 		// Assert
-		require.NoError(t, err, "GetUserById should not return an error when user is found")
+		require.NoError(t, err, "GetUserByID should not return an error when user is found")
 		assert.Equal(t, expectedUser.ID, user.ID)
 		assert.Equal(t, expectedUser.Email, user.Email)
 		assert.Equal(t, expectedUser.Name, user.Name)
 		assert.Equal(t, expectedUser.CreatedAt, user.CreatedAt)
 		assert.Equal(t, expectedUser.UpdatedAt, user.UpdatedAt)
-		assert.Empty(t, user.Password, "Password should not be populated by GetUserById")
+		assert.Empty(t, user.Password, "Password should not be populated by GetUserByID")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
-	t.Run("GetUserById_NotFound", func(t *testing.T) {
+	t.Run("GetUserByID_NotFound", func(t *testing.T) {
 		// Arrange
 		userID := uuid.New()
 
@@ -225,16 +225,16 @@ func TestUserRepository(t *testing.T) {
 			WillReturnError(sql.ErrNoRows)
 
 		// Act
-		user, err := repo.GetUserById(ctx, userID)
+		user, err := repo.GetUserByID(ctx, userID)
 
 		// Assert
-		require.Error(t, err, "GetUserById should return an error when user is not found")
+		require.Error(t, err, "GetUserByID should return an error when user is not found")
 		assert.Equal(t, "user not found", err.Error(), "Error message should indicate user not found")
 		assert.Nil(t, user, "Returned user should be nil when not found")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
-	t.Run("GetUserById_ScanError", func(t *testing.T) {
+	t.Run("GetUserByID_ScanError", func(t *testing.T) {
 		// Arrange
 		userID := uuid.New()
 		scanError := errors.New("some other db error")
@@ -251,10 +251,10 @@ func TestUserRepository(t *testing.T) {
 			WillReturnError(scanError)
 
 		// Act
-		user, err := repo.GetUserById(ctx, userID)
+		user, err := repo.GetUserByID(ctx, userID)
 
 		// Assert
-		require.Error(t, err, "GetUserById should return an error on a generic database error")
+		require.Error(t, err, "GetUserByID should return an error on a generic database error")
 		assert.Equal(t, scanError, err, "Returned error should match the generic database error")
 		assert.Nil(t, user, "Returned user should be nil on error")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")

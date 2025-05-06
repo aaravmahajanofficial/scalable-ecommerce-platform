@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -129,7 +130,8 @@ func TestUserService_Login(t *testing.T) {
 		// Arrange
 		ctx := t.Context()
 		password := "P@ssword123!"
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		require.NoError(t, err)
 
 		req := &models.LoginRequest{
 			Email:    "test@example.com",
@@ -182,7 +184,8 @@ func TestUserService_Login(t *testing.T) {
 		ctx := t.Context()
 		password := "P@ssword123!"
 		wrongPassword := "WrongP@ssword123!"
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+		require.NoError(t, err)
 
 		req := &models.LoginRequest{
 			Email:    "test@example.com",

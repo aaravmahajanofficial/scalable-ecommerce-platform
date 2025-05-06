@@ -210,7 +210,7 @@ func TestGetNotification(t *testing.T) {
 
 	t.Run("Success", func(t *testing.T) {
 		// Arrange
-		mockRepo.EXPECT().GetNotificationById(ctx, testID).Return(expectedNotification, nil).Once()
+		mockRepo.EXPECT().GetNotificationByID(ctx, testID).Return(expectedNotification, nil).Once()
 		// Act
 		notification, err := service.GetNotification(ctx, testID)
 
@@ -222,7 +222,7 @@ func TestGetNotification(t *testing.T) {
 
 	t.Run("Failure - Not Found", func(t *testing.T) {
 		// Arrange
-		mockRepo.EXPECT().GetNotificationById(ctx, testID).Return(nil, notFoundErr).Once()
+		mockRepo.EXPECT().GetNotificationByID(ctx, testID).Return(nil, notFoundErr).Once()
 
 		// Act
 		notification, err := service.GetNotification(ctx, testID)
@@ -240,7 +240,7 @@ func TestGetNotification(t *testing.T) {
 
 	t.Run("Failure - Other DB Error", func(t *testing.T) {
 		// Arrange
-		mockRepo.EXPECT().GetNotificationById(ctx, testID).Return(nil, dbErr).Once()
+		mockRepo.EXPECT().GetNotificationByID(ctx, testID).Return(nil, dbErr).Once()
 
 		// Act
 		notification, err := service.GetNotification(ctx, testID)

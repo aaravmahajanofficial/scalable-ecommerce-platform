@@ -119,7 +119,7 @@ func (s *userService) Login(ctx context.Context, req *models.LoginRequest) (*mod
 }
 
 func (s *userService) GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error) {
-	user, err := s.repo.GetUserById(ctx, id)
+	user, err := s.repo.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("User not found").WithError(err)
 	}

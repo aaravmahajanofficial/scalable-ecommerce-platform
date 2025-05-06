@@ -161,7 +161,8 @@ func TestEmailService_Send(t *testing.T) {
 			handler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest) // 400 Bad Request
-				_, _ = w.Write([]byte(`{"errors": [{"message": "Invalid email"}]}`))
+				_, err := w.Write([]byte(`{"errors": [{"message": "Invalid email"}]}`))
+				require.NoError(t, err)
 			},
 			expectedError: "failed to send email, status code: 400",
 			checkPayload: func(t *testing.T, p sendgridV3Payload) {
@@ -238,8 +239,6 @@ func TestEmailService_Send(t *testing.T) {
 		assert.True(t, strings.Contains(err.Error(), "connect: connection refused") || strings.Contains(err.Error(), "dial tcp"), "Expected connection refused or dial tcp error")
 	})
 }
-
-type emailService = sendgrid_client.EmailService
 
 type testEmailService struct {
 	client *sendgrid.Client

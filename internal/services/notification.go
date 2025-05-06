@@ -91,7 +91,7 @@ func (s *notificationService) SendEmail(ctx context.Context, req *models.EmailNo
 
 // GetNotification implements NotificationService.
 func (s *notificationService) GetNotification(ctx context.Context, id uuid.UUID) (*models.Notification, error) {
-	notification, err := s.repo.GetNotificationById(ctx, id)
+	notification, err := s.repo.GetNotificationByID(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("Notification not found").WithError(err)
 	}

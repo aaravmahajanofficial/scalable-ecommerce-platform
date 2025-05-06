@@ -318,8 +318,11 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 	addr1 := &models.Address{Street: "List St 1", City: "Listville", State: "LS", PostalCode: "11111", Country: "US"}
 	addr2 := &models.Address{Street: "List St 2", City: "Listville", State: "LS", PostalCode: "22222", Country: "US"}
-	addr1JSON, _ := json.Marshal(addr1)
-	addr2JSON, _ := json.Marshal(addr2)
+	addr1JSON, err := json.Marshal(addr1)
+	require.NoError(t, err)
+
+	addr2JSON, err := json.Marshal(addr2)
+	require.NoError(t, err)
 
 	expectedOrders := []models.Order{
 		{

@@ -80,8 +80,8 @@ func (s *stripeClient) CreatePaymentMethod(cardNumber string, cardExpMonth strin
 }
 
 // CreatePaymentMethod implements Client.
-func (s *stripeClient) CreatePaymentMethodFromToken(paymentMethodId string) (*stripe.PaymentMethod, error) {
-	return paymentmethod.Get(paymentMethodId, nil)
+func (s *stripeClient) CreatePaymentMethodFromToken(paymentMethodID string) (*stripe.PaymentMethod, error) {
+	return paymentmethod.Get(paymentMethodID, nil)
 }
 
 // AttachPaymentMethodToIntent implements Client.

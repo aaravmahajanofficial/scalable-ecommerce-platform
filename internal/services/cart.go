@@ -13,7 +13,7 @@ import (
 )
 
 type CartService interface {
-	CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error)
+	CreateCart(ctx context.Context, userID uuid.UUID) (*models.Cart, error)
 	GetCart(ctx context.Context, customerID uuid.UUID) (*models.Cart, error)
 	AddItem(ctx context.Context, customerID uuid.UUID, req *models.AddItemRequest) (*models.Cart, error)
 	UpdateQuantity(ctx context.Context, customerID uuid.UUID, req *models.UpdateQuantityRequest) (*models.Cart, error)
@@ -27,10 +27,10 @@ func NewCartService(repo repository.CartRepository) CartService {
 	return &cartService{repo: repo}
 }
 
-func (s *cartService) CreateCart(ctx context.Context, userId uuid.UUID) (*models.Cart, error) {
+func (s *cartService) CreateCart(ctx context.Context, userID uuid.UUID) (*models.Cart, error) {
 	cart := &models.Cart{
 		ID:        uuid.New(),
-		UserID:    userId,
+		UserID:    userID,
 		Items:     make(map[string]models.CartItem),
 		Total:     0,
 		CreatedAt: time.Now(),
