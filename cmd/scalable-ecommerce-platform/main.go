@@ -264,9 +264,9 @@ func main() {
 	server := http.Server{
 		Addr:         cfg.Addr,
 		Handler:      mainMux,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		IdleTimeout:  120 * time.Second,
+		ReadTimeout:  time.Duration(cfg.ReadTimeout),
+		WriteTimeout: time.Duration(cfg.WriteTimeout),
+		IdleTimeout:  time.Duration(cfg.IdleTimeout),
 	}
 
 	slog.Info("🚀 Server is starting...", slog.String("address", cfg.Addr))

@@ -328,7 +328,7 @@ func TestCreateOrder_UpdateInventoryRepoError(t *testing.T) {
 	mockOrderRepo.AssertExpectations(t)
 }
 
-func TestGetOrderById_Success(t *testing.T) {
+func TestGetOrderByID_Success(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
 	ctx := t.Context()
@@ -336,10 +336,10 @@ func TestGetOrderById_Success(t *testing.T) {
 	expectedOrder := &models.Order{ID: orderID, CustomerID: uuid.New(), Status: models.OrderStatusDelivered}
 
 	// Mock Call Order Repository
-	mockOrderRepo.On("GetOrderById", ctx, orderID).Return(expectedOrder, nil).Once()
+	mockOrderRepo.On("GetOrderByID", ctx, orderID).Return(expectedOrder, nil).Once()
 
 	// Act
-	order, err := orderService.GetOrderById(ctx, orderID)
+	order, err := orderService.GetOrderByID(ctx, orderID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -349,7 +349,7 @@ func TestGetOrderById_Success(t *testing.T) {
 	mockOrderRepo.AssertExpectations(t)
 }
 
-func TestGetOrderById_NotFound(t *testing.T) {
+func TestGetOrderByID_NotFound(t *testing.T) {
 	// Arrange
 	orderService, mockOrderRepo, _, _ := setupOrderServiceTest(t)
 	ctx := t.Context()
@@ -357,10 +357,10 @@ func TestGetOrderById_NotFound(t *testing.T) {
 
 	// Mock Call Order Repository
 	mockErr := errors.New("mock repo error: not found")
-	mockOrderRepo.On("GetOrderById", ctx, orderID).Return(nil, mockErr).Once()
+	mockOrderRepo.On("GetOrderByID", ctx, orderID).Return(nil, mockErr).Once()
 
 	// Act
-	order, err := orderService.GetOrderById(ctx, orderID)
+	order, err := orderService.GetOrderByID(ctx, orderID)
 
 	// Assert
 	assert.Error(t, err)
@@ -459,7 +459,7 @@ func TestUpdateOrderStatus_Success(t *testing.T) {
 	updatedOrder := &models.Order{ID: orderID, Status: newStatus, UpdatedAt: time.Now()}
 
 	// Mock Call Order Repository
-	mockOrderRepo.On("GetOrderById", ctx, orderID).Return(originalOrder, nil).Once()
+	mockOrderRepo.On("GetOrderByID", ctx, orderID).Return(originalOrder, nil).Once()
 
 	// Mock Call Order Repository
 	mockOrderRepo.On("UpdateOrderStatus", ctx, orderID, newStatus).Return(updatedOrder, nil).Once()
@@ -485,7 +485,7 @@ func TestUpdateOrderStatus_OrderNotFound(t *testing.T) {
 
 	// Mock Call Order Repository
 	mockErr := errors.New("mock repo get error: not found")
-	mockOrderRepo.On("GetOrderById", ctx, orderID).Return(nil, mockErr).Once()
+	mockOrderRepo.On("GetOrderByID", ctx, orderID).Return(nil, mockErr).Once()
 
 	// Act
 	order, err := orderService.UpdateOrderStatus(ctx, orderID, newStatus)
@@ -512,7 +512,7 @@ func TestUpdateOrderStatus_UpdateRepoError(t *testing.T) {
 	originalOrder := &models.Order{ID: orderID, Status: models.OrderStatusShipping}
 
 	// Mock Call Order Repository
-	mockOrderRepo.On("GetOrderById", ctx, orderID).Return(originalOrder, nil).Once()
+	mockOrderRepo.On("GetOrderByID", ctx, orderID).Return(originalOrder, nil).Once()
 
 	// Mock Call Order Repository
 	mockErr := errors.New("mock repo update error")

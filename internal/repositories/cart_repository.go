@@ -60,7 +60,7 @@ func (r *cartRepository) GetCartByCustomerID(ctx context.Context, customerID uui
 
 	err := r.DB.QueryRowContext(dbCtx, query, customerID).Scan(&cart.ID, &cart.UserID, &itemsJSON, &cart.CreatedAt, &cart.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying database: %w", err)
 	}
 
 	if err := json.Unmarshal(itemsJSON, &cart.Items); err != nil {

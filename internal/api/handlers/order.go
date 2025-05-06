@@ -113,7 +113,7 @@ func (h *OrderHandler) GetOrder() http.HandlerFunc {
 		logger = logger.With(slog.String("orderId", id.String()))
 
 		// Call the service
-		order, err := h.orderService.GetOrderById(r.Context(), id)
+		order, err := h.orderService.GetOrderByID(r.Context(), id)
 		if err != nil {
 			logger.Error("Failed to get order",
 				slog.String("orderId", id.String()),

@@ -49,6 +49,7 @@ func (e *emailService) Send(ctx context.Context, req *models.EmailNotificationRe
 
 	sanitizedPlainText := sanitizeContent(req.Content)
 	sanitizedHTMLContent := sanitizeHTMLContent(req.HTMLContent)
+
 	message.AddContent(mail.NewContent("text/plain", sanitizedPlainText))
 	message.AddContent(mail.NewContent("text/html", sanitizedHTMLContent))
 
@@ -74,6 +75,7 @@ func (e *emailService) GetSendGridClient() *sendgrid.Client {
 func sanitizeContent(content string) string {
 	// Use bluemonday's strict policy to strip all HTML tags for plain text
 	p := bluemonday.StrictPolicy()
+
 	return p.Sanitize(content)
 }
 
@@ -81,5 +83,6 @@ func sanitizeContent(content string) string {
 func sanitizeHTMLContent(htmlContent string) string {
 	// Use bluemonday's UGCPolicy for HTML content, which allows common safe tags and attributes
 	p := bluemonday.UGCPolicy()
+
 	return p.Sanitize(htmlContent)
 }

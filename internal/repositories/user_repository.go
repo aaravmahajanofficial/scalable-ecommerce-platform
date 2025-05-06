@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 
 	models "github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
@@ -47,7 +48,7 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 	err := r.DB.QueryRowContext(dbCtx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying database: %w", err)
 	}
 
 	return user, nil
@@ -71,7 +72,7 @@ func (r *userRepository) GetUserById(ctx context.Context, id uuid.UUID) (*models
 			return nil, errors.New("user not found")
 		}
 
-		return nil, err
+		return nil, fmt.Errorf("querying database: %w", err)
 	}
 
 	return user, nil

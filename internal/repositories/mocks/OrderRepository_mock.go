@@ -85,12 +85,12 @@ func (_c *MockOrderRepository_CreateOrder_Call) RunAndReturn(run func(ctx contex
 	return _c
 }
 
-// GetOrderById provides a mock function for the type MockOrderRepository
-func (_mock *MockOrderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+// GetOrderByID provides a mock function for the type MockOrderRepository
+func (_mock *MockOrderRepository) GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetOrderById")
+		panic("no return value specified for GetOrderByID")
 	}
 
 	var r0 *models.Order
@@ -113,31 +113,31 @@ func (_mock *MockOrderRepository) GetOrderById(ctx context.Context, id uuid.UUID
 	return r0, r1
 }
 
-// MockOrderRepository_GetOrderById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrderById'
-type MockOrderRepository_GetOrderById_Call struct {
+// MockOrderRepository_GetOrderByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrderByID'
+type MockOrderRepository_GetOrderByID_Call struct {
 	*mock.Call
 }
 
-// GetOrderById is a helper method to define mock.On call
+// GetOrderByID is a helper method to define mock.On call
 //   - ctx
 //   - id
-func (_e *MockOrderRepository_Expecter) GetOrderById(ctx interface{}, id interface{}) *MockOrderRepository_GetOrderById_Call {
-	return &MockOrderRepository_GetOrderById_Call{Call: _e.mock.On("GetOrderById", ctx, id)}
+func (_e *MockOrderRepository_Expecter) GetOrderByID(ctx interface{}, id interface{}) *MockOrderRepository_GetOrderByID_Call {
+	return &MockOrderRepository_GetOrderByID_Call{Call: _e.mock.On("GetOrderByID", ctx, id)}
 }
 
-func (_c *MockOrderRepository_GetOrderById_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockOrderRepository_GetOrderById_Call {
+func (_c *MockOrderRepository_GetOrderByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockOrderRepository_GetOrderByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(uuid.UUID))
 	})
 	return _c
 }
 
-func (_c *MockOrderRepository_GetOrderById_Call) Return(order *models.Order, err error) *MockOrderRepository_GetOrderById_Call {
+func (_c *MockOrderRepository_GetOrderByID_Call) Return(order *models.Order, err error) *MockOrderRepository_GetOrderByID_Call {
 	_c.Call.Return(order, err)
 	return _c
 }
 
-func (_c *MockOrderRepository_GetOrderById_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*models.Order, error)) *MockOrderRepository_GetOrderById_Call {
+func (_c *MockOrderRepository_GetOrderByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*models.Order, error)) *MockOrderRepository_GetOrderByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

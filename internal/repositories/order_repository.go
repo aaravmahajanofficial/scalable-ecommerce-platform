@@ -15,7 +15,7 @@ import (
 
 type OrderRepository interface {
 	CreateOrder(ctx context.Context, order *models.Order) error
-	GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error)
 	ListOrdersByCustomer(ctx context.Context, customerID uuid.UUID, page int, size int) ([]models.Order, int, error)
 	UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error)
 	UpdatePaymentStatus(ctx context.Context, id uuid.UUID, status models.PaymentStatus, paymentIntentID string) error
@@ -66,7 +66,7 @@ func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) 
 }
 
 // Get the order items.
-func (r *orderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+func (r *orderRepository) GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 	dbCtx, cancel := utils.WithDBTimeout(ctx)
 	defer cancel()
 
@@ -85,7 +85,7 @@ func (r *orderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*mode
 	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&order.CustomerID, &order.Status, &order.TotalAmount, &order.PaymentStatus, &order.PaymentIntentID, &jsonData, &order.CreatedAt, &order.UpdatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, err
+			return nil, fmt.Errorf("querying database: %w", err)
 		}
 
 		return nil, fmt.Errorf("failed to get the order: %w", err)
@@ -105,7 +105,7 @@ func (r *orderRepository) GetOrderById(ctx context.Context, id uuid.UUID) (*mode
 	rows, err := r.DB.QueryContext(dbCtx, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, err
+			return nil, fmt.Errorf("querying database: %w", err)
 		}
 
 		return nil, fmt.Errorf("failed to get the order items: %w", err)
@@ -258,7 +258,7 @@ func (r *orderRepository) UpdateOrderStatus(ctx context.Context, id uuid.UUID, s
 		return nil, sql.ErrNoRows
 	}
 
-	updatedOrder, err := r.GetOrderById(ctx, id)
+	updatedOrder, err := r.GetOrderByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch updated order after status update: %w", err)
 	}

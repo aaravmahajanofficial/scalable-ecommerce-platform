@@ -149,7 +149,7 @@ func TestCreateOrder(t *testing.T) {
 	})
 }
 
-func TestGetOrderById(t *testing.T) {
+func TestGetOrderByID(t *testing.T) {
 	repo, mock := setupOrderRepoTest(t)
 	ctx := t.Context()
 
@@ -203,10 +203,10 @@ func TestGetOrderById(t *testing.T) {
 		mock.ExpectQuery(expectedItemsQuerySQL).WithArgs(orderID).WillReturnRows(itemRows)
 
 		// Act
-		order, err := repo.GetOrderById(ctx, orderID)
+		order, err := repo.GetOrderByID(ctx, orderID)
 
 		// Assert
-		assert.NoError(t, err, "GetOrderById should succeed")
+		assert.NoError(t, err, "GetOrderByID should succeed")
 		require.NotNil(t, order, "Order should not be nil on success")
 		assert.Equal(t, expectedOrder.ID, order.ID)
 		assert.Equal(t, expectedOrder.CustomerID, order.CustomerID)
@@ -225,10 +225,10 @@ func TestGetOrderById(t *testing.T) {
 		mock.ExpectQuery(expectedOrderQuerySQL).WithArgs(orderID).WillReturnError(sql.ErrNoRows)
 
 		// Act
-		order, err := repo.GetOrderById(ctx, orderID)
+		order, err := repo.GetOrderByID(ctx, orderID)
 
 		// Assert
-		require.Error(t, err, "GetOrderById should fail when order not found")
+		require.Error(t, err, "GetOrderByID should fail when order not found")
 		assert.ErrorIs(t, err, sql.ErrNoRows, "Error should wrap sql.ErrNoRows")
 		assert.Nil(t, order, "Returned order should be nil")
 	})
@@ -239,10 +239,10 @@ func TestGetOrderById(t *testing.T) {
 		mock.ExpectQuery(expectedOrderQuerySQL).WithArgs(orderID).WillReturnRows(orderRows)
 
 		// Act
-		order, err := repo.GetOrderById(ctx, orderID)
+		order, err := repo.GetOrderByID(ctx, orderID)
 
 		// Assert
-		require.Error(t, err, "GetOrderById should fail on order scan error")
+		require.Error(t, err, "GetOrderByID should fail on order scan error")
 		assert.ErrorContains(t, err, "failed to get the order", "Error message should indicate failure")
 		assert.ErrorContains(t, err, "Scan", "Error should be related to scanning")
 		assert.Nil(t, order, "Returned order should be nil")
@@ -256,10 +256,10 @@ func TestGetOrderById(t *testing.T) {
 		mock.ExpectQuery(expectedOrderQuerySQL).WithArgs(orderID).WillReturnRows(orderRows)
 
 		// Act
-		order, err := repo.GetOrderById(ctx, orderID)
+		order, err := repo.GetOrderByID(ctx, orderID)
 
 		// Assert
-		require.Error(t, err, "GetOrderById should fail on address unmarshal error")
+		require.Error(t, err, "GetOrderByID should fail on address unmarshal error")
 		assert.ErrorContains(t, err, "failed to unmarshal shipping address", "Error message should indicate unmarshal failure")
 		assert.Nil(t, order, "Returned order should be nil")
 	})
@@ -275,10 +275,10 @@ func TestGetOrderById(t *testing.T) {
 		mock.ExpectQuery(expectedItemsQuerySQL).WithArgs(orderID).WillReturnError(dbErr)
 
 		// Act
-		order, err := repo.GetOrderById(ctx, orderID)
+		order, err := repo.GetOrderByID(ctx, orderID)
 
 		// Assert
-		require.Error(t, err, "GetOrderById should fail when items query fails")
+		require.Error(t, err, "GetOrderByID should fail when items query fails")
 		assert.ErrorContains(t, err, "failed to get the order items", "Error message should indicate item query failure")
 		assert.ErrorIs(t, err, dbErr, "Error should wrap the original DB error")
 		assert.Nil(t, order, "Returned order should be nil")
@@ -295,10 +295,10 @@ func TestGetOrderById(t *testing.T) {
 		mock.ExpectQuery(expectedItemsQuerySQL).WithArgs(orderID).WillReturnRows(itemRows)
 
 		// Act
-		order, err := repo.GetOrderById(ctx, orderID)
+		order, err := repo.GetOrderByID(ctx, orderID)
 
 		// Assert
-		require.Error(t, err, "GetOrderById should fail on item scan error")
+		require.Error(t, err, "GetOrderByID should fail on item scan error")
 		assert.ErrorContains(t, err, "failed to scan order item", "Error message should indicate item scan failure")
 		assert.ErrorContains(t, err, "Scan", "Error should be related to scanning")
 		assert.Nil(t, order, "Returned order should be nil")

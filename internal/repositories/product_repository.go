@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/models"
 	"github.com/aaravmahajanofficial/scalable-ecommerce-platform/internal/utils"
@@ -54,7 +55,7 @@ func (r *productRepository) GetProductByID(ctx context.Context, id uuid.UUID) (*
 
 	err := r.DB.QueryRowContext(dbCtx, query, id).Scan(&product.ID, &product.CategoryID, &product.Name, &product.Description, &product.Price, &product.StockQuantity, &product.SKU, &product.Status, &product.CreatedAt, &product.UpdatedAt, &category.ID, &category.Name, &category.Description)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying database: %w", err)
 	}
 
 	product.Category = &category

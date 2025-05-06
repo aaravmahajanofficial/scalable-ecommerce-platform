@@ -96,12 +96,12 @@ func (_c *MockOrderService_CreateOrder_Call) RunAndReturn(run func(ctx context.C
 	return _c
 }
 
-// GetOrderById provides a mock function for the type MockOrderService
-func (_mock *MockOrderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+// GetOrderByID provides a mock function for the type MockOrderService
+func (_mock *MockOrderService) GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetOrderById")
+		panic("no return value specified for GetOrderByID")
 	}
 
 	var r0 *models.Order
@@ -124,31 +124,31 @@ func (_mock *MockOrderService) GetOrderById(ctx context.Context, id uuid.UUID) (
 	return r0, r1
 }
 
-// MockOrderService_GetOrderById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrderById'
-type MockOrderService_GetOrderById_Call struct {
+// MockOrderService_GetOrderByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetOrderByID'
+type MockOrderService_GetOrderByID_Call struct {
 	*mock.Call
 }
 
-// GetOrderById is a helper method to define mock.On call
+// GetOrderByID is a helper method to define mock.On call
 //   - ctx
 //   - id
-func (_e *MockOrderService_Expecter) GetOrderById(ctx interface{}, id interface{}) *MockOrderService_GetOrderById_Call {
-	return &MockOrderService_GetOrderById_Call{Call: _e.mock.On("GetOrderById", ctx, id)}
+func (_e *MockOrderService_Expecter) GetOrderByID(ctx interface{}, id interface{}) *MockOrderService_GetOrderByID_Call {
+	return &MockOrderService_GetOrderByID_Call{Call: _e.mock.On("GetOrderByID", ctx, id)}
 }
 
-func (_c *MockOrderService_GetOrderById_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockOrderService_GetOrderById_Call {
+func (_c *MockOrderService_GetOrderByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *MockOrderService_GetOrderByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(uuid.UUID))
 	})
 	return _c
 }
 
-func (_c *MockOrderService_GetOrderById_Call) Return(order *models.Order, err error) *MockOrderService_GetOrderById_Call {
+func (_c *MockOrderService_GetOrderByID_Call) Return(order *models.Order, err error) *MockOrderService_GetOrderByID_Call {
 	_c.Call.Return(order, err)
 	return _c
 }
 
-func (_c *MockOrderService_GetOrderById_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*models.Order, error)) *MockOrderService_GetOrderById_Call {
+func (_c *MockOrderService_GetOrderByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*models.Order, error)) *MockOrderService_GetOrderByID_Call {
 	_c.Call.Return(run)
 	return _c
 }

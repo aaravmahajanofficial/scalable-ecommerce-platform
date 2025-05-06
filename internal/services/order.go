@@ -12,7 +12,7 @@ import (
 
 type OrderService interface {
 	CreateOrder(ctx context.Context, req *models.CreateOrderRequest) (*models.Order, error)
-	GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error)
+	GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error)
 	ListOrdersByCustomer(ctx context.Context, customerId uuid.UUID, page int, size int) ([]models.Order, int, error)
 	UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error)
 }
@@ -106,8 +106,8 @@ func (s *orderService) CreateOrder(ctx context.Context, req *models.CreateOrderR
 	return order, nil
 }
 
-func (s *orderService) GetOrderById(ctx context.Context, id uuid.UUID) (*models.Order, error) {
-	order, err := s.orderRepo.GetOrderById(ctx, id)
+func (s *orderService) GetOrderByID(ctx context.Context, id uuid.UUID) (*models.Order, error) {
+	order, err := s.orderRepo.GetOrderByID(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("Order not found").WithError(err)
 	}
@@ -134,7 +134,7 @@ func (s *orderService) ListOrdersByCustomer(ctx context.Context, customerId uuid
 
 func (s *orderService) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status models.OrderStatus) (*models.Order, error) {
 	// check if order exists or not
-	_, err := s.orderRepo.GetOrderById(ctx, id)
+	_, err := s.orderRepo.GetOrderByID(ctx, id)
 	if err != nil {
 		return nil, errors.NotFoundError("Order not found").WithError(err)
 	}

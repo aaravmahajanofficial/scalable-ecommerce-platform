@@ -12,7 +12,10 @@ import (
 )
 
 type HTTPServer struct {
-	Addr string `yaml:"address"`
+	Addr         string `yaml:"address"`
+	ReadTimeout  int    `yaml:"read_timeout"`
+	WriteTimeout int    `yaml:"write_timeout"`
+	IdleTimeout  int    `yaml:"idle_timeout"`
 }
 
 type Database struct {

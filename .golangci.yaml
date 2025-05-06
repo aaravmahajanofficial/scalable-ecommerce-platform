@@ -1,20 +1,14 @@
 run:
   timeout: 10m
   go: "1.24.2"
-  skip-dirs:
+  issues:
+  exclude-dirs:
     - vendor
     - node_modules
   fast: true
 
 linters:
   enable-all: true
-  disable:
-    - structcheck
-    - deadcode
-    - maligned
-    - scopelint
-    - interfacer
-    - varcheck
 
 linters-settings:
   errcheck:
@@ -42,5 +36,5 @@ issues:
         - all
 
 output:
-  format: github-actions
+  formats: colored-line-number
   sort-results: true
