@@ -48,6 +48,9 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 	err := r.DB.QueryRowContext(dbCtx, query, email).Scan(&user.ID, &user.Email, &user.Password, &user.Name, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
 		return nil, fmt.Errorf("querying database: %w", err)
 	}
 

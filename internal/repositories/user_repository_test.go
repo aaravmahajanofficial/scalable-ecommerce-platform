@@ -88,7 +88,7 @@ func TestUserRepository(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "CreateUser should return an error")
-		assert.Equal(t, dbError, err, "Returned error should match the expected database error")
+		assert.ErrorIs(t, err, dbError, "Returned error should contain the expected database error")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
 
@@ -142,7 +142,7 @@ func TestUserRepository(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetUserByEmail should return an error when user is not found")
-		assert.Equal(t, sql.ErrNoRows, err, "Returned error should be sql.ErrNoRows")
+		assert.ErrorIs(t, sql.ErrNoRows, err, "Returned error should be sql.ErrNoRows")
 		assert.Nil(t, user, "Returned user should be nil when not found")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})
@@ -255,7 +255,7 @@ func TestUserRepository(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "GetUserByID should return an error on a generic database error")
-		assert.Equal(t, scanError, err, "Returned error should match the generic database error")
+		assert.ErrorIs(t, err, scanError, "Returned error should contain the generic database error")
 		assert.Nil(t, user, "Returned user should be nil on error")
 		assert.NoError(t, mock.ExpectationsWereMet(), "SQL mock expectations were not met")
 	})

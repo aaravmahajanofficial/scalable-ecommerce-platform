@@ -34,7 +34,7 @@ func TestUserService_Register(t *testing.T) {
 		}
 
 		// Mock Behavior -> email is fresh!
-		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, errors.New("Email not found")).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, nil).Once()
 
 		// Mock Behavior -> user was created
 		// mock.AnythingOfType is used when, you don't know the exact value of the user struct, as here, password field may contain hashedPassword
@@ -96,7 +96,7 @@ func TestUserService_Register(t *testing.T) {
 		}
 
 		// Mock Behavior -> email is fresh!
-		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, errors.New("not found")).Once()
+		mockUserRepo.On("GetUserByEmail", mock.Anything, req.Email).Return(nil, nil).Once()
 
 		// Mock Behavior -> something is wrong with database
 		dbErr := errors.New("something exploaded")
@@ -295,7 +295,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 		}
 
 		// Mock Behavior -> user not fresh!
-		mockUserRepo.On("GetUserById", mock.Anything, userID).Return(exisitingUser, nil).Once()
+		mockUserRepo.On("GetUserByID", mock.Anything, userID).Return(exisitingUser, nil).Once()
 
 		// Act
 		resp, err := userService.GetUserByID(ctx, userID)
@@ -315,7 +315,7 @@ func TestUserService_GetUserByID(t *testing.T) {
 		userID := uuid.New()
 
 		// Mock Behavior -> user not fresh!
-		mockUserRepo.On("GetUserById", mock.Anything, userID).Return(nil, errors.New("User not found")).Once()
+		mockUserRepo.On("GetUserByID", mock.Anything, userID).Return(nil, errors.New("User not found")).Once()
 
 		// Act
 		resp, err := userService.GetUserByID(ctx, userID)
