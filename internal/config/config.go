@@ -113,6 +113,8 @@ func MustLoad() *Config {
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		log.Fatalf("config file does not exist: %s", configPath)
+	} else if err != nil {
+		log.Fatalf("error accessing config file at %s: %v", configPath, err)
 	}
 
 	var cfg Config

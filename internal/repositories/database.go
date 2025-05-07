@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
@@ -47,8 +48,11 @@ func New(cfg *config.Config, redisClient *redis.Client, cacheImpl cache.Cache, r
 	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
 	db.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
 
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.HTTPServer.GracefulShutdownTimeout)
+	defer cancel()
+
 	// Test the connection to make sure DB is reachable
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
