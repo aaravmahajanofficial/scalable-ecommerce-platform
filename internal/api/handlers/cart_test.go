@@ -87,7 +87,7 @@ func TestGetCart(t *testing.T) {
 		_, cartHandler := setupCartTest(t)
 
 		// Request without auth context
-		req := httptest.NewRequest(http.MethodGet, "/carts", nil)
+		req := httptest.NewRequest(http.MethodGet, "/carts", http.NoBody)
 		req.Header.Set("Content-Type", "application/json")
 
 		// Add logger to context

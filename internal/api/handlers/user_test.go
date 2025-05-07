@@ -310,7 +310,7 @@ func TestUserHandler_Profile(t *testing.T) {
 
 		mockUserService.On("GetUserByID", mock.Anything, user.ID).Return(user, nil).Once()
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", http.NoBody)
 
 		claims := &models.Claims{
 			UserID: user.ID,
@@ -338,7 +338,7 @@ func TestUserHandler_Profile(t *testing.T) {
 	})
 	t.Run("Failure - No Auth Context", func(t *testing.T) {
 		// Arrange - request without auth context
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", http.NoBody)
 		w := httptest.NewRecorder()
 
 		// Act
@@ -362,7 +362,7 @@ func TestUserHandler_Profile(t *testing.T) {
 		userID := uuid.New()
 		email := "test@example.com"
 
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/profile", http.NoBody)
 
 		claims := &models.Claims{
 			UserID: userID,

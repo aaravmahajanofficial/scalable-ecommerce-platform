@@ -90,7 +90,7 @@ func NewReadinessHandler(cfg *config.Config, healthEndpoint *HealthEndpoint) (ht
 }
 
 func NewLivenessHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "text/plain")
 		fmt.Fprintf(w, "Service is alive. Time: %s\n", time.Now().Format(time.RFC3339))

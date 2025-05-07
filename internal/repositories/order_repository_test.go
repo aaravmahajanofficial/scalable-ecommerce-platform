@@ -512,7 +512,7 @@ func TestListOrdersByCustomer(t *testing.T) {
 
 		// Assert
 		require.Error(t, err, "ListOrdersByCustomer should fail on item scan error")
-		assert.ErrorContains(t, err, "failed to scan order items", "Error message should indicate item scan failure")
+		assert.ErrorContains(t, err, "failed to scan order item", "Error message should indicate item scan failure")
 		assert.Nil(t, orders, "Orders slice should be nil")
 		assert.Zero(t, total, "Total should be zero")
 	})

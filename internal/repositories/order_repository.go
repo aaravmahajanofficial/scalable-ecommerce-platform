@@ -211,19 +211,22 @@ func (r *orderRepository) ListOrdersByCustomer(ctx context.Context, customerID u
 		for itemsRows.Next() {
 			var item models.OrderItem
 
-			err := itemsRows.Scan(&item.ID, &item.ProductID, &item.Quantity, &item.UnitPrice, &item.CreatedAt)
-			if err != nil {
-				itemsRows.Close()
-
-				return nil, 0, fmt.Errorf("failed to scan order items: %w", err)
+			scanErr := itemsRows.Scan(&item.ID, &item.ProductID, &item.Quantity, &item.UnitPrice, &item.CreatedAt)
+			if scanErr != nil {
+				closeErr := itemsRows.Close()
+				if closeErr != nil {
+					return nil, 0, fmt.Errorf("scan error: %v, and failed to close itemsRows: %v", scanErr, closeErr)
+				}
+				return nil, 0, fmt.Errorf("failed to scan order item: %w", scanErr)
 			}
 
 			item.OrderID = orders[i].ID
-
 			items = append(items, item)
 		}
 
-		itemsRows.Close()
+		if err := itemsRows.Close(); err != nil {
+			return nil, 0, fmt.Errorf("failed to close itemsRows: %v", err)
+		}
 
 		orders[i].Items = items
 	}

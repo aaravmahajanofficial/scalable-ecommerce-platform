@@ -130,7 +130,7 @@ func TestEmailService_Send(t *testing.T) {
 				Content:     "Another plain text",
 				HTMLContent: "<p>HTML</p>",
 			},
-			handler: func(w http.ResponseWriter, r *http.Request) {
+			handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusAccepted)
 			},
 			expectedError: "",
@@ -158,7 +158,7 @@ func TestEmailService_Send(t *testing.T) {
 				Subject: "Test Subject 3",
 				Content: "Content",
 			},
-			handler: func(w http.ResponseWriter, r *http.Request) {
+			handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusBadRequest) // 400 Bad Request
 				_, err := w.Write([]byte(`{"errors": [{"message": "Invalid email"}]}`))
@@ -177,7 +177,7 @@ func TestEmailService_Send(t *testing.T) {
 				Subject: "Test Subject 4",
 				Content: "Content",
 			},
-			handler: func(w http.ResponseWriter, r *http.Request) {
+			handler: func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError) // 500 Internal Server Error
 			},
 			expectedError: "failed to send email, status code: 500",
@@ -242,7 +242,7 @@ type testEmailService struct {
 	client *sendgrid.Client
 }
 
-func (e *testEmailService) Send(ctx context.Context, req *models.EmailNotificationRequest) error {
+func (e *testEmailService) Send(_ context.Context, _ *models.EmailNotificationRequest) error {
 	return nil
 }
 
