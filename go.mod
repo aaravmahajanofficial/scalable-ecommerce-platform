@@ -1,6 +1,6 @@
 module github.com/aaravmahajanofficial/scalable-ecommerce-platform
 
-go 1.24.2
+go 1.24.3
 
 require (
 	github.com/XSAM/otelsql v0.38.0
