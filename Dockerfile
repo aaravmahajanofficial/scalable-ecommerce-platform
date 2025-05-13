@@ -1,28 +1,23 @@
-FROM golang:1.24-alpine AS build-stage
+# Stage 1 - Build
+FROM golang:1.24-bookworm AS build
 
-WORKDIR /app
+WORKDIR /go/src/app
 
 COPY go.mod go.sum ./
-
 RUN go mod download
 
-COPY . .
+COPY ./cmd/scalable-ecommerce-platform ./cmd/scalable-ecommerce-platform
+COPY ./internal ./internal
 
-# create statically linked executable, it contains all the code it needs to run
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/server ./cmd/scalable-ecommerce-platform/
+# creates statically linked executable, it contains all the code it needs to run, strips debug info to reduce binary size
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /app/scalable-ecommerce ./cmd/scalable-ecommerce-platform/
 
-FROM alpine:latest
 
-WORKDIR /app
+# Stage 2 - Minimal Runtime
+FROM gcr.io/distroless/static-debian12
 
-RUN addgroup -S tempGroup && adduser -S tempUser -G tempGroup
-
-COPY --from=build-stage /app/server /app/server
-
-RUN chown tempUser:tempGroup /app/server && chmod +x /app/server
-
-USER tempUser
+COPY --from=build /app/scalable-ecommerce /app/scalable-ecommerce
 
 EXPOSE 8085
 
-ENTRYPOINT [ "/app/server" ]
+CMD [ "/app/scalable-ecommerce" ]

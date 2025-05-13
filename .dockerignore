@@ -1,5 +1,3 @@
-# .dockerignore
-
 # Ignore git directory
 .git
 .gitignore
@@ -9,7 +7,7 @@ Dockerfile
 .dockerignore
 
 # Ignore local environment variables
-.env
+*.env
 
 # Ignore build artifacts (the runtime stage handles the final binary)
 bin/
@@ -29,3 +27,6 @@ vendor/
 
 # Ignore log files
 *.log
+
+# Ignore the markdown files
+*.md
